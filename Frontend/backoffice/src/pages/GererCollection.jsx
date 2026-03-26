@@ -224,7 +224,7 @@ export default function GererCollection() {
                 <span className="material-symbols-outlined text-lg">delete</span> Supprimer
               </button>
               <button type="button" onClick={handleSave} disabled={saving}
-                className="px-5 py-2.5 bg-brand text-white font-bold rounded-xl text-sm flex items-center gap-2 shadow-lg shadow-brand/20 hover:bg-brand-dark transition-all disabled:opacity-50">
+                className="px-5 py-2.5 bg-btn text-white font-bold rounded-xl text-sm flex items-center gap-2 shadow-lg shadow-btn/20 hover:bg-btn-dark transition-all disabled:opacity-50">
                 <span className="material-symbols-outlined text-lg">{saving ? 'hourglass_empty' : 'save'}</span>
                 {saving ? 'Sauvegarde...' : 'Sauvegarder'}
               </button>
@@ -408,7 +408,7 @@ export default function GererCollection() {
                               return (
                                 <button key={child.id} type="button" onClick={() => toggleCategory(child.nom)}
                                   className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
-                                    isChildSelected ? 'border-brand bg-brand/10 text-brand' : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'
+                                    isChildSelected ? 'border-badge bg-badge/10 text-badge' : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'
                                   }`}>
                                   {isChildSelected && <span className="material-symbols-outlined text-xs align-middle mr-1">check</span>}
                                   {child.nom}
@@ -576,7 +576,7 @@ export default function GererCollection() {
                         onClick={() => setMenuParentCategory(menuParentCategory === cat.nom ? '' : cat.nom)}
                         className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
                           menuParentCategory === cat.nom
-                            ? 'border-brand bg-brand/10 text-brand'
+                            ? 'border-badge bg-badge/10 text-badge'
                             : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'
                         }`}
                       >
@@ -682,8 +682,8 @@ export default function GererCollection() {
               <span className="material-symbols-outlined text-brand text-lg">storefront</span>
               <h2 className="text-sm font-bold text-slate-700">Aperçu Front Office</h2>
               <span className="ml-auto relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand/60 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-brand"></span>
               </span>
             </div>
             <div className="p-4">
@@ -797,7 +797,7 @@ export default function GererCollection() {
               <div className="flex flex-wrap gap-1.5 mt-3">
                 {visMenu && menuParentCategory && <span className="text-[9px] font-bold uppercase tracking-wider text-brand bg-brand/10 px-2 py-0.5 rounded-full">Menu → {menuParentCategory}</span>}
                 {menuFeatured && <span className="text-[9px] font-bold uppercase tracking-wider text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">★ En vedette</span>}
-                {visHomepage && <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Homepage</span>}
+                {visHomepage && <span className="text-[9px] font-bold uppercase tracking-wider text-brand bg-brand/5 px-2 py-0.5 rounded-full">Homepage</span>}
                 {visMobile && <span className="text-[9px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">Mobile</span>}
               </div>
 
@@ -819,7 +819,7 @@ export default function GererCollection() {
                 <p className="text-[13px] text-blue-700 font-medium truncate">
                   {metaTitle || 'Titre de la collection — GMIR JEWELRY'}
                 </p>
-                <p className="text-[11px] text-emerald-700 truncate mt-0.5">
+                <p className="text-[11px] text-brand truncate mt-0.5">
                   www.gmir-jewelry.com/collections/{slug || 'slug'}
                 </p>
                 <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">

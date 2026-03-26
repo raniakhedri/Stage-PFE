@@ -8,14 +8,14 @@ import CustomSelect from '../components/ui/CustomSelect'
 import { categoryApi } from '../api/categoryApi'
 
 const statutMap = {
-  'actif':     { bg: 'bg-emerald-100 text-emerald-700', label: 'ACTIF' },
+  'actif':     { bg: 'bg-badge/10 text-badge', label: 'ACTIF' },
   'brouillon': { bg: 'bg-slate-100 text-slate-600',     label: 'BROUILLON' },
   'planifié':  { bg: 'bg-blue-100 text-blue-700',       label: 'PLANIFIÉ' },
   'désactivé': { bg: 'bg-red-100 text-red-600',         label: 'DÉSACTIVÉ' },
 }
 
 const visBadge = {
-  menu:     { bg: 'bg-brand/10 text-brand',      label: 'Menu' },
+  menu:     { bg: 'bg-badge/10 text-badge',      label: 'Menu' },
   homepage: { bg: 'bg-amber-100 text-amber-700',  label: 'Homepage' },
   mobile:   { bg: 'bg-purple-100 text-purple-700', label: 'Mobile' },
   footer:   { bg: 'bg-slate-100 text-slate-600',   label: 'Footer' },
@@ -89,7 +89,7 @@ export default function Categories() {
 
   const kpiData = [
     { label: 'Total Catégories', value: String(totalCats), sub: '', subColor: 'text-slate-400', icon: 'folder', iconBg: 'bg-slate-50 text-slate-500' },
-    { label: 'Catégories Actives', value: String(activeCats), sub: totalCats ? `${Math.round(activeCats/totalCats*100)}% total` : '0%', subColor: 'text-slate-400', icon: 'check_circle', iconBg: 'bg-emerald-50 text-brand' },
+    { label: 'Catégories Actives', value: String(activeCats), sub: totalCats ? `${Math.round(activeCats/totalCats*100)}% total` : '0%', subColor: 'text-slate-400', icon: 'check_circle', iconBg: 'bg-badge/10 text-badge' },
     { label: 'Produits Catégorisés', value: '—', sub: '', subColor: 'text-slate-400', icon: 'inventory_2', iconBg: 'bg-blue-50 text-blue-500' },
     { label: 'Niveaux Max', value: String(maxNiveau + 1), sub: `${maxNiveau + 1} niveaux`, subColor: 'text-slate-400', icon: 'account_tree', iconBg: 'bg-purple-50 text-purple-500' },
   ]
@@ -261,7 +261,7 @@ export default function Categories() {
       </td>
       {/* Type */}
       <td className="px-3 py-3 whitespace-nowrap">
-        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${cat.type === 'Principale' ? 'bg-brand/10 text-brand' : 'bg-slate-100 text-slate-500'}`}>
+        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${cat.type === 'Principale' ? 'bg-badge/10 text-badge' : 'bg-slate-100 text-slate-500'}`}>
           {cat.type.toUpperCase()}
         </span>
       </td>
@@ -279,7 +279,7 @@ export default function Categories() {
       </td>
       {/* Statut */}
       <td className="px-3 py-3 whitespace-nowrap">
-        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${statutMap[cat.statut]?.bg}`}>
+        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold font-badge ${statutMap[cat.statut]?.bg}`}>
           {statutMap[cat.statut]?.label}
         </span>
       </td>
@@ -290,7 +290,7 @@ export default function Categories() {
           <button
             onClick={() => toggleActive(cat.id)}
             title={cat.statut === 'actif' ? 'Désactiver' : 'Activer'}
-            className={`p-1 rounded transition-colors ${cat.statut === 'actif' ? 'text-emerald-500 hover:bg-emerald-50' : 'text-slate-400 hover:bg-slate-100'}`}
+            className={`p-1 rounded transition-colors ${cat.statut === 'actif' ? 'text-brand hover:bg-brand/5' : 'text-slate-400 hover:bg-slate-100'}`}
           >
             <span className="material-symbols-outlined text-lg">
               {cat.statut === 'actif' ? 'toggle_on' : 'toggle_off'}

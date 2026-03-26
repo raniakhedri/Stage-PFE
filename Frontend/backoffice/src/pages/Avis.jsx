@@ -53,7 +53,7 @@ const noteOptions = ['Toutes les notes', '5 étoiles', '4 étoiles', '3 étoiles
 const periodeOptions = ['Toutes les périodes', '7 derniers jours', '30 derniers jours', '3 derniers mois']
 
 const statutBadge = {
-  'Approuvé':   'bg-emerald-100 text-emerald-700',
+  'Approuvé':   'bg-badge/10 text-badge',
   'En attente': 'bg-amber-100 text-amber-700',
   'Spam':       'bg-red-100 text-red-700',
 }
@@ -154,10 +154,10 @@ export default function Avis() {
 
       {/* ── KPIs ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <KpiCard label="Note moyenne" value={`${noteMoyenne}/5`} sub="+0.2 ce mois" subColor="text-emerald-600" icon="star" iconBg="bg-amber-50 text-amber-500" />
-        <KpiCard label="Total des avis" value={total.toLocaleString()} sub="+12%" subColor="text-emerald-600" icon="reviews" iconBg="bg-emerald-50 text-brand" />
+        <KpiCard label="Note moyenne" value={`${noteMoyenne}/5`} sub="+0.2 ce mois" subColor="text-brand" icon="star" iconBg="bg-amber-50 text-amber-500" />
+        <KpiCard label="Total des avis" value={total.toLocaleString()} sub="+12%" subColor="text-brand" icon="reviews" iconBg="bg-badge/10 text-badge" />
         <KpiCard label="Avis approuvés" value={approuves} sub={`${total > 0 ? Math.round(approuves / total * 100) : 0}% du total`} subColor="text-slate-400" icon="check_circle" iconBg="bg-blue-50 text-blue-600" />
-        <KpiCard label="En attente de modération" value={enAttente} sub={enAttente > 0 ? 'Action requise' : 'Tout est à jour'} subColor={enAttente > 0 ? 'text-amber-600' : 'text-emerald-600'} icon="pending_actions" iconBg="bg-amber-50 text-amber-600" />
+        <KpiCard label="En attente de modération" value={enAttente} sub={enAttente > 0 ? 'Action requise' : 'Tout est à jour'} subColor={enAttente > 0 ? 'text-amber-600' : 'text-brand'} icon="pending_actions" iconBg="bg-amber-50 text-amber-600" />
       </div>
 
       {/* ── Filters ── */}
@@ -233,7 +233,7 @@ export default function Avis() {
 
                   {/* Statut */}
                   <td className="px-6 py-3.5 text-center">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${statutBadge[a.statut] || 'bg-slate-100 text-slate-500'}`}>
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold font-badge ${statutBadge[a.statut] || 'bg-slate-100 text-slate-500'}`}>
                       {a.statut}
                     </span>
                   </td>
@@ -242,7 +242,7 @@ export default function Avis() {
                   <td className="px-6 py-3.5 text-right">
                     <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       {a.statut === 'En attente' && (
-                        <button onClick={() => approuver(a.id)} className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded-md transition-all" title="Approuver">
+                        <button onClick={() => approuver(a.id)} className="p-1.5 text-brand hover:bg-brand/5 rounded-md transition-all" title="Approuver">
                           <span className="material-symbols-outlined text-[18px]">check_circle</span>
                         </button>
                       )}
@@ -331,7 +331,7 @@ export default function Avis() {
               </div>
               <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Statut</p>
-                <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${statutBadge[detailAvis.statut]}`}>{detailAvis.statut}</span>
+                <span className={`px-3 py-1 rounded-full text-[10px] font-bold font-badge ${statutBadge[detailAvis.statut]}`}>{detailAvis.statut}</span>
               </div>
               {detailAvis.reponse && (
                 <div>
@@ -343,7 +343,7 @@ export default function Avis() {
 
             <div className="flex justify-end gap-3 pt-2">
               {detailAvis.statut === 'En attente' && (
-                <button onClick={() => { approuver(detailAvis.id); setDetailAvis(null) }} className="px-4 py-2 text-sm font-semibold text-white bg-brand rounded-lg hover:bg-brand-dark transition-colors">Approuver</button>
+                <button onClick={() => { approuver(detailAvis.id); setDetailAvis(null) }} className="px-4 py-2 text-sm font-semibold text-white bg-btn rounded-lg hover:bg-btn-dark transition-colors">Approuver</button>
               )}
               <button onClick={() => { openReply(detailAvis); setDetailAvis(null) }} className="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors">Répondre</button>
             </div>
@@ -379,7 +379,7 @@ export default function Avis() {
 
             <div className="flex justify-end gap-3 pt-2">
               <button onClick={() => setReplyAvis(null)} className="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors">Annuler</button>
-              <button onClick={submitReply} className="px-4 py-2 text-sm font-semibold text-white bg-brand rounded-lg hover:bg-brand-dark transition-colors">Envoyer</button>
+              <button onClick={submitReply} className="px-4 py-2 text-sm font-semibold text-white bg-btn rounded-lg hover:bg-btn-dark transition-colors">Envoyer</button>
             </div>
           </div>
         </div>

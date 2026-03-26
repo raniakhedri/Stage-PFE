@@ -118,9 +118,9 @@ export default function TvaLivraison() {
 
       {/* ─── KPIs ─── */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <KpiCard label="Taux TVA Actifs" value={tauxActifs} sub="Système opérationnel" subColor="text-emerald-600" icon="percent" iconBg="bg-emerald-50 text-brand" />
+        <KpiCard label="Taux TVA Actifs" value={tauxActifs} sub="Système opérationnel" subColor="text-brand" icon="percent" iconBg="bg-badge/10 text-badge" />
         <KpiCard label="Taux par Défaut" value={`${tauxDefaut}%`} sub="Basé sur la zone France" subColor="text-slate-400" icon="settings_backup_restore" iconBg="bg-blue-50 text-blue-600" />
-        <KpiCard label="Zones de Livraison" value={zones.length} sub={`${zones.filter(z => z.statut === 'Ouverte').length} zones ouvertes`} subColor="text-emerald-600" icon="public" iconBg="bg-amber-50 text-amber-600" />
+        <KpiCard label="Zones de Livraison" value={zones.length} sub={`${zones.filter(z => z.statut === 'Ouverte').length} zones ouvertes`} subColor="text-brand" icon="public" iconBg="bg-amber-50 text-amber-600" />
         <KpiCard label="Délai Moyen Exp." value="24h" sub="Objectif : < 18h" subColor="text-slate-400" icon="schedule" iconBg="bg-purple-50 text-purple-600" />
       </div>
 
@@ -197,7 +197,7 @@ export default function TvaLivraison() {
                     <button onClick={() => toggleTauxStatut(t.id)}>
                       <span className={`px-2 py-1 text-xs font-bold rounded cursor-pointer ${
                         t.statut === 'Actif'
-                          ? 'bg-emerald-100 text-emerald-700'
+                          ? 'bg-badge/10 text-badge'
                           : 'bg-slate-100 text-slate-500'
                       }`}>
                         {t.statut}
@@ -262,7 +262,7 @@ export default function TvaLivraison() {
                   <td className="px-6 py-3.5 text-sm font-bold">{z.cout}</td>
                   <td className="px-6 py-3.5">
                     <span className={`px-2 py-1 text-xs font-bold rounded ${
-                      z.statut === 'Ouverte' ? 'bg-emerald-100 text-emerald-700'
+                      z.statut === 'Ouverte' ? 'bg-badge/10 text-badge'
                         : z.statut === 'Maintenance' ? 'bg-amber-100 text-amber-700'
                         : 'bg-slate-100 text-slate-500'
                     }`}>
@@ -423,7 +423,7 @@ export default function TvaLivraison() {
             </div>
             <div className="flex justify-end gap-3 pt-2">
               <button onClick={() => setShowAddTaux(false)} className="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors">Annuler</button>
-              <button onClick={handleAddTaux} className="px-4 py-2 text-sm font-semibold text-white bg-brand rounded-lg hover:bg-brand-dark transition-colors">Ajouter</button>
+              <button onClick={handleAddTaux} className="px-4 py-2 text-sm font-semibold text-white bg-btn rounded-lg hover:bg-btn-dark transition-colors">Ajouter</button>
             </div>
           </div>
         </div>
@@ -456,7 +456,7 @@ export default function TvaLivraison() {
             </div>
             <div className="flex justify-end gap-3 pt-2">
               <button onClick={() => setEditTaux(null)} className="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors">Annuler</button>
-              <button onClick={handleEditTaux} className="px-4 py-2 text-sm font-semibold text-white bg-brand rounded-lg hover:bg-brand-dark transition-colors">Enregistrer</button>
+              <button onClick={handleEditTaux} className="px-4 py-2 text-sm font-semibold text-white bg-btn rounded-lg hover:bg-btn-dark transition-colors">Enregistrer</button>
             </div>
           </div>
         </div>
@@ -523,7 +523,7 @@ export default function TvaLivraison() {
             </div>
             <div className="flex justify-end gap-3 pt-2">
               <button onClick={() => setShowAddZone(false)} className="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors">Annuler</button>
-              <button onClick={handleAddZone} className="px-4 py-2 text-sm font-semibold text-white bg-brand rounded-lg hover:bg-brand-dark transition-colors">Ajouter</button>
+              <button onClick={handleAddZone} className="px-4 py-2 text-sm font-semibold text-white bg-btn rounded-lg hover:bg-btn-dark transition-colors">Ajouter</button>
             </div>
           </div>
         </div>

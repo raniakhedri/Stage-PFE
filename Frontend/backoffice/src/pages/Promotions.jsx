@@ -9,14 +9,14 @@ import CustomSelect from '../components/ui/CustomSelect'
    ══════════════════════════════════════════════════════════════════════════ */
 const typeConfig = {
   pourcentage:  { label: 'Pourcentage',       icon: 'percent',         badge: 'bg-blue-50 text-blue-700 border-blue-100' },
-  fixe:         { label: 'Montant fixe',       icon: 'payments',        badge: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
+  fixe:         { label: 'Montant fixe',       icon: 'payments',        badge: 'bg-badge/5 text-badge border-badge/10' },
   livraison:    { label: 'Livraison gratuite', icon: 'local_shipping',  badge: 'bg-purple-50 text-purple-700 border-purple-100' },
   cadeau:       { label: 'Cadeau',             icon: 'redeem',          badge: 'bg-pink-50 text-pink-700 border-pink-100' },
   bogo:         { label: 'BOGO',               icon: 'shopping_bag',    badge: 'bg-amber-50 text-amber-700 border-amber-100' },
 }
 
 const statutConfig = {
-  actif:    { label: 'ACTIF',    bg: 'bg-emerald-500 text-white' },
+  actif:    { label: 'ACTIF',    bg: 'bg-badge text-white' },
   expire:   { label: 'EXPIRÉ',   bg: 'bg-slate-400 text-white' },
   brouillon:{ label: 'BROUILLON',bg: 'bg-amber-400 text-white' },
   planifie: { label: 'PLANIFIÉ', bg: 'bg-blue-500 text-white' },
@@ -97,7 +97,7 @@ const filterTypeOptions = ['Tous les types', 'Pourcentage', 'Montant fixe', 'Liv
 
 const autoTriggers = [
   { icon: 'cake', label: 'Anniversaire client', desc: 'Cadeau automatique le jour de l\'anniversaire', color: 'text-pink-500' },
-  { icon: 'redeem', label: 'Première commande', desc: 'Bienvenue -10% sur le 1er achat', color: 'text-emerald-500' },
+  { icon: 'redeem', label: 'Première commande', desc: 'Bienvenue -10% sur le 1er achat', color: 'text-brand' },
   { icon: 'remove_shopping_cart', label: 'Panier abandonné', desc: 'Relance -5% après 24h d\'abandon', color: 'text-amber-500' },
   { icon: 'psychology', label: 'Client hésitant', desc: 'Détecte hésitation → -10% flash auto', color: 'text-blue-500' },
 ]
@@ -296,14 +296,14 @@ export default function Promotions() {
 
       {/* ── KPIs ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <KpiCard label="Coupons actifs" value={actifs} sub={`${coupons.length} total`} subColor="text-slate-400" icon="sell" iconBg="bg-emerald-50 text-brand" />
-        <KpiCard label="Revenus générés" value={`${totalRevenus.toLocaleString()} €`} sub="+18% ce mois" subColor="text-emerald-600" icon="payments" iconBg="bg-blue-50 text-blue-600" />
+        <KpiCard label="Coupons actifs" value={actifs} sub={`${coupons.length} total`} subColor="text-slate-400" icon="sell" iconBg="bg-badge/10 text-badge" />
+        <KpiCard label="Revenus générés" value={`${totalRevenus.toLocaleString()} €`} sub="+18% ce mois" subColor="text-brand" icon="payments" iconBg="bg-blue-50 text-blue-600" />
         <KpiCard label="Taux d'utilisation" value={totalUtilisations} sub="utilisations totales" subColor="text-slate-400" icon="receipt_long" iconBg="bg-amber-50 text-amber-600" />
-        <KpiCard label="Conversion moyenne" value={`${avgConversion}%`} sub={avgConversion >= 30 ? 'Excellent' : 'À améliorer'} subColor={avgConversion >= 30 ? 'text-emerald-600' : 'text-amber-600'} icon="trending_up" iconBg="bg-purple-50 text-purple-600" />
+        <KpiCard label="Conversion moyenne" value={`${avgConversion}%`} sub={avgConversion >= 30 ? 'Excellent' : 'À améliorer'} subColor={avgConversion >= 30 ? 'text-brand' : 'text-amber-600'} icon="trending_up" iconBg="bg-purple-50 text-purple-600" />
       </div>
 
       {/* ── Smart Insights ── */}
-      <div className="bg-gradient-to-r from-brand/5 to-emerald-50 rounded-xl border border-brand/10 p-5">
+      <div className="bg-gradient-to-r from-brand/5 to-brand/5 rounded-xl border border-brand/10 p-5">
         <div className="flex items-center gap-2 mb-4">
           <span className="material-symbols-outlined text-brand">psychology</span>
           <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Smart Insights</h3>
@@ -311,9 +311,9 @@ export default function Promotions() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {bestCoupon && (
             <div className="bg-white rounded-lg border border-slate-200 p-4 flex items-start gap-3">
-              <div className="p-2 bg-emerald-50 rounded-lg"><span className="material-symbols-outlined text-emerald-600">local_fire_department</span></div>
+              <div className="p-2 bg-brand/5 rounded-lg"><span className="material-symbols-outlined text-brand">local_fire_department</span></div>
               <div>
-                <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Meilleur coupon</p>
+                <p className="text-[10px] font-bold text-brand uppercase tracking-wider">Meilleur coupon</p>
                 <p className="text-sm font-bold text-slate-800 mt-0.5">{bestCoupon.code}</p>
                 <p className="text-xs text-slate-500 mt-0.5">{bestCoupon.conversion}% conversion · {bestCoupon.revenus.toLocaleString()} € revenus</p>
               </div>
@@ -413,7 +413,7 @@ export default function Promotions() {
 
                         {/* Type */}
                         <td className="px-6 py-3.5">
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border ${tc.badge}`}>
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold font-badge uppercase tracking-wide border ${tc.badge}`}>
                             <span className="material-symbols-outlined text-[12px]">{tc.icon}</span>
                             {tc.label}
                           </span>
@@ -446,7 +446,7 @@ export default function Promotions() {
                         {/* Statut */}
                         <td className="px-6 py-3.5 text-center">
                           <button onClick={() => toggleStatut(c.id)} title="Cliquer pour changer">
-                            <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${sc.bg}`}>{sc.label}</span>
+                            <span className={`px-3 py-1 rounded-full text-[10px] font-bold font-badge uppercase tracking-wider ${sc.bg}`}>{sc.label}</span>
                           </button>
                         </td>
 
@@ -454,7 +454,7 @@ export default function Promotions() {
                         <td className="px-6 py-3.5 text-center">
                           {c.conversion > 0 ? (
                             <div className="text-center">
-                              <span className={`text-sm font-bold ${c.conversion >= 30 ? 'text-emerald-600' : c.conversion >= 15 ? 'text-amber-600' : 'text-red-500'}`}>{c.conversion}%</span>
+                              <span className={`text-sm font-bold ${c.conversion >= 30 ? 'text-brand' : c.conversion >= 15 ? 'text-amber-600' : 'text-red-500'}`}>{c.conversion}%</span>
                               <p className="text-[10px] text-slate-400">{c.revenus.toLocaleString()} €</p>
                             </div>
                           ) : (
@@ -531,7 +531,7 @@ export default function Promotions() {
           {/* Formulaire remise */}
           <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-6">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-brand/10 text-brand rounded-xl flex items-center justify-center">
+              <div className="w-12 h-12 bg-badge/10 text-badge rounded-xl flex items-center justify-center">
                 <span className="material-symbols-outlined text-2xl">label</span>
               </div>
               <div>
@@ -622,7 +622,7 @@ export default function Promotions() {
                   <div className="flex items-center justify-between">
                     <h4 className="font-bold text-slate-800 text-sm">{t.label}</h4>
                     <button onClick={() => toast.success(`Trigger "${t.label}" activé !`)}
-                      className="px-3 py-1 bg-brand/10 text-brand text-[10px] font-bold rounded-lg hover:bg-brand/20 transition-colors uppercase">
+                      className="px-3 py-1 bg-badge/10 text-badge text-[10px] font-bold rounded-lg hover:bg-badge/20 transition-colors uppercase">
                       Activer
                     </button>
                   </div>
@@ -645,8 +645,8 @@ export default function Promotions() {
                     <span className="text-xs text-slate-500">{c.type === 'pourcentage' ? `${c.valeur}%` : `${c.valeur} €`} · {segmentOptions.find(s => s.value === c.segment)?.label}</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-xs font-bold text-emerald-600">{c.utilisations} utilisations</span>
-                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${statutConfig[c.statut]?.bg}`}>{statutConfig[c.statut]?.label}</span>
+                    <span className="text-xs font-bold text-brand">{c.utilisations} utilisations</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold font-badge ${statutConfig[c.statut]?.bg}`}>{statutConfig[c.statut]?.label}</span>
                   </div>
                 </div>
               ))}
@@ -772,7 +772,7 @@ export default function Promotions() {
               <div className="flex flex-wrap gap-2">
                 {categorieOptions.map(cat => (
                   <button key={cat} type="button" onClick={() => toggleCatSelection(cat)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${newCategories.includes(cat) ? 'border-brand bg-brand/10 text-brand' : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'}`}>
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${newCategories.includes(cat) ? 'border-badge bg-badge/10 text-badge' : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'}`}>
                     {cat}
                   </button>
                 ))}
@@ -782,7 +782,7 @@ export default function Promotions() {
             {/* Submit */}
             <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
               <button onClick={() => setShowCreate(false)} className="px-4 py-2.5 text-sm font-semibold text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors">Annuler</button>
-              <button onClick={submitCreate} className="px-6 py-2.5 text-sm font-semibold text-white bg-brand rounded-lg hover:bg-brand-dark transition-colors shadow-md">Créer le coupon</button>
+              <button onClick={submitCreate} className="px-6 py-2.5 text-sm font-semibold text-white bg-btn rounded-lg hover:bg-btn-dark transition-colors shadow-md">Créer le coupon</button>
             </div>
           </div>
         </div>
@@ -795,7 +795,7 @@ export default function Promotions() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <span className="px-4 py-1.5 bg-brand/5 text-brand font-bold text-lg rounded-lg border border-brand/10">{detailCoupon.code}</span>
-                <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${statutConfig[detailCoupon.statut]?.bg}`}>{statutConfig[detailCoupon.statut]?.label}</span>
+                <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold font-badge ${statutConfig[detailCoupon.statut]?.bg}`}>{statutConfig[detailCoupon.statut]?.label}</span>
               </div>
               <button onClick={() => setDetailCoupon(null)} className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors">
                 <span className="material-symbols-outlined text-slate-400">close</span>
@@ -828,9 +828,9 @@ export default function Promotions() {
             <div className="border-t border-slate-100 pt-4">
               <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Performances</p>
               <div className="grid grid-cols-3 gap-4">
-                <div className="text-center bg-emerald-50 rounded-lg p-4">
-                  <p className="text-2xl font-bold text-emerald-700">{detailCoupon.revenus.toLocaleString()} €</p>
-                  <p className="text-[10px] text-emerald-600 font-bold uppercase mt-1">Revenus générés</p>
+                <div className="text-center bg-brand/5 rounded-lg p-4">
+                  <p className="text-2xl font-bold text-brand">{detailCoupon.revenus.toLocaleString()} €</p>
+                  <p className="text-[10px] text-brand font-bold uppercase mt-1">Revenus générés</p>
                 </div>
                 <div className="text-center bg-blue-50 rounded-lg p-4">
                   <p className="text-2xl font-bold text-blue-700">{detailCoupon.commandes}</p>
@@ -852,7 +852,7 @@ export default function Promotions() {
               <button onClick={() => { copierCode(detailCoupon.code); setDetailCoupon(null) }} className="px-4 py-2 text-sm font-semibold text-brand bg-brand/10 rounded-lg hover:bg-brand/20 transition-colors flex items-center gap-2">
                 <span className="material-symbols-outlined text-sm">content_copy</span>Copier code
               </button>
-              <button onClick={() => { toast.info(`Email envoyé avec le code ${detailCoupon.code}`); setDetailCoupon(null) }} className="px-4 py-2 text-sm font-semibold text-white bg-brand rounded-lg hover:bg-brand-dark transition-colors flex items-center gap-2">
+              <button onClick={() => { toast.info(`Email envoyé avec le code ${detailCoupon.code}`); setDetailCoupon(null) }} className="px-4 py-2 text-sm font-semibold text-white bg-btn rounded-lg hover:bg-btn-dark transition-colors flex items-center gap-2">
                 <span className="material-symbols-outlined text-sm">mail</span>Partager par email
               </button>
             </div>

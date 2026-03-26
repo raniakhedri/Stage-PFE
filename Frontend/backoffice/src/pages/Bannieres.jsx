@@ -15,7 +15,7 @@ const positionColors = {
 }
 
 const statutConfig = {
-  'Actif':      { bg: 'bg-emerald-100 text-emerald-700', dot: 'bg-emerald-500' },
+  'Actif':      { bg: 'bg-badge/10 text-badge', dot: 'bg-badge' },
   'Programmé':  { bg: 'bg-blue-100 text-blue-700',       dot: 'bg-blue-500' },
   'Expiré':     { bg: 'bg-slate-100 text-slate-500',     dot: 'bg-slate-400' },
   'Brouillon':  { bg: 'bg-yellow-100 text-yellow-700',   dot: 'bg-yellow-500' },
@@ -271,13 +271,13 @@ export default function Bannieres() {
 
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <KpiCard label="Bannières Actives" value={actives} sub={`+2 ce mois`} subColor="text-emerald-600" icon="check_circle" iconBg="bg-emerald-50 text-emerald-600" progress={75} progressColor="bg-emerald-500" />
+        <KpiCard label="Bannières Actives" value={actives} sub={`+2 ce mois`} subColor="text-brand" icon="check_circle" iconBg="bg-badge/10 text-badge" progress={75} progressColor="bg-brand" />
         <KpiCard label="Programmées" value={String(programmees).padStart(2, '0')} sub="Prochaine: Lundi" subColor="text-blue-600" icon="schedule" iconBg="bg-blue-50 text-blue-600" progress={30} progressColor="bg-blue-500" />
         <KpiCard label="Expirées" value={expirees} sub="Archivées" subColor="text-slate-400" icon="history" iconBg="bg-slate-100 text-slate-500" progress={100} progressColor="bg-slate-400" />
       </div>
 
       {/* Smart Insights */}
-      <div className="bg-gradient-to-r from-brand/5 to-emerald-50 rounded-xl border border-brand/10 p-5">
+      <div className="bg-gradient-to-r from-brand/5 to-brand/5 rounded-xl border border-brand/10 p-5">
         <div className="flex items-center gap-2 mb-4">
           <span className="material-symbols-outlined text-brand">psychology</span>
           <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Smart Insights</h3>
@@ -285,14 +285,14 @@ export default function Bannieres() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {best && (
             <div className="bg-white rounded-lg border border-slate-200 p-4 flex items-start gap-3">
-              <div className="p-2 bg-emerald-50 rounded-lg">
-                <span className="material-symbols-outlined text-emerald-600">emoji_events</span>
+              <div className="p-2 bg-brand/5 rounded-lg">
+                <span className="material-symbols-outlined text-brand">emoji_events</span>
               </div>
               <div>
-                <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Meilleure bannière</p>
+                <p className="text-[10px] font-bold text-brand uppercase tracking-wider">Meilleure bannière</p>
                 <p className="text-sm font-bold text-slate-800 mt-0.5">{best.titre}</p>
                 <div className="flex items-center gap-3 mt-1">
-                  <span className="text-xs text-slate-500">CTR: <span className="font-bold text-emerald-600">{best.ctr}%</span></span>
+                  <span className="text-xs text-slate-500">CTR: <span className="font-bold text-brand">{best.ctr}%</span></span>
                   <span className="text-xs text-slate-500">{best.clics.toLocaleString()} clics</span>
                   <span className="text-xs text-slate-500">{best.vues.toLocaleString()} vues</span>
                 </div>
@@ -410,7 +410,7 @@ export default function Bannieres() {
 
                     {/* Position badge */}
                     <td className="px-4 py-2.5">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border ${posClass}`}>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold font-badge uppercase tracking-wide border ${posClass}`}>
                         {b.position}
                       </span>
                     </td>
@@ -448,8 +448,8 @@ export default function Bannieres() {
                             <span className="text-[11px] text-slate-600">{b.clics.toLocaleString()}</span>
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <span className="material-symbols-outlined text-[13px]" style={{ color: b.ctr >= 3 ? '#059669' : b.ctr >= 1 ? '#d97706' : '#ef4444' }}>trending_up</span>
-                            <span className={`text-[11px] font-bold ${b.ctr >= 3 ? 'text-emerald-600' : b.ctr >= 1 ? 'text-amber-600' : 'text-red-500'}`}>{b.ctr}%</span>
+                            <span className={`material-symbols-outlined text-[13px] ${b.ctr >= 3 ? 'text-brand' : b.ctr >= 1 ? 'text-amber-600' : 'text-red-500'}`}>trending_up</span>
+                            <span className={`text-[11px] font-bold ${b.ctr >= 3 ? 'text-brand' : b.ctr >= 1 ? 'text-amber-600' : 'text-red-500'}`}>{b.ctr}%</span>
                           </div>
                         </div>
                       ) : (
@@ -460,7 +460,7 @@ export default function Bannieres() {
                     {/* Diffusion / Status */}
                     <td className="px-4 py-2.5">
                       <div className="flex flex-col gap-1">
-                        <span className={`inline-flex items-center gap-1.5 w-fit px-2 py-0.5 rounded-full text-[10px] font-bold ${stat.bg}`}>
+                        <span className={`inline-flex items-center gap-1.5 w-fit px-2 py-0.5 rounded-full text-[10px] font-bold font-badge ${stat.bg}`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${stat.dot}`}></span>
                           {b.statut.toUpperCase()}
                         </span>
@@ -571,12 +571,12 @@ export default function Bannieres() {
             </div>
             {/* Preview area */}
             <div className="p-6">
-              <div className="w-full aspect-[16/5] bg-gradient-to-br from-brand/10 to-emerald-50 rounded-xl flex flex-col items-center justify-center border-2 border-dashed border-brand/20">
+              <div className="w-full aspect-[16/5] bg-gradient-to-br from-brand/10 to-brand/5 rounded-xl flex flex-col items-center justify-center border-2 border-dashed border-badge/20">
                 <span className="material-symbols-outlined text-brand/30 text-6xl mb-3">view_carousel</span>
                 <p className="text-lg font-bold text-slate-700">{previewBanner.titre}</p>
                 <p className="text-sm text-slate-500 mt-1">{previewBanner.sousTitre}</p>
                 {previewBanner.ctaTexte && (
-                  <button className="mt-4 px-6 py-2 bg-brand text-white font-bold rounded-lg text-sm shadow-lg">
+                  <button className="mt-4 px-6 py-2 bg-btn text-white font-bold rounded-lg text-sm shadow-lg">
                     {previewBanner.ctaTexte}
                   </button>
                 )}

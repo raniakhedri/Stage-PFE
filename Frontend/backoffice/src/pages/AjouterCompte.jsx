@@ -9,7 +9,7 @@ import Spinner from '../components/ui/Spinner'
 const roleIconMap = {
   SUPER_ADMIN: { icon: 'shield_person', iconBg: 'bg-red-50 text-red-600' },
   ADMIN: { icon: 'manage_accounts', iconBg: 'bg-slate-100 text-slate-600' },
-  CLIENT: { icon: 'person', iconBg: 'bg-emerald-50 text-emerald-600' },
+  CLIENT: { icon: 'person', iconBg: 'bg-badge/10 text-badge' },
 }
 const defaultRoleIcon = { icon: 'person', iconBg: 'bg-blue-50 text-blue-600' }
 
@@ -176,7 +176,7 @@ export default function AjouterCompte() {
           {/* Informations personnelles */}
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
-              <div className="w-8 h-8 bg-brand/10 text-brand rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-badge/10 text-badge rounded-lg flex items-center justify-center">
                 <span className="material-symbols-outlined text-lg">person</span>
               </div>
               <h3 className="text-sm font-bold text-slate-800">Informations personnelles</h3>
@@ -320,7 +320,7 @@ export default function AjouterCompte() {
           {/* Segmentation */}
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
-              <div className="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-badge/10 text-badge rounded-lg flex items-center justify-center">
                 <span className="material-symbols-outlined text-lg">tune</span>
               </div>
               <h3 className="text-sm font-bold text-slate-800">Segmentation</h3>
@@ -375,14 +375,14 @@ export default function AjouterCompte() {
               </div>
               <div className="flex justify-between text-xs">
                 <span className="text-slate-500">Invitation email</span>
-                <span className={`font-semibold ${form.sendInvite ? 'text-emerald-600' : 'text-slate-600'}`}>{form.sendInvite ? 'Oui' : 'Non'}</span>
+                <span className={`font-semibold ${form.sendInvite ? 'text-brand' : 'text-slate-600'}`}>{form.sendInvite ? 'Oui' : 'Non'}</span>
               </div>
             </div>
           </div>
 
           {/* Boutons bas */}
           <div className="flex flex-col gap-3">
-            <button type="submit" disabled={submitting} className="w-full py-3 bg-brand text-white font-bold text-sm rounded-xl hover:bg-brand-dark transition-all shadow-lg shadow-brand/20 flex items-center justify-center gap-2 disabled:opacity-60">
+            <button type="submit" disabled={submitting} className="w-full py-3 bg-btn text-white font-bold text-sm rounded-xl hover:bg-btn-dark transition-all shadow-lg shadow-btn/20 flex items-center justify-center gap-2 disabled:opacity-60">
               <span className="material-symbols-outlined text-lg">person_add</span>
               {submitting ? 'Création en cours…' : 'Créer le compte'}
             </button>

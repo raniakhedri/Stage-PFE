@@ -1,7 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { ToastContainer } from 'react-toastify'
+import { useEffect } from 'react'
 import 'react-toastify/dist/ReactToastify.css'
 
+import { applyAllColors, applyAllFonts } from './utils/brandColor'
 import RequireAuth from './components/auth/RequireAuth'
 import Layout from './components/layout/Layout'
 import AuthCallback from './pages/AuthCallback'
@@ -35,6 +37,20 @@ import NotFound from './pages/NotFound'
 // Les autres pages seront ajoutées ici au fur et à mesure
 
 function App() {
+  useEffect(() => {
+    // Load backoffice appearance settings (public endpoint, no auth needed)
+    const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'
+    fetch(`${baseURL}/public/appearance/backoffice`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data) {
+          applyAllColors(data)
+          applyAllFonts(data)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
   return (
     <BrowserRouter>
       <ToastContainer position="top-right" autoClose={3000} />

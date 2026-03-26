@@ -267,7 +267,7 @@ export default function EditCategorie() {
           </button>
           <button onClick={handleSubmit}
             disabled={saving}
-            className="px-5 py-2.5 rounded-custom text-sm font-bold text-white bg-brand hover:bg-brand-dark transition-colors flex items-center gap-2 disabled:opacity-50">
+            className="px-5 py-2.5 rounded-custom text-sm font-bold text-white bg-btn hover:bg-btn-dark transition-colors flex items-center gap-2 disabled:opacity-50">
             <span className="material-symbols-outlined text-lg">{saving ? 'progress_activity' : 'save'}</span>
             {saving ? 'Enregistrement...' : 'Mettre à jour'}
           </button>
@@ -325,7 +325,7 @@ export default function EditCategorie() {
               <div className="flex items-center gap-3 mt-1">
                 <span className="material-symbols-outlined text-slate-400 text-lg">{type === 'Principale' ? 'folder' : 'subdirectory_arrow_right'}</span>
                 <div>
-                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${type === 'Principale' ? 'bg-brand/10 text-brand' : 'bg-slate-100 text-slate-600'}`}>
+                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${type === 'Principale' ? 'bg-badge/10 text-badge' : 'bg-slate-100 text-slate-600'}`}>
                     {type.toUpperCase()}
                   </span>
                   <p className="text-[10px] text-slate-400 mt-1">
@@ -568,8 +568,8 @@ export default function EditCategorie() {
               <span className="material-symbols-outlined text-brand text-lg">storefront</span>
               <h2 className="text-sm font-bold text-slate-700">Aperçu Front Office</h2>
               <span className="ml-auto relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand/60 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-brand"></span>
               </span>
             </div>
             <div className="p-4">
@@ -709,7 +709,7 @@ export default function EditCategorie() {
                   <span className="text-[9px] font-bold uppercase tracking-wider text-brand bg-brand/10 px-2 py-0.5 rounded-full">Menu #{menuPosition}</span>
                 )}
                 {visHomepage && (
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Homepage</span>
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-brand bg-brand/5 px-2 py-0.5 rounded-full">Homepage</span>
                 )}
               </div>
 

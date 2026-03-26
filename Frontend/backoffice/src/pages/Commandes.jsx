@@ -14,9 +14,9 @@ const mockCommandes = [
     phone: '06 12 34 56 78',
     initials: 'MB',
     paiement: 'Carte',
-    paiementBg: 'bg-emerald-100 text-emerald-800',
+    paiementBg: 'bg-badge/10 text-badge',
     statut: 'Livrée',
-    statutBg: 'bg-emerald-100 text-emerald-700',
+    statutBg: 'bg-badge/10 text-badge',
     livraison: 'Livré',
     livraisonBg: 'bg-slate-100 text-slate-600',
     total: '120.00 €',
@@ -82,7 +82,7 @@ const mockCommandes = [
     phone: '06 55 44 33 22',
     initials: 'SL',
     paiement: 'Carte',
-    paiementBg: 'bg-emerald-100 text-emerald-800',
+    paiementBg: 'bg-badge/10 text-badge',
     statut: 'En attente',
     statutBg: 'bg-amber-100 text-amber-700',
     livraison: 'En attente',
@@ -116,9 +116,9 @@ const mockCommandes = [
     phone: '01 23 45 67 89',
     initials: 'NM',
     paiement: 'Carte',
-    paiementBg: 'bg-emerald-100 text-emerald-800',
+    paiementBg: 'bg-badge/10 text-badge',
     statut: 'Livrée',
-    statutBg: 'bg-emerald-100 text-emerald-700',
+    statutBg: 'bg-badge/10 text-badge',
     livraison: 'Livré',
     livraisonBg: 'bg-slate-100 text-slate-600',
     total: '78.50 €',
@@ -150,17 +150,17 @@ const kpiData = [
     label: 'Total Commandes',
     value: '1 284',
     sub: '+12.5%',
-    subColor: 'text-emerald-500',
+    subColor: 'text-brand',
     icon: 'shopping_cart',
-    iconBg: 'bg-brand/10 text-brand',
+    iconBg: 'bg-badge/10 text-badge',
   },
   {
     label: "Chiffre d'affaires",
     value: '142 500 €',
     sub: '+8.3%',
-    subColor: 'text-emerald-500',
+    subColor: 'text-brand',
     icon: 'payments',
-    iconBg: 'bg-emerald-50 text-emerald-600',
+    iconBg: 'bg-badge/10 text-badge',
   },
   {
     label: 'En attente',
@@ -174,7 +174,7 @@ const kpiData = [
     label: 'Taux de livraison',
     value: '94.2%',
     sub: '+2.1%',
-    subColor: 'text-emerald-500',
+    subColor: 'text-brand',
     icon: 'local_shipping',
     iconBg: 'bg-blue-50 text-blue-500',
   },
@@ -300,7 +300,7 @@ export default function Commandes() {
           <div className="flex gap-2">
             <button
               onClick={() => handleBulkAction('status')}
-              className="px-4 py-2 bg-brand text-white text-xs font-bold rounded-lg hover:bg-brand-dark transition-colors"
+              className="px-4 py-2 bg-btn text-white text-xs font-bold rounded-lg hover:bg-btn-dark transition-colors"
             >
               Changer statut
             </button>
@@ -389,17 +389,17 @@ export default function Commandes() {
                       </div>
                     </td>
                     <td className="px-5 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold ${c.paiementBg}`}>
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold font-badge ${c.paiementBg}`}>
                         {c.paiement}
                       </span>
                     </td>
                     <td className="px-5 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold ${c.statutBg}`}>
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold font-badge ${c.statutBg}`}>
                         {c.statut}
                       </span>
                     </td>
                     <td className="px-5 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold ${c.livraisonBg}`}>
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold font-badge ${c.livraisonBg}`}>
                         {c.livraison}
                       </span>
                     </td>

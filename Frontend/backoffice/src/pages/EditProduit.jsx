@@ -234,7 +234,7 @@ function EditProduit() {
               <h2 className="text-2xl font-bold text-slate-900">
                 Modifier le produit
               </h2>
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 uppercase tracking-wider">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold font-badge bg-badge/10 text-badge uppercase tracking-wider">
                 En Stock
               </span>
             </div>
@@ -307,7 +307,7 @@ function EditProduit() {
                         onClick={() => toggleCollection(col)}
                         className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
                           collections.includes(col)
-                            ? 'border-brand bg-brand/10 text-brand'
+                            ? 'border-badge bg-badge/10 text-badge'
                             : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'
                         }`}
                       >
@@ -603,7 +603,7 @@ function EditProduit() {
                   onClick={() => setPromoActive((v) => !v)}
                   className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all border ${
                     promoActive
-                      ? 'bg-emerald-50 text-brand border-emerald-200'
+                      ? 'bg-badge/10 text-badge border-badge/20'
                       : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                   }`}
                 >
@@ -624,21 +624,21 @@ function EditProduit() {
                           value={promoPrice}
                           onChange={(e) => setPromoPrice(e.target.value)}
                           placeholder="Ex: 69.00"
-                          className="w-full pl-9 rounded-lg border border-emerald-300 bg-white py-2.5 text-sm focus:ring-2 focus:ring-brand outline-none"
+                          className="w-full pl-9 rounded-lg border border-brand/30 bg-white py-2.5 text-sm focus:ring-2 focus:ring-brand outline-none"
                         />
                       </div>
                     </div>
 
                     {/* Promo preview */}
                     {hasPromo && (
-                      <div className="bg-emerald-50 p-4 rounded-xl flex items-center justify-between border border-emerald-100">
-                        <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider">
+                      <div className="bg-brand/5 p-4 rounded-xl flex items-center justify-between border border-brand/10">
+                        <span className="text-xs font-bold text-brand uppercase tracking-wider">
                           Aperçu Promotion
                         </span>
                         <div className="flex items-center gap-2">
                           <span className="text-slate-400 line-through text-sm">{salePrice}€</span>
-                          <span className="material-symbols-outlined text-emerald-600 text-sm">arrow_forward</span>
-                          <span className="text-emerald-700 font-bold text-lg">{parseFloat(promoPrice).toFixed(2)}€</span>
+                          <span className="material-symbols-outlined text-brand text-sm">arrow_forward</span>
+                          <span className="text-brand font-bold text-lg">{parseFloat(promoPrice).toFixed(2)}€</span>
                         </div>
                       </div>
                     )}
@@ -749,7 +749,7 @@ function EditProduit() {
             >
               Annuler les modifications
             </button>
-            <button className="bg-brand hover:bg-brand-dark text-white px-8 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 shadow-lg shadow-brand/20">
+            <button className="bg-btn hover:bg-btn-dark text-white px-8 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 shadow-lg shadow-brand/20">
               <span className="material-symbols-outlined text-[18px]">check_circle</span>
               Mettre à jour le produit
             </button>

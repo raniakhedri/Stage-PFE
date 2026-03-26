@@ -7,7 +7,7 @@ const mockOrders = {
   9842: {
     id: '#ORD-9842',
     statut: 'Livrée',
-    statutBg: 'bg-emerald-100 text-emerald-700',
+    statutBg: 'bg-badge/10 text-badge',
     date: '12 Mars 2026, 14:32',
     client: {
       nom: 'Marc Bernard',
@@ -17,8 +17,8 @@ const mockOrders = {
       adresse: '8 Avenue des Champs\n75008 Paris, France',
       depuis: 'Client depuis 2023',
     },
-    paiement: { methode: 'Carte Bancaire', detail: 'Visa **** 8821', statut: 'Payé', statutBg: 'bg-emerald-100 text-emerald-800' },
-    livraison: { transporteur: 'Colissimo Standard', statut: 'Livré', statutBg: 'bg-emerald-100 text-emerald-700', tracking: 'COL-826491037FR', adresse: 'Marc Bernard\n8 Avenue des Champs\n75008 Paris, FR' },
+    paiement: { methode: 'Carte Bancaire', detail: 'Visa **** 8821', statut: 'Payé', statutBg: 'bg-badge/10 text-badge' },
+    livraison: { transporteur: 'Colissimo Standard', statut: 'Livré', statutBg: 'bg-badge/10 text-badge', tracking: 'COL-826491037FR', adresse: 'Marc Bernard\n8 Avenue des Champs\n75008 Paris, FR' },
     produits: [
       { id: 1, nom: 'Veste Softshell Haute Visibilité', variante: 'Taille: XL • Couleur: Jaune Fluo', qte: 2, prix: 59.00, image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDKXF5KJf-5qjAInOrBqY6twprQuJWqcjiS17KWrBr5lZ37w5uWaIhnvyKoBhxDgcIUc--VnTAZAa1mZQa7td7bfkvPPQhnr2h7TbJEBP-WPN3qV1PeqoEUZv-8H51L3EXSf6UF4C8F2jCJ5cMupzGUu3AiAaYEpUVCiGm6q1Y9bg6WIqP_B0a7U9Q5NSPnnUEMAOickG5R8Ezrd4yBLG5QTOby2hiJ8cMr8ARrhrsQGVgjFBKdthdRQlBG3_g4_27KmfGTfgb8ies0' },
     ],
@@ -30,10 +30,10 @@ const mockOrders = {
     notes: 'Livrer avant 17h si possible.',
     timeline: [
       { label: 'Commande créée', date: '12 Mar 2026, 14:32', icon: 'shopping_cart', color: 'bg-slate-400' },
-      { label: 'Paiement confirmé', date: '12 Mar 2026, 14:33', icon: 'check_circle', color: 'bg-emerald-500' },
+      { label: 'Paiement confirmé', date: '12 Mar 2026, 14:33', icon: 'check_circle', color: 'bg-brand' },
       { label: 'En préparation', date: '12 Mar 2026, 15:10', icon: 'inventory_2', color: 'bg-blue-500' },
       { label: 'Expédiée', date: '13 Mar 2026, 09:45', icon: 'local_shipping', color: 'bg-indigo-500' },
-      { label: 'Livrée', date: '15 Mar 2026, 11:20', icon: 'done_all', color: 'bg-emerald-600' },
+      { label: 'Livrée', date: '15 Mar 2026, 11:20', icon: 'done_all', color: 'bg-brand' },
     ],
   },
   9843: {
@@ -125,9 +125,9 @@ const mockOrders = {
     notes: 'Retour demandé : parka non conforme à la taille.',
     timeline: [
       { label: 'Commande créée', date: '10 Mar 2026, 08:00', icon: 'shopping_cart', color: 'bg-slate-400' },
-      { label: 'Paiement confirmé', date: '10 Mar 2026, 08:01', icon: 'check_circle', color: 'bg-emerald-500' },
+      { label: 'Paiement confirmé', date: '10 Mar 2026, 08:01', icon: 'check_circle', color: 'bg-brand' },
       { label: 'Expédiée', date: '11 Mar 2026, 10:30', icon: 'local_shipping', color: 'bg-indigo-500' },
-      { label: 'Livrée', date: '13 Mar 2026, 14:00', icon: 'done_all', color: 'bg-emerald-600' },
+      { label: 'Livrée', date: '13 Mar 2026, 14:00', icon: 'done_all', color: 'bg-brand' },
       { label: 'Retour demandé', date: '15 Mar 2026, 09:00', icon: 'assignment_return', color: 'bg-amber-500' },
       { label: 'Remboursé', date: '18 Mar 2026, 11:30', icon: 'payments', color: 'bg-purple-500' },
     ],
@@ -145,7 +145,7 @@ const mockOrders = {
       adresse: '17 Rue du Faubourg\n31000 Toulouse, France',
       depuis: 'Client depuis 2025',
     },
-    paiement: { methode: 'Carte Bancaire', detail: 'Visa **** 3012', statut: 'Payé', statutBg: 'bg-emerald-100 text-emerald-800' },
+    paiement: { methode: 'Carte Bancaire', detail: 'Visa **** 3012', statut: 'Payé', statutBg: 'bg-badge/10 text-badge' },
     livraison: { transporteur: 'Mondial Relay', statut: 'En attente', statutBg: 'bg-amber-100 text-amber-700', tracking: '—', adresse: 'Sophie Laurent\n17 Rue du Faubourg\n31000 Toulouse, FR' },
     produits: [
       { id: 1, nom: 'T-shirt Technique Respirant', variante: 'Taille: M • Couleur: Bleu', qte: 4, prix: 28.00, image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBEj2rOtUr4FyZsWeSKGKz-kvLXd1H_K0O1-OG6VNWPony0oSosGbyeXVYNUlDC-ow-Jh0VuG9xN6v3g4e0vRGeWBM7LgzbsbVewAMnRwrFSa92XemDBoAEfxEbzS374E3MMqr0GBX__-dfJsBcVb739dY1y3E1zc0yHGpflYVE2AzQ5bICqQRXzLtsQyZXwhAhYiPhIS_pCG1IROKqDLqQn2WfdsNDTNtSwKbAfWHTJWmQBbWTLum32fRrwECheUmLZmuTscQ9FSKK' },
@@ -159,7 +159,7 @@ const mockOrders = {
     notes: 'Commande urgente — client professionnel.',
     timeline: [
       { label: 'Commande créée', date: '10 Mar 2026, 11:00', icon: 'shopping_cart', color: 'bg-slate-400' },
-      { label: 'Paiement confirmé', date: '10 Mar 2026, 11:01', icon: 'check_circle', color: 'bg-emerald-500' },
+      { label: 'Paiement confirmé', date: '10 Mar 2026, 11:01', icon: 'check_circle', color: 'bg-brand' },
     ],
   },
 }
@@ -170,7 +170,7 @@ const statusColors = {
   'Confirmée': 'bg-blue-100 text-blue-700',
   'En préparation': 'bg-indigo-100 text-indigo-700',
   'Expédiée': 'bg-indigo-100 text-indigo-700',
-  'Livrée': 'bg-emerald-100 text-emerald-700',
+  'Livrée': 'bg-badge/10 text-badge',
   'Annulée': 'bg-red-100 text-red-700',
   'Retournée': 'bg-slate-700 text-white',
 }
@@ -200,7 +200,7 @@ export default function DetailCommande() {
         <div className="space-y-2">
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-2xl font-bold text-slate-900">Détails de la Commande</h1>
-            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${currentStatusBg}`}>
+            <span className={`px-3 py-1 rounded-full text-[10px] font-black font-badge uppercase tracking-widest ${currentStatusBg}`}>
               {statut}
             </span>
           </div>
@@ -338,8 +338,8 @@ export default function DetailCommande() {
               </div>
               {order.remise > 0 && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-emerald-600">Remise</span>
-                  <span className="font-medium text-emerald-600">-{order.remise.toFixed(2)} €</span>
+                  <span className="text-brand">Remise</span>
+                  <span className="font-medium text-brand">-{order.remise.toFixed(2)} €</span>
                 </div>
               )}
               <div className="pt-4 border-t border-dashed border-slate-200 flex justify-between items-center">
@@ -366,7 +366,7 @@ export default function DetailCommande() {
               <div className="flex justify-end mt-3">
                 <button
                   onClick={() => toast.success('Note enregistrée.')}
-                  className="px-4 py-2 bg-brand text-white text-xs font-bold rounded-lg hover:bg-brand-dark transition-colors"
+                  className="px-4 py-2 bg-btn text-white text-xs font-bold rounded-lg hover:bg-btn-dark transition-colors"
                 >
                   Enregistrer
                 </button>
@@ -427,7 +427,7 @@ export default function DetailCommande() {
                   <p className="text-[10px] text-slate-400">{order.paiement.detail}</p>
                 </div>
               </div>
-              <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full ${order.paiement.statutBg}`}>
+              <span className={`px-2.5 py-1 text-[10px] font-bold font-badge rounded-full ${order.paiement.statutBg}`}>
                 {order.paiement.statut}
               </span>
             </div>
@@ -439,7 +439,7 @@ export default function DetailCommande() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-bold text-slate-800">{order.livraison.transporteur}</p>
-                <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full ${order.livraison.statutBg}`}>
+                <span className={`px-2.5 py-1 text-[10px] font-bold font-badge rounded-full ${order.livraison.statutBg}`}>
                   {order.livraison.statut}
                 </span>
               </div>

@@ -11,7 +11,7 @@ const kpiData = [
     label: 'Demandes en attente',
     value: '24',
     sub: '+12%',
-    subColor: 'text-emerald-500',
+    subColor: 'text-brand',
     icon: 'pending_actions',
     iconBg: 'bg-amber-50 text-amber-500',
   },
@@ -29,15 +29,15 @@ const kpiData = [
     sub: 'Total 30j',
     subColor: 'text-slate-400',
     icon: 'payments',
-    iconBg: 'bg-emerald-50 text-brand',
+    iconBg: 'bg-badge/10 text-badge',
   },
   {
     label: 'Taux de Retour',
     value: '4.2%',
     sub: '+0.5%',
-    subColor: 'text-emerald-500',
+    subColor: 'text-brand',
     icon: 'analytics',
-    iconBg: 'bg-brand/10 text-brand',
+    iconBg: 'bg-badge/10 text-badge',
   },
 ]
 
@@ -86,8 +86,8 @@ const mockRetours = [
     produitFull: 'Gants de Sécurité Renforcés',
     ref: 'GS-2023-112',
     statut: 'REMBOURSÉ',
-    statutBg: 'bg-emerald-100 text-emerald-700',
-    panelStatutBg: 'bg-emerald-100 text-emerald-700',
+    statutBg: 'bg-badge/10 text-badge',
+    panelStatutBg: 'bg-badge/10 text-badge',
     panelStatut: 'Remboursé',
     montant: '15.50 €',
     raison: 'Taille incorrecte',
@@ -237,7 +237,7 @@ export default function Retours() {
                       <td className="px-4 py-3 font-semibold text-slate-800 text-sm whitespace-nowrap">{r.client}</td>
                       <td className="px-4 py-3 text-slate-600 text-sm whitespace-nowrap">{r.produit}</td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${r.statutBg}`}>
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold font-badge ${r.statutBg}`}>
                           {r.statut}
                         </span>
                       </td>
@@ -420,7 +420,7 @@ export default function Retours() {
                   <div className="space-y-3">
                     <h4 className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Informations Client</h4>
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-brand/10 text-brand flex items-center justify-center font-bold text-xs">
+                      <div className="w-8 h-8 rounded-lg bg-badge/10 text-badge flex items-center justify-center font-bold text-xs">
                         {selected.initials}
                       </div>
                       <div>

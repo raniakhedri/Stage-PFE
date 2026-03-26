@@ -7,8 +7,8 @@ export default {
   theme: {
     extend: {
       colors: {
-        brand: '#005b3d',
-        'brand-dark': '#004a32',
+        // brand & brand-dark are defined as CSS utilities in index.css
+        // using CSS custom properties for dynamic runtime color changes
         primary: {
           50:  '#eff6ff',
           100: '#dbeafe',
@@ -19,7 +19,7 @@ export default {
         },
       },
       borderRadius: {
-        'custom': '12px',
+        'custom': 'var(--border-radius, 12px)',
       },
       keyframes: {
         slideInRight: {

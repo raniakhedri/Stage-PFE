@@ -13,11 +13,11 @@ const paysOptions = ['France', 'Belgique', 'Suisse', 'Canada', 'Maroc', 'Tunisie
 const roleIconMap = {
   SUPER_ADMIN: { icon: 'admin_panel_settings', iconBg: 'bg-red-50 text-red-600' },
   ADMIN:       { icon: 'manage_accounts',      iconBg: 'bg-slate-100 text-slate-600' },
-  CLIENT:      { icon: 'person',               iconBg: 'bg-emerald-50 text-emerald-600' },
+  CLIENT:      { icon: 'person',               iconBg: 'bg-badge/10 text-badge' },
 }
 
 const statusBadge = {
-  ACTIVE:  { cls: 'bg-emerald-100 text-emerald-700', label: 'Actif' },
+  ACTIVE:  { cls: 'bg-badge/10 text-badge', label: 'Actif' },
   BLOCKED: { cls: 'bg-red-100 text-red-600',         label: 'Bloqué' },
 }
 
@@ -225,7 +225,7 @@ export default function DetailClient() {
 
       {/* ── KPIs ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <KpiCard label="Total dépensé"   value="—" sub="Module commandes à venir"  subColor="text-slate-400" icon="payments"      iconBg="bg-emerald-50 text-brand" />
+        <KpiCard label="Total dépensé"   value="—" sub="Module commandes à venir"  subColor="text-slate-400" icon="payments"      iconBg="bg-badge/10 text-badge" />
         <KpiCard label="Commandes"        value="—" sub="Module commandes à venir"  subColor="text-slate-400" icon="shopping_bag"   iconBg="bg-slate-50 text-slate-400" />
         <KpiCard label="Statut"           value={stBadge.label} sub={`Depuis ${memberSince}`} subColor="text-slate-400" icon="verified_user"  iconBg="bg-blue-50 text-blue-500" />
         <KpiCard label="Client depuis"    value={memberSince} sub={`Dernière connexion: ${lastLogin}`} subColor="text-brand" icon="calendar_today" iconBg="bg-slate-50 text-slate-400" />
@@ -240,11 +240,11 @@ export default function DetailClient() {
           {/* Informations personnelles */}
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
-              <div className="w-8 h-8 bg-brand/10 text-brand rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-badge/10 text-badge rounded-lg flex items-center justify-center">
                 <span className="material-symbols-outlined text-lg">person</span>
               </div>
               <h3 className="text-sm font-bold text-slate-800">Informations personnelles</h3>
-              <span className={`ml-auto px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${stBadge.cls}`}>{stBadge.label}</span>
+              <span className={`ml-auto px-2.5 py-1 rounded-full text-[10px] font-bold font-badge uppercase ${stBadge.cls}`}>{stBadge.label}</span>
             </div>
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
@@ -333,7 +333,7 @@ export default function DetailClient() {
           {/* Profil client */}
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-brand/10 text-brand flex items-center justify-center text-sm font-bold">
+              <div className="w-10 h-10 rounded-full bg-badge/10 text-badge flex items-center justify-center text-sm font-bold">
                 {initials}
               </div>
               <div>
@@ -382,7 +382,7 @@ export default function DetailClient() {
           {/* Segmentation */}
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
-              <div className="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-badge/10 text-badge rounded-lg flex items-center justify-center">
                 <span className="material-symbols-outlined text-lg">tune</span>
               </div>
               <h3 className="text-sm font-bold text-slate-800">Segmentation</h3>
@@ -436,7 +436,7 @@ export default function DetailClient() {
               </div>
               <div className="flex justify-between text-xs">
                 <span className="text-slate-500">Statut</span>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${stBadge.cls}`}>{stBadge.label}</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold font-badge uppercase ${stBadge.cls}`}>{stBadge.label}</span>
               </div>
               <div className="flex justify-between text-xs">
                 <span className="text-slate-500">Membre depuis</span>
@@ -516,7 +516,7 @@ export default function DetailClient() {
                       <div className="flex items-center gap-2 mt-1 text-sm">
                         <span className="text-red-500 line-through truncate max-w-[40%]">{c.oldVal}</span>
                         <span className="material-symbols-outlined text-slate-300 text-sm">arrow_forward</span>
-                        <span className="text-emerald-600 font-semibold truncate max-w-[40%]">{c.newVal}</span>
+                        <span className="text-brand font-semibold truncate max-w-[40%]">{c.newVal}</span>
                       </div>
                     </div>
                   </div>

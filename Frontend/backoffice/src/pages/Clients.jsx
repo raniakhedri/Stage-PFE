@@ -8,14 +8,14 @@ import CustomSelect from '../components/ui/CustomSelect'
 import Spinner from '../components/ui/Spinner'
 
 const statusConfig = {
-  ACTIVE:   { label: 'Actif',   cls: 'bg-emerald-500 text-white' },
+  ACTIVE:   { label: 'Actif',   cls: 'bg-brand text-white' },
   INACTIVE: { label: 'Inactif', cls: 'bg-amber-500 text-white' },
   BLOCKED:  { label: 'Bloqué',  cls: 'bg-red-500 text-white' },
 }
 
 const defaultSegmentColors = {
   NOUVEAU: 'bg-blue-50 text-blue-600 border border-blue-100',
-  FIDELE:  'bg-emerald-50 text-emerald-600 border border-emerald-100',
+  FIDELE:  'bg-badge/10 text-badge border border-badge/10',
   VIP:     'bg-amber-100 text-amber-700 border border-amber-200',
   INACTIF: 'bg-slate-100 text-slate-500 border border-slate-200',
 }
@@ -34,7 +34,7 @@ function CommandesModal({ client, onClose }) {
       <div className="relative ml-auto h-full w-full max-w-xl bg-white shadow-2xl flex flex-col animate-[slideInRight_0.25s_ease-out]">
         <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-brand/10 text-brand rounded-lg flex items-center justify-center">
+            <div className="w-9 h-9 bg-badge/10 text-badge rounded-lg flex items-center justify-center">
               <span className="material-symbols-outlined text-lg">receipt_long</span>
             </div>
             <div>
@@ -56,7 +56,7 @@ function CommandesModal({ client, onClose }) {
           </button>
           <button
             onClick={() => { onClose(); window.location.href = `/clients/${client.id}` }}
-            className="px-4 py-2 text-sm font-bold text-white bg-brand rounded-xl hover:bg-brand-dark transition-all flex items-center gap-2"
+            className="px-4 py-2 text-sm font-bold text-white bg-btn rounded-xl hover:bg-btn-dark transition-all flex items-center gap-2"
           >
             <span className="material-symbols-outlined text-[16px]">person</span>
             Voir le profil
@@ -252,7 +252,7 @@ export default function Clients() {
           label="Total clients"
           value={stats ? stats.totalClients.toLocaleString('fr-FR') : '—'}
           sub={stats ? `${stats.activeClients} actifs` : ''}
-          subColor="text-emerald-500"
+          subColor="text-brand"
           icon="group"
           iconBg="bg-slate-50 text-slate-400"
         />
@@ -278,7 +278,7 @@ export default function Clients() {
           sub="Bientôt disponible"
           subColor="text-slate-400"
           icon="payments"
-          iconBg="bg-emerald-50 text-brand"
+          iconBg="bg-badge/10 text-badge"
         />
       </div>
 
@@ -358,7 +358,7 @@ export default function Clients() {
                       </td>
                       <td className="px-6 py-5 text-center">
                         {client.segmentLabel ? (
-                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${segCls}`}>
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold font-badge uppercase ${segCls}`}>
                             {client.segmentName === 'VIP' && (
                               <span className="material-symbols-outlined text-[11px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
                             )}
@@ -375,7 +375,7 @@ export default function Clients() {
                         <span className="text-slate-400 text-xs">—</span>
                       </td>
                       <td className="px-6 py-5">
-                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${sta.cls}`}>
+                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold font-badge uppercase tracking-wider ${sta.cls}`}>
                           {sta.label}
                         </span>
                       </td>

@@ -141,7 +141,7 @@ export default function AjouterBanniere() {
           <button type="button" onClick={() => navigate('/bannieres')} className="px-4 py-2.5 bg-slate-100 text-slate-700 font-semibold rounded-xl text-sm flex items-center gap-2 hover:bg-slate-200 transition-all border border-slate-200">
             Annuler
           </button>
-          <button type="submit" className="px-6 py-2.5 bg-brand text-white font-bold rounded-xl text-sm flex items-center gap-2 shadow-lg shadow-brand/20 hover:bg-brand-dark transition-all">
+          <button type="submit" className="px-6 py-2.5 bg-btn text-white font-bold rounded-xl text-sm flex items-center gap-2 shadow-lg shadow-btn/20 hover:bg-btn-dark transition-all">
             <span className="material-symbols-outlined text-lg">save</span>
             Enregistrer
           </button>
@@ -235,7 +235,7 @@ export default function AjouterBanniere() {
                 <div className="flex gap-2">
                   {alignOptions.map((a) => (
                     <button key={a.value} type="button" onClick={() => setAlignement(a.value)}
-                      className={`px-4 py-2 rounded-lg text-sm font-bold border transition-all flex items-center gap-2 ${alignement === a.value ? 'border-brand bg-brand/10 text-brand' : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'}`}
+                      className={`px-4 py-2 rounded-lg text-sm font-bold border transition-all flex items-center gap-2 ${alignement === a.value ? 'border-badge bg-badge/10 text-badge' : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'}`}
                     >
                       <span className="material-symbols-outlined text-[18px]">{a.icon}</span>
                       {a.label}
@@ -470,7 +470,7 @@ export default function AjouterBanniere() {
             </div>
             <div className="p-4">
               <div className={`mx-auto border-2 border-slate-100 rounded-lg overflow-hidden transition-all ${previewDevice === 'desktop' ? 'w-full aspect-[16/5]' : 'w-44 aspect-[9/16] mx-auto'}`}>
-                <div className="w-full h-full bg-gradient-to-br from-brand/10 to-emerald-50 flex flex-col items-center justify-center p-4 text-center relative">
+                <div className="w-full h-full bg-gradient-to-br from-brand/10 to-brand/5 flex flex-col items-center justify-center p-4 text-center relative">
                   {(desktopImage || mobileImage) && (
                     <div className="absolute top-2 right-2">
                       <span className="material-symbols-outlined text-brand/30 text-sm">image</span>

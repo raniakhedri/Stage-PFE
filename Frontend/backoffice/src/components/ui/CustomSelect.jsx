@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 
 export default function CustomSelect({
@@ -19,19 +19,23 @@ export default function CustomSelect({
   )
   const selected = normalized.find((o) => o.value === value) ?? normalized[0] ?? null
 
-  // Recompute portal position whenever opening
-  const handleOpen = () => {
+  // Compute fixed position relative to viewport
+  const updateCoords = useCallback(() => {
     if (btnRef.current) {
       const r = btnRef.current.getBoundingClientRect()
-      setCoords({ top: r.bottom + window.scrollY + 6, left: r.left + window.scrollX, width: r.width })
+      setCoords({ top: r.bottom + 6, left: r.left, width: r.width })
     }
+  }, [])
+
+  const handleOpen = () => {
+    updateCoords()
     setOpen((v) => !v)
   }
 
-  // Close on outside click
+  // Close on outside click + close on scroll
   useEffect(() => {
     if (!open) return
-    const handler = (e) => {
+    const handleClickOutside = (e) => {
       if (
         btnRef.current && !btnRef.current.contains(e.target) &&
         panelRef.current && !panelRef.current.contains(e.target)
@@ -39,8 +43,17 @@ export default function CustomSelect({
         setOpen(false)
       }
     }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+    const handleScroll = () => setOpen(false)
+    document.addEventListener('mousedown', handleClickOutside)
+    // Listen for scroll on the main-scroll container and the window
+    const scrollEl = document.getElementById('main-scroll')
+    if (scrollEl) scrollEl.addEventListener('scroll', handleScroll, { passive: true })
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      if (scrollEl) scrollEl.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('scroll', handleScroll)
+    }
   }, [open])
 
   const handleSelect = (opt) => {
@@ -77,7 +90,7 @@ export default function CustomSelect({
       {open && createPortal(
         <div
           ref={panelRef}
-          style={{ position: 'absolute', top: coords.top, left: coords.left, width: Math.max(coords.width, 160), zIndex: 9999 }}
+          style={{ position: 'fixed', top: coords.top, left: coords.left, width: Math.max(coords.width, 160), zIndex: 9999 }}
           className="bg-white border border-slate-200 rounded-custom shadow-xl overflow-hidden"
         >
           <div className="max-h-56 overflow-y-auto">

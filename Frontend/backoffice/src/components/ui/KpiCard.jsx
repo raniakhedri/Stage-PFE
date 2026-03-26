@@ -5,9 +5,9 @@
  *   label      {string}  — libellé affiché en petit uppercase
  *   value      {string|number} — valeur principale (grande)
  *   sub        {string}  — sous-texte (ex: "+12.5%", "Attention")
- *   subColor   {string}  — classe Tailwind de couleur du sous-texte (ex: "text-emerald-500")
+ *   subColor   {string}  — classe Tailwind de couleur du sous-texte (ex: "text-brand")
  *   icon       {string}  — nom Material Symbol
- *   iconBg     {string}  — classes Tailwind pour le fond + couleur de l'icône (ex: "bg-emerald-50 text-brand")
+ *   iconBg     {string}  — classes Tailwind pour le fond + couleur de l'icône (ex: "bg-brand/10 text-brand")
  */
 export default function KpiCard({ label, value, sub, subColor = 'text-slate-400', icon, iconBg = 'bg-slate-50 text-slate-400', progress, progressColor = 'bg-slate-300' }) {
   return (

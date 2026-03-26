@@ -95,12 +95,12 @@ function Header() {
               {crumb.path && !isLast ? (
                 <button
                   onClick={() => navigate(crumb.path)}
-                  className="text-xl font-bold text-slate-400 hover:text-slate-700 transition-colors"
+                  className="text-xl font-bold text-slate-400 hover:text-slate-700 transition-colors font-heading"
                 >
                   {crumb.label}
                 </button>
               ) : (
-                <span className="text-xl font-bold text-slate-800">{crumb.label}</span>
+                <span className="text-xl font-bold text-slate-800 font-heading">{crumb.label}</span>
               )}
             </span>
           )

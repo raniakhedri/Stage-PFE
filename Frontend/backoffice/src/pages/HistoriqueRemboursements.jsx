@@ -31,7 +31,7 @@ const kpiData = [
     sub: 'Complétés',
     subColor: 'text-slate-400',
     icon: 'payments',
-    iconBg: 'bg-emerald-50 text-emerald-500',
+    iconBg: 'bg-badge/10 text-badge',
   },
   {
     label: 'Nombre de Remboursements',
@@ -164,9 +164,9 @@ export default function HistoriqueRemboursements() {
                     </span>
                   </td>
                   <td className="px-5 py-4 whitespace-nowrap">
-                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold font-badge ${
                       r.statut === 'Complété'
-                        ? 'bg-emerald-100 text-emerald-700'
+                        ? 'bg-badge/10 text-badge'
                         : 'bg-amber-100 text-amber-700'
                     }`}>
                       {r.statut.toUpperCase()}

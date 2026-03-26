@@ -33,7 +33,7 @@ const plans = [
     periode: '/an',
     description: 'Pour les entreprises en pleine croissance.',
     icon: 'workspace_premium',
-    iconBg: 'bg-brand/10 text-brand',
+    iconBg: 'bg-badge/10 text-badge',
     badge: 'Actuel',
     features: [
       '10 000 produits',
@@ -88,14 +88,14 @@ export default function CompteHebergement() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Hosting */}
         <div className="bg-white p-6 rounded-custom border border-slate-200 shadow-sm flex gap-4">
-          <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-custom flex items-center justify-center shrink-0">
+          <div className="w-12 h-12 bg-badge/10 text-badge rounded-custom flex items-center justify-center shrink-0">
             <span className="material-symbols-outlined text-2xl">cloud_done</span>
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Statut d'hébergement</p>
             <h3 className="text-xl font-bold text-slate-800 mt-2">workwearpro.fr</h3>
             <div className="flex items-center gap-2 mt-1">
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">ACTIVE</span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold font-badge bg-badge/10 text-badge">ACTIVE</span>
               <button className="text-brand text-xs font-bold hover:underline flex items-center">
                 Détails du domaine
                 <span className="material-symbols-outlined text-[14px]">chevron_right</span>
@@ -106,7 +106,7 @@ export default function CompteHebergement() {
 
         {/* Plan */}
         <div className="bg-white p-6 rounded-custom border border-slate-200 shadow-sm flex gap-4">
-          <div className="w-12 h-12 bg-brand/10 text-brand rounded-custom flex items-center justify-center shrink-0">
+          <div className="w-12 h-12 bg-badge/10 text-badge rounded-custom flex items-center justify-center shrink-0">
             <span className="material-symbols-outlined text-2xl">event_repeat</span>
           </div>
           <div className="flex-1 min-w-0">
@@ -139,7 +139,7 @@ export default function CompteHebergement() {
                   }`}
                 >
                   {plan.badge && (
-                    <span className="absolute -top-3 right-5 px-3 py-0.5 rounded-full text-[10px] font-bold bg-brand text-white">
+                    <span className="absolute -top-3 right-5 px-3 py-0.5 rounded-full text-[10px] font-bold font-badge bg-brand text-white">
                       {plan.badge}
                     </span>
                   )}
@@ -173,13 +173,13 @@ export default function CompteHebergement() {
 
                   {/* Button */}
                   {isCurrent ? (
-                    <div className="w-full py-2.5 rounded-lg bg-brand/10 text-brand text-xs font-bold text-center">
+                    <div className="w-full py-2.5 rounded-lg bg-badge/10 text-badge text-xs font-bold text-center">
                       Plan actuel
                     </div>
                   ) : (
                     <button
                       onClick={() => handleChangePlan(plan.id)}
-                      className="w-full py-2.5 rounded-lg border border-slate-200 text-slate-700 text-xs font-bold hover:bg-brand hover:text-white hover:border-brand transition-all"
+                      className="w-full py-2.5 rounded-lg border border-slate-200 text-slate-700 text-xs font-bold hover:bg-btn hover:text-white hover:border-btn transition-all"
                     >
                       Passer à {plan.nom}
                     </button>
@@ -214,7 +214,7 @@ export default function CompteHebergement() {
                 <td className="px-6 py-5 text-sm text-slate-600">{p.date}</td>
                 <td className="px-6 py-5 text-sm font-bold text-slate-800">{p.montant}</td>
                 <td className="px-6 py-5 text-center">
-                  <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">{p.statut}</span>
+                  <span className="px-3 py-1 rounded-full text-[10px] font-bold font-badge bg-badge/10 text-badge">{p.statut}</span>
                 </td>
                 <td className="px-6 py-5 text-right">
                   <button className="text-slate-400 hover:text-brand transition-colors">

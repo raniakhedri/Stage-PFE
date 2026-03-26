@@ -2,14 +2,126 @@
 @tailwind components;
 @tailwind utilities;
 
-* {
+:root {
+  /* ── Color variables ── */
+  --color-brand: 0 77 64;
+  --color-brand-dark: 0 63 52;
+  --color-btn: 0 77 64;
+  --color-btn-dark: 0 63 52;
+  --color-sidebar: 0 77 64;
+  --color-sidebar-dark: 0 63 52;
+  --color-badge: 236 91 19;
+  --color-badge-dark: 200 77 16;
+
+  /* ── Layout variables ── */
+  --border-radius: 12px;
+
+  /* ── Typography variables ── */
+  --font-heading: 'Public Sans', system-ui, sans-serif;
+  --font-body: 'Public Sans', system-ui, sans-serif;
+  --font-sidebar: 'Public Sans', system-ui, sans-serif;
+  --font-button: 'Public Sans', system-ui, sans-serif;
+  --font-badge: 'Public Sans', system-ui, sans-serif;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DYNAMIC BORDER RADIUS — all rounded classes follow the slider
+   ═══════════════════════════════════════════════════════════════ */
+.rounded-lg  { border-radius: var(--border-radius) !important; }
+.rounded-xl  { border-radius: var(--border-radius) !important; }
+.rounded-2xl { border-radius: calc(var(--border-radius) + 4px) !important; }
+.rounded-md  { border-radius: calc(var(--border-radius) * 0.6) !important; }
+
+/* ═══════════════════════════════════════════════════════════════
+   DYNAMIC COLOR UTILITIES — driven by CSS custom properties
+   Four families: brand (general), btn (buttons), sidebar, badge
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── BRAND (general accent: inputs, focus, misc) ────────────── */
+.bg-brand      { background-color: rgb(var(--color-brand)) !important; }
+.bg-brand-dark { background-color: rgb(var(--color-brand-dark)) !important; }
+.bg-brand\/3   { background-color: rgb(var(--color-brand) / 0.03) !important; }
+.bg-brand\/5   { background-color: rgb(var(--color-brand) / 0.05) !important; }
+.bg-brand\/10  { background-color: rgb(var(--color-brand) / 0.1) !important; }
+.bg-brand\/20  { background-color: rgb(var(--color-brand) / 0.2) !important; }
+.bg-brand\/30  { background-color: rgb(var(--color-brand) / 0.3) !important; }
+.bg-brand\/40  { background-color: rgb(var(--color-brand) / 0.4) !important; }
+.bg-brand\/60  { background-color: rgb(var(--color-brand) / 0.6) !important; }
+.bg-brand\/90  { background-color: rgb(var(--color-brand) / 0.9) !important; }
+.text-brand      { color: rgb(var(--color-brand)) !important; }
+.text-brand-dark { color: rgb(var(--color-brand-dark)) !important; }
+.border-brand      { border-color: rgb(var(--color-brand)) !important; }
+.border-brand\/5   { border-color: rgb(var(--color-brand) / 0.05) !important; }
+.border-brand\/10  { border-color: rgb(var(--color-brand) / 0.1) !important; }
+.border-brand\/20  { border-color: rgb(var(--color-brand) / 0.2) !important; }
+.border-brand\/30  { border-color: rgb(var(--color-brand) / 0.3) !important; }
+.border-brand\/40  { border-color: rgb(var(--color-brand) / 0.4) !important; }
+.ring-brand      { --tw-ring-color: rgb(var(--color-brand)) !important; }
+.ring-brand\/20  { --tw-ring-color: rgb(var(--color-brand) / 0.2) !important; }
+.shadow-brand\/20 { --tw-shadow-color: rgb(var(--color-brand) / 0.2) !important; --tw-shadow: var(--tw-shadow-colored); }
+.accent-brand { accent-color: rgb(var(--color-brand)) !important; }
+.hover\:bg-brand:hover           { background-color: rgb(var(--color-brand)) !important; }
+.hover\:bg-brand-dark:hover      { background-color: rgb(var(--color-brand-dark)) !important; }
+.hover\:bg-brand\/5:hover        { background-color: rgb(var(--color-brand) / 0.05) !important; }
+.hover\:bg-brand\/10:hover       { background-color: rgb(var(--color-brand) / 0.1) !important; }
+.hover\:bg-brand\/20:hover       { background-color: rgb(var(--color-brand) / 0.2) !important; }
+.hover\:border-brand:hover       { border-color: rgb(var(--color-brand)) !important; }
+.hover\:border-brand\/40:hover   { border-color: rgb(var(--color-brand) / 0.4) !important; }
+.hover\:text-brand:hover         { color: rgb(var(--color-brand)) !important; }
+.hover\:text-brand-dark:hover    { color: rgb(var(--color-brand-dark)) !important; }
+.focus\:ring-brand:focus         { --tw-ring-color: rgb(var(--color-brand)) !important; }
+.focus\:ring-brand\/20:focus     { --tw-ring-color: rgb(var(--color-brand) / 0.2) !important; }
+.focus\:border-brand:focus       { border-color: rgb(var(--color-brand)) !important; }
+.group:hover .group-hover\:text-brand { color: rgb(var(--color-brand)) !important; }
+
+/* ── BUTTONS ────────────────────────────────────────────────── */
+.bg-btn        { background-color: rgb(var(--color-btn)) !important; }
+.bg-btn-dark   { background-color: rgb(var(--color-btn-dark)) !important; }
+.text-btn      { color: rgb(var(--color-btn)) !important; }
+.shadow-btn\/20 { --tw-shadow-color: rgb(var(--color-btn) / 0.2) !important; --tw-shadow: var(--tw-shadow-colored); }
+.ring-btn      { --tw-ring-color: rgb(var(--color-btn)) !important; }
+.hover\:bg-btn-dark:hover { background-color: rgb(var(--color-btn-dark)) !important; }
+.hover\:bg-btn:hover      { background-color: rgb(var(--color-btn)) !important; }
+.focus\:ring-btn:focus    { --tw-ring-color: rgb(var(--color-btn)) !important; }
+
+/* ── SIDEBAR ────────────────────────────────────────────────── */
+.bg-sidebar    { background-color: rgb(var(--color-sidebar)) !important; }
+.text-sidebar  { color: rgb(var(--color-sidebar)) !important; }
+.hover\:text-sidebar:hover { color: rgb(var(--color-sidebar)) !important; }
+.bg-sidebar\/10 { background-color: rgb(var(--color-sidebar) / 0.1) !important; }
+
+/* ── BADGES / TAGS ──────────────────────────────────────────── */
+.bg-badge       { background-color: rgb(var(--color-badge)) !important; }
+.bg-badge\/5    { background-color: rgb(var(--color-badge) / 0.05) !important; }
+.bg-badge\/10   { background-color: rgb(var(--color-badge) / 0.1) !important; }
+.bg-badge\/20   { background-color: rgb(var(--color-badge) / 0.2) !important; }
+.text-badge     { color: rgb(var(--color-badge)) !important; }
+.border-badge   { border-color: rgb(var(--color-badge)) !important; }
+.border-badge\/10 { border-color: rgb(var(--color-badge) / 0.1) !important; }
+.border-badge\/20 { border-color: rgb(var(--color-badge) / 0.2) !important; }
+.hover\:bg-badge\/20:hover { background-color: rgb(var(--color-badge) / 0.2) !important; }
+.hover\:border-badge:hover { border-color: rgb(var(--color-badge)) !important; }
+
+/* ═══════════════════════════════════════════════════════════════
+   DYNAMIC FONT UTILITIES — driven by CSS custom properties
+   Five families: heading, body, sidebar, button, badge
+   ═══════════════════════════════════════════════════════════════ */
+.font-heading { font-family: var(--font-heading) !important; }
+.font-body    { font-family: var(--font-body)    !important; }
+.font-sidebar { font-family: var(--font-sidebar) !important; }
+.font-button  { font-family: var(--font-button)  !important; }
+.font-badge   { font-family: var(--font-badge)   !important; }
+
+/* ═══════════════════════════════════════════════════════════════ */
+
+*  {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: var(--font-body), 'Inter', system-ui, -apple-system, sans-serif;
   background-color: #f3f4f6;
   color: #111827;
   cursor: default;
@@ -52,4 +164,235 @@ input[type="checkbox"], input[type="radio"], input[type="range"] {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+
+/* ── Animations toggle ── */
+.no-animations *,
+.no-animations *::before,
+.no-animations *::after {
+  animation-duration: 0s !important;
+  transition-duration: 0s !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DARK MODE
+   ═══════════════════════════════════════════════════════════════ */
+.dark-mode {
+  color-scheme: dark;
+}
+
+/* Body / main background */
+.dark-mode body {
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+
+/* White cards / sections → dark surface */
+.dark-mode .bg-white {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+
+/* Slate-50 backgrounds (layout wrapper) */
+.dark-mode .bg-slate-50 {
+  background-color: #0f172a !important;
+}
+
+/* Gray background f3f4f6 fallback */
+.dark-mode .bg-gray-50,
+.dark-mode .bg-gray-100 {
+  background-color: #1e293b !important;
+}
+
+/* Slate-100 backgrounds (table rows, alt rows, pills) */
+.dark-mode .bg-slate-100 {
+  background-color: #334155 !important;
+}
+
+/* Borders */
+.dark-mode .border-slate-200 {
+  border-color: #334155 !important;
+}
+.dark-mode .border-slate-100 {
+  border-color: #1e293b !important;
+}
+
+/* Text colors */
+.dark-mode .text-black {
+  color: #f1f5f9 !important;
+}
+.dark-mode .text-slate-900 {
+  color: #f1f5f9 !important;
+}
+.dark-mode .text-slate-800 {
+  color: #f1f5f9 !important;
+}
+.dark-mode .text-slate-700 {
+  color: #e2e8f0 !important;
+}
+.dark-mode .text-slate-600 {
+  color: #cbd5e1 !important;
+}
+.dark-mode .text-slate-500 {
+  color: #94a3b8 !important;
+}
+.dark-mode .text-slate-400 {
+  color: #94a3b8 !important;
+}
+.dark-mode .text-gray-900 {
+  color: #f1f5f9 !important;
+}
+.dark-mode .text-gray-800 {
+  color: #f1f5f9 !important;
+}
+.dark-mode .text-gray-700 {
+  color: #e2e8f0 !important;
+}
+.dark-mode .text-gray-600 {
+  color: #cbd5e1 !important;
+}
+.dark-mode .text-gray-500 {
+  color: #94a3b8 !important;
+}
+/* Inline dark colors */
+.dark-mode [class*="text-\[#1a1a1a\]"] {
+  color: #f1f5f9 !important;
+}
+.dark-mode [class*="text-\[#005b3d\]"] {
+  color: #6ee7b7 !important;
+}
+
+/* Hover backgrounds */
+.dark-mode .hover\:bg-slate-50:hover {
+  background-color: #334155 !important;
+}
+.dark-mode .hover\:bg-slate-100:hover {
+  background-color: #475569 !important;
+}
+
+/* Inputs / selects */
+.dark-mode input,
+.dark-mode textarea,
+.dark-mode select {
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
+  border-color: #334155 !important;
+}
+.dark-mode input::placeholder,
+.dark-mode textarea::placeholder {
+  color: #64748b !important;
+}
+
+/* Tables */
+.dark-mode th {
+  background-color: #1e293b !important;
+  color: #94a3b8 !important;
+}
+.dark-mode td {
+  border-color: #334155 !important;
+}
+.dark-mode tr:hover td {
+  background-color: #334155 !important;
+}
+
+/* Scrollbar dark */
+.dark-mode ::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+.dark-mode ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+.dark-mode ::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Dividers */
+.dark-mode .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #334155 !important;
+}
+
+/* Ring on white backgrounds */
+.dark-mode .ring-slate-100 {
+  --tw-ring-color: #334155 !important;
+}
+
+/* Shadow softened in dark */
+.dark-mode .shadow-sm {
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.3) !important;
+}
+.dark-mode .shadow-lg {
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3) !important;
+}
+.dark-mode .shadow-xl {
+  box-shadow: 0 8px 16px -4px rgb(0 0 0 / 0.4), 0 4px 6px -2px rgb(0 0 0 / 0.3) !important;
+}
+
+/* Slate-200/300 backgrounds (pills, avatars, placeholders) */
+.dark-mode .bg-slate-200 {
+  background-color: #475569 !important;
+}
+.dark-mode .bg-slate-300 {
+  background-color: #475569 !important;
+}
+.dark-mode .bg-gray-200 {
+  background-color: #475569 !important;
+}
+.dark-mode .bg-gray-300 {
+  background-color: #475569 !important;
+}
+
+/* Dark backgrounds → light in dark mode */
+.dark-mode .bg-slate-800 {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+.dark-mode .bg-slate-900 {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+/* Extra borders */
+.dark-mode .border-slate-300 {
+  border-color: #475569 !important;
+}
+.dark-mode .border-gray-200 {
+  border-color: #334155 !important;
+}
+.dark-mode .border-gray-300 {
+  border-color: #475569 !important;
+}
+
+/* Extra dividers */
+.dark-mode .divide-slate-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #1e293b !important;
+}
+.dark-mode .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #334155 !important;
+}
+.dark-mode .divide-gray-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #1e293b !important;
+}
+
+/* Hover states */
+.dark-mode .hover\:bg-gray-50:hover {
+  background-color: #334155 !important;
+}
+.dark-mode .hover\:bg-gray-100:hover {
+  background-color: #475569 !important;
+}
+
+/* Ring overrides */
+.dark-mode .ring-slate-200 {
+  --tw-ring-color: #334155 !important;
+}
+.dark-mode .ring-gray-200 {
+  --tw-ring-color: #334155 !important;
+}
+
+/* Focus ring in dark */
+.dark-mode input:focus,
+.dark-mode textarea:focus,
+.dark-mode select:focus {
+  border-color: rgb(var(--color-brand)) !important;
+  outline-color: rgb(var(--color-brand)) !important;
 }

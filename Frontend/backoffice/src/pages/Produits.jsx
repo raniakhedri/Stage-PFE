@@ -10,7 +10,7 @@ const kpiCards = [
     label: 'Total Produits',
     value: '1,284',
     sub: '+12.5%',
-    subColor: 'text-emerald-500',
+    subColor: 'text-brand',
     iconBg: 'bg-slate-50 text-slate-400',
     icon: 'inventory',
   },
@@ -19,7 +19,7 @@ const kpiCards = [
     value: '1,150',
     sub: '90% total',
     subColor: 'text-slate-400',
-    iconBg: 'bg-emerald-50 text-brand',
+    iconBg: 'bg-badge/10 text-badge',
     icon: 'check_circle',
   },
   {
@@ -45,7 +45,7 @@ const products = [
     id: 1,
     name: 'Urban Tech Hoodie',
     badge: 'New',
-    badgeBg: 'bg-brand text-white',
+    badgeBg: 'bg-badge text-white',
     category: 'Vêtements',
     subCategory: 'T-shirts & Polos',
     collections: ['Summer 2026', 'Best Sellers'],
@@ -59,8 +59,8 @@ const products = [
     stock: 242,
     stockLabel: '242 unités',
     stockStatus: 'Optimal',
-    stockColor: 'text-emerald-500',
-    stockBarColor: 'bg-emerald-500',
+    stockColor: 'text-brand',
+    stockBarColor: 'bg-brand',
     stockPct: 80,
     imgBg: 'bg-slate-200',
   },
@@ -284,7 +284,7 @@ function Produits() {
                         {p.collections && p.collections.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-1.5">
                             {p.collections.map((col) => (
-                              <span key={col} className="px-1.5 py-0.5 bg-brand/10 text-brand text-[9px] font-bold rounded">{col}</span>
+                              <span key={col} className="px-1.5 py-0.5 bg-badge/10 text-badge text-[9px] font-bold rounded">{col}</span>
                             ))}
                           </div>
                         )}
@@ -293,7 +293,7 @@ function Produits() {
 
                     {/* Performance */}
                     <td className="px-6 py-6">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${p.perfBg}`}>
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold font-badge uppercase ${p.perfBg}`}>
                         {p.performance}
                       </span>
                     </td>
@@ -309,7 +309,7 @@ function Produits() {
                         </div>
                         <span className="text-[10px] text-slate-400">
                           Coût: {p.cost}{' '}
-                          <span className="text-emerald-500 font-bold ml-1">({p.margin})</span>
+                          <span className="text-brand font-bold ml-1">({p.margin})</span>
                         </span>
                       </div>
                     </td>

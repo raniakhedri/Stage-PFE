@@ -28,7 +28,7 @@ const visibilityOptions = [
 
 const statusConfig = {
   active: {
-    badge: 'bg-emerald-500 text-white',
+    badge: 'bg-badge text-white',
     dot: 'bg-white animate-pulse',
     label: 'Active',
     pulse: true,
@@ -56,7 +56,7 @@ const statusConfig = {
 function StatusBadge({ status }) {
   const cfg = statusConfig[status] || statusConfig.draft
   return (
-    <span className={`px-2 py-1 text-[10px] font-black uppercase tracking-wider rounded flex items-center gap-1 ${cfg.badge}`}>
+    <span className={`px-2 py-1 text-[10px] font-black font-badge uppercase tracking-wider rounded flex items-center gap-1 ${cfg.badge}`}>
       {cfg.icon
         ? <span className="material-symbols-outlined text-[14px]">{cfg.icon}</span>
         : <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`}></span>
@@ -87,13 +87,13 @@ function CollectionCard({ col, onToggleFeatured, onDelete }) {
         <div className="absolute top-3 left-3 flex flex-wrap gap-2">
           <StatusBadge status={col.statut} />
           {col.featured && (
-            <span className="px-2 py-1 bg-amber-400 text-black text-[10px] font-black uppercase tracking-wider rounded flex items-center gap-1">
+            <span className="px-2 py-1 bg-amber-400 text-black text-[10px] font-black font-badge uppercase tracking-wider rounded flex items-center gap-1">
               <span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>grade</span>
               Vedette
             </span>
           )}
           {col.type === 'auto' && (
-            <span className="px-2 py-1 bg-blue-500 text-white text-[10px] font-black uppercase tracking-wider rounded">Automatique</span>
+            <span className="px-2 py-1 bg-blue-500 text-white text-[10px] font-black font-badge uppercase tracking-wider rounded">Automatique</span>
           )}
         </div>
 
@@ -133,7 +133,7 @@ function CollectionCard({ col, onToggleFeatured, onDelete }) {
             </p>
             <div className="flex flex-wrap gap-1.5">
               {col.linkedCategories.map((cat) => (
-                <span key={cat} className="px-2 py-0.5 bg-brand/10 text-brand text-[10px] font-bold rounded">{cat}</span>
+                <span key={cat} className="px-2 py-0.5 bg-badge/10 text-badge text-[10px] font-bold font-badge rounded">{cat}</span>
               ))}
             </div>
           </div>
@@ -183,7 +183,7 @@ function CollectionCard({ col, onToggleFeatured, onDelete }) {
           <div className="flex gap-2">
             <button
               onClick={() => navigate(`/collections/${col.id}`)}
-              className="flex-1 px-3 py-2 bg-brand text-white text-[11px] font-bold rounded-lg hover:bg-brand-dark transition-colors flex items-center justify-center gap-1.5">
+              className="flex-1 px-3 py-2 bg-btn text-white text-[11px] font-bold rounded-lg hover:bg-btn-dark transition-colors flex items-center justify-center gap-1.5">
               <span className="material-symbols-outlined text-sm">settings</span>
               Gérer
             </button>
@@ -279,7 +279,7 @@ export default function Collections() {
       {/* KPI cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KpiCard label="Total collections"    value={total}    sub={`${total} au total`}  subColor="text-slate-400"    icon="category"     iconBg="bg-slate-50 text-slate-400" />
-        <KpiCard label="Collections actives"  value={active}   sub={`${Math.round(active/total*100)||0}% total`} subColor="text-slate-400" icon="check_circle"  iconBg="bg-emerald-50 text-brand" />
+        <KpiCard label="Collections actives"  value={active}   sub={`${Math.round(active/total*100)||0}% total`} subColor="text-slate-400" icon="check_circle"  iconBg="bg-badge/10 text-badge" />
         <KpiCard label="En vedette"           value={featured} sub={featured > 0 ? 'Mise en avant' : '—'} subColor="text-amber-500"  icon="grade"        iconBg="bg-amber-50 text-amber-500" />
         <KpiCard label="Brouillons"           value={drafts}   sub={drafts > 0 ? 'À publier' : '—'}    subColor="text-slate-400"    icon="edit_note"    iconBg="bg-slate-50 text-slate-400" />
       </div>

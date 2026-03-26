@@ -72,29 +72,29 @@ const alerts = [
 ]
 
 const topProducts = [
-  { name: 'Combinaison FR Pro Arctic', badge: 'BEST SELLER', badgeBg: 'bg-brand/10 text-brand',       sales: '240 ventes · +12% cette semaine', price: '14.400 €', stock: '42',  stockRed: false, color: 'bg-slate-300' },
+  { name: 'Combinaison FR Pro Arctic', badge: 'BEST SELLER', badgeBg: 'bg-badge/10 text-badge',       sales: '240 ventes · +12% cette semaine', price: '14.400 €', stock: '42',  stockRed: false, color: 'bg-slate-300' },
   { name: 'Sneakers Ultra-Grip v3',    badge: 'TRENDING',    badgeBg: 'bg-amber-100 text-amber-700',  sales: '185 ventes · +24% en 24h',        price: '11.100 €', stock: '8',   stockRed: true,  color: 'bg-blue-200' },
   { name: 'Jeans Cargo Renforcé Blue', badge: 'LOW STOCK',   badgeBg: 'bg-red-100 text-red-700',      sales: '92 ventes · Demande stable',       price: '5.520 €',  stock: '2',   stockRed: true,  color: 'bg-indigo-200' },
 ]
 
 const categoryBars = [
-  { label: 'Vestes',      value: '93K€',  pct: 180, color: 'bg-brand',       textColor: 'text-brand',       trend: '+12%', trendColor: 'text-emerald-600' },
-  { label: 'Sneakers',    value: '56K€',  pct: 120, color: 'bg-blue-500',    textColor: 'text-slate-800',   trend: '+8%',  trendColor: 'text-emerald-600' },
+  { label: 'Vestes',      value: '93K€',  pct: 180, color: 'bg-brand',       textColor: 'text-brand',       trend: '+12%', trendColor: 'text-brand' },
+  { label: 'Sneakers',    value: '56K€',  pct: 120, color: 'bg-blue-500',    textColor: 'text-slate-800',   trend: '+8%',  trendColor: 'text-brand' },
   { label: 'Jeans',       value: '31K€',  pct: 80,  color: 'bg-indigo-400',  textColor: 'text-indigo-700',  trend: '-3%',  trendColor: 'text-red-500' },
-  { label: 'Accessoires', value: '18K€',  pct: 50,  color: 'bg-amber-400',   textColor: 'text-amber-700',   trend: '+15%', trendColor: 'text-emerald-600' },
+  { label: 'Accessoires', value: '18K€',  pct: 50,  color: 'bg-amber-400',   textColor: 'text-amber-700',   trend: '+15%', trendColor: 'text-brand' },
 ]
 
 const clientStats = [
   { label: 'Nouveaux clients', value: '+124', icon: 'person_add', iconBg: 'bg-blue-100 text-blue-600',    border: '' },
-  { label: 'Clients fidèles',  value: '842',  icon: 'loyalty',    iconBg: 'bg-brand/10 text-brand',       border: 'border-l-4 border-brand' },
-  { label: 'Top clients (VIP)',value: '18',   icon: 'star',       iconBg: 'bg-emerald-100 text-emerald-600', border: '' },
+  { label: 'Clients fidèles',  value: '842',  icon: 'loyalty',    iconBg: 'bg-badge/10 text-badge',       border: 'border-l-4 border-badge' },
+  { label: 'Top clients (VIP)',value: '18',   icon: 'star',       iconBg: 'bg-badge/10 text-badge', border: '' },
   { label: 'Clients inactifs', value: '42',   icon: 'person_off', iconBg: 'bg-red-100 text-red-600',      border: '' },
 ]
 
 const orderStatuses = [
   { label: 'Attente',   value: 24, color: 'text-amber-600' },
   { label: 'Prép.',     value: 12, color: 'text-blue-600' },
-  { label: 'Expédiées', value: 86, color: 'text-emerald-600' },
+  { label: 'Expédiées', value: 86, color: 'text-brand' },
   { label: 'Annulées',  value: 3,  color: 'text-red-600' },
   { label: 'Retours',   value: 18, color: 'text-slate-700' },
   { label: 'Rembour.',  value: 4,  color: 'text-slate-500' },
@@ -102,7 +102,7 @@ const orderStatuses = [
 
 const recentOrders = [
   { id: '#ORD-9421', client: 'Ironclad Construction', status: 'En attente', statusBg: 'bg-amber-100 text-amber-700',   total: '1.420 €' },
-  { id: '#ORD-9420', client: 'Sarah Jenkins',         status: 'Expédiée',   statusBg: 'bg-emerald-100 text-emerald-700', total: '125,50 €' },
+  { id: '#ORD-9420', client: 'Sarah Jenkins',         status: 'Expédiée',   statusBg: 'bg-badge/10 text-badge', total: '125,50 €' },
   { id: '#ORD-9418', client: 'Tech Logistics S.A.',   status: 'Retour',     statusBg: 'bg-slate-100 text-slate-700',    total: '842,00 €' },
 ]
 
@@ -227,7 +227,7 @@ function Dashboard() {
                 <h3 className="text-xl font-bold text-slate-800">{k.value}</h3>
                 <span
                   className={`text-[10px] font-bold flex items-center gap-0.5 ${
-                    k.trendColor || (k.trendUp ? 'text-emerald-600' : 'text-red-500')
+                    k.trendColor || (k.trendUp ? 'text-brand' : 'text-red-500')
                   }`}
                 >
                   <span className="material-symbols-outlined text-[12px]">
@@ -247,7 +247,7 @@ function Dashboard() {
             </div>
             <div className="flex items-end justify-between mt-1">
               <h3 className="text-xl font-black text-brand">2.1%</h3>
-              <span className="text-emerald-600 text-[10px] font-bold flex items-center gap-0.5">
+              <span className="text-brand text-[10px] font-bold flex items-center gap-0.5">
                 <span className="material-symbols-outlined text-[12px]">trending_down</span>
                 -0.4%
               </span>
@@ -266,7 +266,7 @@ function Dashboard() {
               onClick={() => a.path && navigate(a.path)}
               className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 shadow-sm ${
                 a.primary
-                  ? 'bg-brand hover:bg-brand-dark text-white'
+                  ? 'bg-btn hover:bg-btn-dark text-white'
                   : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
               }`}
             >
@@ -500,7 +500,7 @@ function Dashboard() {
                       <td className="px-4 py-3 text-xs font-medium text-slate-400">{o.id}</td>
                       <td className="px-4 py-3 text-xs font-bold text-slate-800">{o.client}</td>
                       <td className="px-4 py-3">
-                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${o.statusBg}`}>
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold font-badge ${o.statusBg}`}>
                           {o.status}
                         </span>
                       </td>

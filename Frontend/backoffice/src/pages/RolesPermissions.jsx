@@ -20,20 +20,20 @@ const MODULE_LABELS = {
 
 // ── Role card styling ──────────────────────────────────────────────────────────
 const ROLE_ICONS = {
-  SUPER_ADMIN: { icon: 'admin_panel_settings', iconBg: 'bg-brand/10 text-brand', border: 'border-2 border-brand/20 hover:border-brand' },
+  SUPER_ADMIN: { icon: 'admin_panel_settings', iconBg: 'bg-badge/10 text-badge', border: 'border-2 border-badge/20 hover:border-badge' },
   ADMIN:       { icon: 'manage_accounts',      iconBg: 'bg-slate-100 text-slate-500', border: 'border border-slate-200 hover:shadow-md' },
   CLIENT:      { icon: 'shopping_cart',         iconBg: 'bg-blue-50 text-blue-500',   border: 'border border-slate-200 hover:shadow-md' },
 }
 const DEFAULT_ICON = { icon: 'shield_person', iconBg: 'bg-slate-100 text-slate-500', border: 'border border-slate-200 hover:shadow-md' }
 
 const roleBadgeClass = (name) => {
-  if (name === 'SUPER_ADMIN') return 'bg-brand/10 text-brand'
+  if (name === 'SUPER_ADMIN') return 'bg-badge/10 text-badge'
   if (name === 'ADMIN') return 'bg-slate-100 text-slate-600'
   return 'bg-blue-50 text-blue-600'
 }
 
 const statusCfg = {
-  ACTIVE:    { cls: 'bg-emerald-50 text-emerald-600', dot: 'bg-emerald-500', label: 'Actif'     },
+  ACTIVE:    { cls: 'bg-badge/10 text-badge', dot: 'bg-badge', label: 'Actif'     },
   SUSPENDED: { cls: 'bg-amber-50 text-amber-600',     dot: 'bg-amber-500',   label: 'Suspendu'  },
   BANNED:    { cls: 'bg-red-50 text-red-600',          dot: 'bg-red-500',     label: 'Banni'     },
 }
@@ -268,7 +268,7 @@ export default function RolesPermissions() {
                 <div className="space-y-2 mb-5">
                   {topPerms(role).map((p) => (
                     <div key={p.label} className="flex items-center gap-2 text-[11px] font-medium">
-                      <span className={`material-symbols-outlined text-[16px] ${p.granted ? 'text-emerald-600' : 'text-slate-300'}`}>
+                      <span className={`material-symbols-outlined text-[16px] ${p.granted ? 'text-brand' : 'text-slate-300'}`}>
                         {p.granted ? 'check_circle' : 'cancel'}
                       </span>
                       <span className={p.granted ? 'text-slate-600' : 'text-slate-400'}>{p.label}</span>
@@ -386,7 +386,7 @@ export default function RolesPermissions() {
                     <td className="px-8 py-4">
                       <div className="flex items-center gap-3">
                         <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs ${
-                          user.roleName === 'SUPER_ADMIN' ? 'bg-brand/10 text-brand' : 'bg-slate-100 text-slate-500'
+                          user.roleName === 'SUPER_ADMIN' ? 'bg-badge/10 text-badge' : 'bg-slate-100 text-slate-500'
                         }`}>
                           {initials}
                         </div>
@@ -397,7 +397,7 @@ export default function RolesPermissions() {
                       </div>
                     </td>
                     <td className="px-8 py-4">
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${roleBadgeClass(user.roleName)}`}>
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold font-badge ${roleBadgeClass(user.roleName)}`}>
                         {user.roleLabel || user.roleName}
                       </span>
                     </td>
@@ -407,7 +407,7 @@ export default function RolesPermissions() {
                         : 'Jamais'}
                     </td>
                     <td className="px-8 py-4 text-center">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold ${sta.cls}`}>
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold font-badge ${sta.cls}`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${sta.dot}`} />
                         {sta.label}
                       </span>
