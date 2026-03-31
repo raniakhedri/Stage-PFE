@@ -5,18 +5,32 @@ import PageHeader from '../components/ui/PageHeader'
 import KpiCard from '../components/ui/KpiCard'
 import Spinner from '../components/ui/Spinner'
 
-// ── Permission module labels (French) ──────────────────────────────────────────
+// ── Permission module labels (French) — matches sidebar pages ──────────────
 const MODULE_LABELS = {
-  TABLEAU_DE_BORD: 'Tableau de bord',
-  PRODUITS_CATEGORIES: 'Produits & Catégories',
-  COMMANDES_RETOURS: 'Commandes & Retours',
-  CLIENTS_UTILISATEURS: 'Clients & Utilisateurs',
-  PAIEMENTS_TVA_LIVRAISON: 'Paiements & TVA/Shipping',
-  LOGS_EXPORT: "Logs d'activité & Export",
-  APPARENCE_BANNIERES: 'Apparence & Bannières',
-  PROMOTIONS: 'Promotions',
-  ROLES_PERMISSIONS: 'Rôles & Permissions',
+  TABLEAU_DE_BORD:    'Tableau de bord',
+  PRODUITS:           'Produits',
+  COMMANDES:          'Commandes',
+  RETOURS:            'Retours',
+  CLIENTS:            'Clients',
+  ANALYSES:           'Analyses',
+  COLLECTIONS:        'Collections',
+  CATEGORIES:         'Catégories',
+  BANNIERES:          'Bannières',
+  TVA_LIVRAISON:      'TVA & Livraison',
+  PROMOTIONS:         'Promotions',
+  EMAIL_MARKETING:    'Email Marketing',
+  AVIS:               'Avis',
+  APPARENCE:          'Apparence',
+  ROLES_PERMISSIONS:  'Rôles & Permissions',
+  COMPTE_HEBERGEMENT: 'Compte & Hébergement',
 }
+
+// ── Section grouping for the matrix ────────────────────────────────────────────
+const MODULE_SECTIONS = [
+  { title: 'Navigation principale', icon: 'menu', keys: ['TABLEAU_DE_BORD', 'PRODUITS', 'COMMANDES', 'RETOURS', 'CLIENTS', 'ANALYSES', 'COLLECTIONS', 'CATEGORIES', 'BANNIERES', 'TVA_LIVRAISON'] },
+  { title: 'Marketing',             icon: 'campaign', keys: ['PROMOTIONS', 'EMAIL_MARKETING', 'AVIS'] },
+  { title: 'Paramètres',            icon: 'settings', keys: ['APPARENCE', 'ROLES_PERMISSIONS', 'COMPTE_HEBERGEMENT'] },
+]
 
 // ── Role card styling ──────────────────────────────────────────────────────────
 const ROLE_ICONS = {
@@ -197,7 +211,7 @@ export default function RolesPermissions() {
   // ── Helpers for role card permission preview ───────────────────────────────
   const topPerms = (role) => {
     const entries = Object.entries(role.permissions || {})
-    const granted = entries.filter(([, v]) => v).slice(0, 2)
+    const granted = entries.filter(([, v]) => v).slice(0, 3)
     const denied  = entries.filter(([, v]) => !v).slice(0, 1)
     return [...granted, ...denied].map(([key, val]) => ({
       label: MODULE_LABELS[key] || key,
@@ -303,38 +317,59 @@ export default function RolesPermissions() {
           <h4 className="font-bold text-slate-800 text-base">Matrice des Permissions</h4>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
+          <table className="w-full text-left border-collapse">
             <thead className="bg-slate-50 text-slate-500 text-[11px] uppercase tracking-wider font-bold">
               <tr>
-                <th className="px-8 py-4">Module</th>
+                <th className="px-5 py-3 text-left" style={{ width: '40%' }}>Page</th>
                 {roles.map((r) => (
-                  <th key={r.id} className="px-8 py-4 text-center">
+                  <th key={r.id} className="px-3 py-3 text-center" style={{ width: `${60 / Math.max(roles.length, 1)}%` }}>
                     {r.label || r.name}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
-              {moduleKeys.map((moduleKey) => (
-                <tr key={moduleKey} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="px-8 py-4 text-sm font-semibold text-slate-800">{MODULE_LABELS[moduleKey]}</td>
-                  {roles.map((r) => (
-                    <td key={r.id} className="px-8 py-4 text-center">
-                      <input
-                        type="checkbox"
-                        checked={!!matrix[r.id]?.[moduleKey]}
-                        disabled={r.name === 'SUPER_ADMIN'}
-                        onChange={() => togglePerm(r.id, moduleKey)}
-                        className="rounded border-slate-300 text-brand focus:ring-brand/30 size-4 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-                      />
+            <tbody>
+              {MODULE_SECTIONS.map((section) => (
+                <>
+                  <tr key={section.title} className="bg-slate-50/50">
+                    <td colSpan={roles.length + 1} className="px-5 py-2">
+                      <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-slate-400" style={{ fontSize: '15px' }}>{section.icon}</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{section.title}</span>
+                      </div>
                     </td>
+                  </tr>
+                  {section.keys.map((moduleKey) => (
+                    <tr key={moduleKey} className="border-t border-slate-100/80 hover:bg-slate-50/60 transition-colors">
+                      <td className="px-5 py-2 text-[13px] font-medium text-slate-700">{MODULE_LABELS[moduleKey]}</td>
+                      {roles.map((r) => (
+                        <td key={r.id} className="px-3 py-2">
+                          <div className="flex items-center justify-center">
+                            {r.name === 'SUPER_ADMIN' ? (
+                              <span className="material-symbols-outlined text-brand" style={{ fontSize: '18px' }}>check_circle</span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => togglePerm(r.id, moduleKey)}
+                                className={`w-[18px] h-[18px] rounded border-2 flex items-center justify-center transition-all ${matrix[r.id]?.[moduleKey] ? 'bg-brand border-brand' : 'border-slate-300 hover:border-slate-400'}`}
+                              >
+                                {matrix[r.id]?.[moduleKey] && (
+                                  <span className="material-symbols-outlined text-white" style={{ fontSize: '13px' }}>check</span>
+                                )}
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      ))}
+                    </tr>
                   ))}
-                </tr>
+                </>
               ))}
             </tbody>
           </table>
         </div>
-        <div className="px-8 py-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+        <div className="px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+          <span className="text-[11px] text-slate-400">{moduleKeys.length} pages · {roles.length} rôles</span>
           <button
             onClick={handleSaveMatrix}
             disabled={savingMatrix}
@@ -477,23 +512,33 @@ export default function RolesPermissions() {
                 </div>
                 {/* Permissions */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Permissions</label>
-                  <div className="space-y-2">
-                    {Object.entries(MODULE_LABELS).map(([key, label]) => (
-                      <label key={key} className="flex items-center gap-3 cursor-pointer group">
-                        <input
-                          type="checkbox"
-                          checked={!!roleForm.permissions[key]}
-                          onChange={() =>
-                            setRoleForm((f) => ({
-                              ...f,
-                              permissions: { ...f.permissions, [key]: !f.permissions[key] },
-                            }))
-                          }
-                          className="rounded border-slate-300 text-brand focus:ring-brand/30 size-4 cursor-pointer"
-                        />
-                        <span className="text-sm text-slate-700 group-hover:text-slate-900">{label}</span>
-                      </label>
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-3">Permissions par page</label>
+                  <div className="space-y-4">
+                    {MODULE_SECTIONS.map((section) => (
+                      <div key={section.title}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="material-symbols-outlined text-slate-400" style={{ fontSize: '14px' }}>{section.icon}</span>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{section.title}</span>
+                        </div>
+                        <div className="space-y-1.5 pl-1">
+                          {section.keys.map((key) => (
+                            <label key={key} className="flex items-center gap-3 cursor-pointer group py-1">
+                              <input
+                                type="checkbox"
+                                checked={!!roleForm.permissions[key]}
+                                onChange={() =>
+                                  setRoleForm((f) => ({
+                                    ...f,
+                                    permissions: { ...f.permissions, [key]: !f.permissions[key] },
+                                  }))
+                                }
+                                className="rounded border-slate-300 text-brand focus:ring-brand/30 size-4 cursor-pointer"
+                              />
+                              <span className="text-sm text-slate-700 group-hover:text-slate-900">{MODULE_LABELS[key]}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </div>

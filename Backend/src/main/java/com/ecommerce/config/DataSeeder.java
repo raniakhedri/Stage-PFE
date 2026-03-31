@@ -139,12 +139,16 @@ public class DataSeeder implements CommandLineRunner {
                 Role superAdminRole = roleRepository.findByName("SUPER_ADMIN")
                                 .orElseThrow(() -> new RuntimeException("Rôle SUPER_ADMIN non trouvé"));
 
+                Segment defaultSegment = segmentRepository.findByName("NOUVEAU")
+                                .orElseThrow(() -> new RuntimeException("Segment NOUVEAU non trouvé"));
+
                 User superAdmin = User.builder()
                                 .firstName("Super")
                                 .lastName("Admin")
                                 .email(adminEmail)
                                 .password(passwordEncoder.encode(adminPassword))
                                 .role(superAdminRole)
+                                .segment(defaultSegment)
                                 .status(AccountStatus.ACTIVE)
                                 .build();
 
