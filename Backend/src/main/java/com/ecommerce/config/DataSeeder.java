@@ -61,7 +61,7 @@ public class DataSeeder implements CommandLineRunner {
                         log.info("Anciens modules détectés — mise à jour des permissions...");
                         // Drop old check constraint so new enum values are accepted
                         jdbcTemplate.execute(
-                                "ALTER TABLE permissions DROP CONSTRAINT IF EXISTS permissions_module_check");
+                                        "ALTER TABLE permissions DROP CONSTRAINT IF EXISTS permissions_module_check");
                         // Delete permissions natively; cache is cleared by clearAutomatically=true
                         permissionRepository.deleteAllNative();
                         // Re-attach updated permissions to existing roles

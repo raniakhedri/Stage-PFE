@@ -9,6 +9,7 @@ import com.ecommerce.entity.Role;
 import com.ecommerce.entity.Segment;
 import com.ecommerce.entity.User;
 import com.ecommerce.enums.AccountStatus;
+import com.ecommerce.repository.RefreshTokenRepository;
 import com.ecommerce.repository.RoleRepository;
 import com.ecommerce.repository.SegmentRepository;
 import com.ecommerce.repository.UserRepository;
@@ -30,6 +31,7 @@ public class UserService {
     private final SegmentRepository segmentRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthService authService;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     // ── Admin: Create user ────────────────────────────────────────────────────
     @Transactional
@@ -131,6 +133,7 @@ public class UserService {
     @Transactional
     public void deleteUser(Long id) {
         User user = findUserOrThrow(id);
+        refreshTokenRepository.deleteByUserId(id);
         userRepository.delete(user);
     }
 

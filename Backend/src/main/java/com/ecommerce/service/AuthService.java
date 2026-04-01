@@ -134,9 +134,7 @@ public class AuthService {
     public UserResponse mapToUserResponse(User user) {
         Map<String, Boolean> permissionsMap = new HashMap<>();
         if (user.getRole() != null && user.getRole().getPermissions() != null) {
-            user.getRole().getPermissions().forEach(p ->
-                permissionsMap.put(p.getModule().name(), p.isGranted())
-            );
+            user.getRole().getPermissions().forEach(p -> permissionsMap.put(p.getModule().name(), p.isGranted()));
         }
         return UserResponse.builder()
                 .id(user.getId())
