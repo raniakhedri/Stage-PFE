@@ -24,6 +24,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -130,7 +132,7 @@ public class AuthService {
     }
 
     public UserResponse mapToUserResponse(User user) {
-        Map<String, Boolean> permissionsMap = new java.util.HashMap<>();
+        Map<String, Boolean> permissionsMap = new HashMap<>();
         if (user.getRole() != null && user.getRole().getPermissions() != null) {
             user.getRole().getPermissions().forEach(p ->
                 permissionsMap.put(p.getModule().name(), p.isGranted())

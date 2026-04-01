@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +29,7 @@ public class DataSeeder implements CommandLineRunner {
         private final TvaRateRepository tvaRateRepository;
         private final TvaConfigRepository tvaConfigRepository;
         private final ShippingZoneRepository shippingZoneRepository;
+        private final JdbcTemplate jdbcTemplate;
 
         @Value("${app.seed.admin-email}")
         private String adminEmail;
@@ -46,18 +48,51 @@ public class DataSeeder implements CommandLineRunner {
 
         private void seedRoles() {
                 if (roleRepository.count() > 0) {
-                        // Detect old enum values — purge and re-seed if needed
+                        // Detect old enum values — purge and re-seed permissions only
                         Set<String> currentModules = Set.of(Arrays.stream(PermissionModule.values())
                                         .map(Enum::name).toArray(String[]::new));
-                        boolean hasOldData = permissionRepository.findAll().stream()
-                                        .anyMatch(p -> !currentModules.contains(p.getModule().name()));
+                        Set<String> dbModules = permissionRepository.findAllModuleNamesNative();
+                        boolean hasOldData = dbModules.stream()
+                                        .anyMatch(m -> !currentModules.contains(m));
                         if (!hasOldData) {
                                 log.info("Rôles déjà initialisés, skip seed.");
                                 return;
                         }
-                        log.info("Anciens modules détectés — purge et re-seed des rôles...");
-                        permissionRepository.deleteAll();
-                        roleRepository.deleteAll();
+                        log.info("Anciens modules détectés — mise à jour des permissions...");
+                        // Drop old check constraint so new enum values are accepted
+                        jdbcTemplate.execute(
+                                "ALTER TABLE permissions DROP CONSTRAINT IF EXISTS permissions_module_check");
+                        // Delete permissions natively; cache is cleared by clearAutomatically=true
+                        permissionRepository.deleteAllNative();
+                        // Re-attach updated permissions to existing roles
+                        roleRepository.findByName("SUPER_ADMIN").ifPresent(role -> {
+                                for (PermissionModule module : PermissionModule.values()) {
+                                        role.addPermission(Permission.builder()
+                                                        .module(module).granted(true).build());
+                                }
+                                roleRepository.save(role);
+                        });
+                        roleRepository.findByName("ADMIN").ifPresent(role -> {
+                                for (PermissionModule module : PermissionModule.values()) {
+                                        boolean granted = module != PermissionModule.ROLES_PERMISSIONS
+                                                        && module != PermissionModule.COMPTE_HEBERGEMENT;
+                                        role.addPermission(Permission.builder()
+                                                        .module(module).granted(granted).build());
+                                }
+                                roleRepository.save(role);
+                        });
+                        roleRepository.findByName("CLIENT").ifPresent(role -> {
+                                for (PermissionModule module : PermissionModule.values()) {
+                                        boolean granted = module == PermissionModule.TABLEAU_DE_BORD
+                                                        || module == PermissionModule.COMMANDES
+                                                        || module == PermissionModule.RETOURS;
+                                        role.addPermission(Permission.builder()
+                                                        .module(module).granted(granted).build());
+                                }
+                                roleRepository.save(role);
+                        });
+                        log.info("Permissions mises à jour pour les rôles existants.");
+                        return;
                 }
 
                 log.info("Initialisation des rôles et permissions...");
