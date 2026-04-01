@@ -18,4 +18,6 @@ public interface CouponUsageRepository extends JpaRepository<CouponUsage, Long> 
     int countTotalUsages(@Param("couponId") Long couponId);
 
     void deleteByCouponId(Long couponId);
+
+    void deleteByUserId(Long userId);
 }
