@@ -1,6 +1,7 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useState, useRef, useEffect } from 'react'
 import axios from 'axios'
+import { useFoAppearance } from '../../context/AppearanceContext'
 
 /* ── Fallback data (used while API loads or if it fails) ── */
 const fallbackCategoryData = {
@@ -150,6 +151,8 @@ export default function Header() {
     navigate('/login')
   }
 
+  const { brandName, slogan, logoMain, logoLight, logoNavbar } = useFoAppearance()
+
   const handleCategoryHover = (cat) => {
     if (cat !== activeCategory) {
       setActiveCategory(cat)
@@ -168,13 +171,8 @@ export default function Header() {
   // Featured collections for this category (menuFeatured = true)
   const featuredCollections = categoryCollections.filter(col => col.menuFeatured)
 
+  // Images are ALWAYS fixed on the featured collections — hover never changes them
   const displayImages = (() => {
-    if (hoveredCollection) {
-      return [
-        { src: hoveredCollection.imageUrl || defaultImages[0].src, title: hoveredCollection.nom, sub: 'DÉCOUVRIR' },
-        { src: hoveredCollection.bannerUrl || hoveredCollection.imageUrl || defaultImages[1].src, title: hoveredCollection.nom, sub: 'THE LOOKBOOK' },
-      ]
-    }
     if (featuredCollections.length >= 2) {
       return [
         { src: featuredCollections[0].imageUrl || defaultImages[0].src, title: featuredCollections[0].nom, sub: 'DÉCOUVRIR' },
@@ -208,8 +206,23 @@ export default function Header() {
         {/* Center: Logo */}
         <div className="flex-1 flex justify-center">
           <Link to="/" className="flex flex-col items-center gap-0.5">
-            <span className={`text-2xl font-black tracking-[0.15em] uppercase transition-colors duration-500 ${isTransparent ? 'text-white' : 'text-[#005b3d]'}`}>GMIR</span>
-            <span className={`text-[9px] font-medium tracking-[0.35em] uppercase transition-colors duration-500 ${isTransparent ? 'text-white/80' : 'text-[#005b3d]'}`}>JEWELRY</span>
+            {(() => {
+              const solidLogo = logoNavbar || logoMain
+              const transparentLogo = logoLight || solidLogo
+              const activeLogo = isTransparent ? transparentLogo : solidLogo
+              return activeLogo ? (
+                <img
+                  src={activeLogo}
+                  alt={brandName}
+                  className="h-8 w-auto object-contain transition-all duration-500"
+                />
+              ) : (
+                <>
+                  <span className={`text-2xl font-black tracking-[0.15em] uppercase transition-colors duration-500 ${isTransparent ? 'text-white' : 'text-brand'}`}>{brandName || 'GMIR'}</span>
+                  <span className={`text-[9px] font-medium tracking-[0.35em] uppercase transition-colors duration-500 ${isTransparent ? 'text-white/80' : 'text-brand'}`}>{slogan || 'JEWELRY'}</span>
+                </>
+              )
+            })()}
           </Link>
         </div>
 

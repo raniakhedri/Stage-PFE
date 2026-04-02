@@ -9,6 +9,8 @@ public class AppearanceRequest {
     private String primaryColor;
     private String secondaryColor;
     private String buttonColor;
+    private String buttonHoverColor;
+    private String buttonTextColor;
     private String sidebarColor;
     private String badgeColor;
 
@@ -22,6 +24,7 @@ public class AppearanceRequest {
     // Logos (base64 ou URL)
     private String logoMain;
     private String logoLight;
+    private String logoNavbar;
     private String favicon;
     private String loader;
 

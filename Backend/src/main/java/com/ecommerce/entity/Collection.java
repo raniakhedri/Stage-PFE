@@ -76,6 +76,11 @@ public class Collection {
     private LocalDate dateDebut;
     private LocalDate dateFin;
 
+    // Homepage bento position: null (off), 'principale', 'secondaire-haut',
+    // 'secondaire-bas'
+    @Column(name = "homepage_position")
+    private String homepagePosition;
+
     // Featured in the menu (2 per parent category shown as images)
     @Column(name = "menu_featured", columnDefinition = "boolean default false")
     @Builder.Default

@@ -240,7 +240,7 @@ export default function ProductDetail() {
 
           {/* Actions */}
           <div className="flex flex-col gap-4 mb-12">
-            <button className="w-full bg-primary text-on-primary py-6 text-[14px] font-bold uppercase tracking-widest hover:bg-neutral-800">
+            <button className="w-full fo-btn py-6 text-[14px] font-bold uppercase tracking-widest">
               Ajouter au Panier
             </button>
             <button className="w-full flex items-center justify-center gap-2 py-4 border border-neutral-200 hover:border-black uppercase text-[12px] font-bold tracking-widest">

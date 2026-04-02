@@ -16,6 +16,8 @@ public class AppearanceResponse {
     private String primaryColor;
     private String secondaryColor;
     private String buttonColor;
+    private String buttonHoverColor;
+    private String buttonTextColor;
     private String sidebarColor;
     private String badgeColor;
 
@@ -29,6 +31,7 @@ public class AppearanceResponse {
     // Logos
     private String logoMain;
     private String logoLight;
+    private String logoNavbar;
     private String favicon;
     private String loader;
 

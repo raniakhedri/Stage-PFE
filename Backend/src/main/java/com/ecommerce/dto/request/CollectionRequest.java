@@ -41,6 +41,8 @@ public class CollectionRequest {
 
     private String menuParentCategory;
 
+    private String homepagePosition;
+
     private List<String> linkedCategories;
 
     private String metaTitle;

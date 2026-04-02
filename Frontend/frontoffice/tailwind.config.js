@@ -7,8 +7,10 @@ export default {
   theme: {
     extend: {
       colors: {
-        brand: '#005b3d',
-        'brand-dark': '#004a32',
+        // Dynamic via CSS custom properties (set by AppearanceContext)
+        brand: 'rgb(var(--fo-brand) / <alpha-value>)',
+        'brand-dark': 'rgb(var(--fo-brand) / <alpha-value>)',
+        primary: 'rgb(var(--fo-primary) / <alpha-value>)',
         surface: '#f9f9f9',
         'surface-container': '#eeeeee',
         'surface-container-low': '#f3f3f3',
@@ -20,16 +22,15 @@ export default {
         'on-surface-variant': '#474747',
         outline: '#777777',
         'outline-variant': '#c6c6c6',
-        primary: '#000000',
-        'on-primary': '#e2e2e2',
+        'on-primary': '#ffffff',
         'primary-container': '#3b3b3b',
         secondary: '#5f5e5e',
         'secondary-container': '#d6d4d3',
       },
       fontFamily: {
-        headline: ['Public Sans', 'Inter', 'system-ui', 'sans-serif'],
-        body: ['Public Sans', 'Inter', 'system-ui', 'sans-serif'],
-        label: ['Public Sans', 'Inter', 'system-ui', 'sans-serif'],
+        headline: ['var(--fo-font-headline)', 'Public Sans', 'Inter', 'system-ui', 'sans-serif'],
+        body: ['var(--fo-font-body)', 'Public Sans', 'Inter', 'system-ui', 'sans-serif'],
+        label: ['var(--fo-font-body)', 'Public Sans', 'Inter', 'system-ui', 'sans-serif'],
       },
       borderRadius: {
         DEFAULT: '0px',

@@ -49,6 +49,7 @@ export default function GererCollection() {
   const { id } = useParams()
   const navigate = useNavigate()
   const fileInputRef = useRef(null)
+  const bentoFileInputRef = useRef(null)
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -71,7 +72,7 @@ export default function GererCollection() {
   const [priorite, setPriorite] = useState(0)
 
   // Visibilité
-  const [visHomepage, setVisHomepage] = useState(true)
+  const [homepagePosition, setHomepagePosition] = useState('') // '' | 'principale' | 'secondaire-haut' | 'secondaire-bas'
   const [visMenu, setVisMenu] = useState(true)
   const [visMobile, setVisMobile] = useState(true)
   const [menuParentCategory, setMenuParentCategory] = useState('')
@@ -85,10 +86,15 @@ export default function GererCollection() {
   const [allCategories, setAllCategories] = useState([])
   const [linkedCategories, setLinkedCategories] = useState([])
 
-  // Image
+  // Image menu
   const [imageUrl, setImageUrl] = useState('')
   const [isDragging, setIsDragging] = useState(false)
   const [isHoveringPreview, setIsHoveringPreview] = useState(false)
+
+  // Image homepage bento (bannerUrl)
+  const [bentoImageUrl, setBentoImageUrl] = useState('')
+  const [isBentoDragging, setIsBentoDragging] = useState(false)
+  const [isHoveringBentoPreview, setIsHoveringBentoPreview] = useState(false)
 
   // SEO
   const [metaTitle, setMetaTitle] = useState('')
@@ -118,15 +124,15 @@ export default function GererCollection() {
       setStatut(col.statut || 'active')
       setFeatured(col.featured || false)
       setPriorite(col.priorite || 0)
-      setVisHomepage(col.visHomepage ?? true)
+      setHomepagePosition(col.homepagePosition || '')
       setVisMenu(col.visMenu ?? true)
       setVisMobile(col.visMobile ?? true)
-      setMenuParentCategory(col.menuParentCategory || '')
       setMenuFeatured(col.menuFeatured || false)
       setDateDebut(col.dateDebut || '')
       setDateFin(col.dateFin || '')
       setLinkedCategories(col.linkedCategories || [])
       setImageUrl(col.imageUrl || '')
+      setBentoImageUrl(col.bannerUrl || '')
       setMetaTitle(col.metaTitle || '')
       setMetaDescription(col.metaDescription || '')
       setAllCategories(cats)
@@ -137,6 +143,12 @@ export default function GererCollection() {
     }).finally(() => setLoading(false))
   }, [id, navigate])
 
+  // ── Auto-derive menuParentCategory from linkedCategories ─────────────
+  useEffect(() => {
+    const rootNames = allCategories.filter(c => !c.parentId).map(c => c.nom)
+    setMenuParentCategory(linkedCategories.find(name => rootNames.includes(name)) || '')
+  }, [linkedCategories, allCategories])
+
   // ── Image handlers ───────────────────────────────────────────────────
   const processFile = useCallback((file) => {
     if (!file) return
@@ -146,17 +158,47 @@ export default function GererCollection() {
     reader.readAsDataURL(file)
   }, [])
 
+  const processBentoFile = useCallback((file) => {
+    if (!file) return
+    if (file.size > 2 * 1024 * 1024) { toast.error('Image trop lourde (max 2 Mo)'); return }
+    const reader = new FileReader()
+    reader.onload = (e) => setBentoImageUrl(e.target.result)
+    reader.readAsDataURL(file)
+  }, [])
+
   const clearImage = () => setImageUrl('')
+  const clearBentoImage = () => setBentoImageUrl('')
 
   const handleDrop = (e) => { e.preventDefault(); setIsDragging(false); processFile(e.dataTransfer.files?.[0]) }
   const handleDragOver = (e) => { e.preventDefault(); setIsDragging(true) }
   const handleDragLeave = () => setIsDragging(false)
 
-  // ── Category toggle ──────────────────────────────────────────────────
-  const toggleCategory = (catNom) =>
-    setLinkedCategories((prev) =>
-      prev.includes(catNom) ? prev.filter((c) => c !== catNom) : [...prev, catNom]
-    )
+  const handleBentoDrop = (e) => { e.preventDefault(); setIsBentoDragging(false); processBentoFile(e.dataTransfer.files?.[0]) }
+  const handleBentoDragOver = (e) => { e.preventDefault(); setIsBentoDragging(true) }
+  const handleBentoDragLeave = () => setIsBentoDragging(false)
+
+  // ── Category toggle (single root, multiple children) ─────────────────
+  const toggleCategory = (catNom) => {
+    const clicked = allCategories.find(c => c.nom === catNom)
+    const isRoot = clicked && !clicked.parentId
+    setLinkedCategories((prev) => {
+      if (isRoot) {
+        if (prev.includes(catNom)) {
+          // Deselect root + all its children
+          const childNames = allCategories.filter(c => c.parentId === clicked.id).map(c => c.nom)
+          return prev.filter(n => n !== catNom && !childNames.includes(n))
+        } else {
+          // Select new root — remove all other roots and their children first
+          const rootNames = allCategories.filter(c => !c.parentId).map(c => c.nom)
+          const filtered = prev.filter(n => !rootNames.includes(n) && !allCategories.some(c => rootNames.includes(allCategories.find(r => r.id === c.parentId)?.nom) && c.nom === n))
+          return [...filtered, catNom]
+        }
+      } else {
+        // Child: simple toggle
+        return prev.includes(catNom) ? prev.filter(n => n !== catNom) : [...prev, catNom]
+      }
+    })
+  }
 
   // ── Remove product ────────────────────────────────────────────────
   const removeProduct = (idx) =>
@@ -168,10 +210,10 @@ export default function GererCollection() {
     setSaving(true)
     try {
       await collectionApi.update(id, {
-        nom: nom.trim(), slug, description, imageUrl: imageUrl || null, type,
+        nom: nom.trim(), slug, description, imageUrl: imageUrl || null, bannerUrl: bentoImageUrl || null, type,
         tags: tags || null, prixMax: prixMax ? parseFloat(prixMax) : null,
         performance, statut, featured, priorite,
-        visHomepage, visMenu, visMobile,
+        visHomepage: !!homepagePosition, homepagePosition: homepagePosition || null, visMenu, visMobile,
         menuParentCategory: menuParentCategory || null,
         menuFeatured,
         dateDebut: dateDebut || null, dateFin: dateFin || null,
@@ -302,19 +344,26 @@ export default function GererCollection() {
             </div>
           </div>
 
-          {/* ── Image ─────────────────────────────────────────────── */}
+          {/* ── Images ─────────────────────────────────────────────── */}
           <div className="bg-white rounded-custom border border-slate-200 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
               <span className="material-symbols-outlined text-brand text-lg">image</span>
-              <h2 className="text-sm font-bold text-slate-700">Image</h2>
-              <span className="ml-auto text-[10px] text-slate-400 font-mono">Ratio 1:1</span>
+              <h2 className="text-sm font-bold text-slate-700">Images</h2>
             </div>
-            <div className="p-5 space-y-3">
-              {imageUrl ? (
-                <div className="space-y-3">
+            <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-6">
+
+              {/* ── Image Menu ── */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-slate-400 text-base">menu</span>
+                  <p className="text-xs font-bold text-slate-600">Image Menu</p>
+                  <span className="ml-auto text-[10px] font-mono bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">600 × 600 px</span>
+                </div>
+                <p className="text-[10px] text-slate-400 -mt-1">Affichée dans la navigation (carrousel de catégories). Format carré.</p>
+                {imageUrl ? (
                   <div className="relative rounded-lg overflow-hidden border border-slate-200 aspect-square bg-slate-50 cursor-pointer group"
                     onMouseEnter={() => setIsHoveringPreview(true)} onMouseLeave={() => setIsHoveringPreview(false)}>
-                    <img src={imageUrl} alt="Preview" className={`w-full h-full object-cover transition-all duration-300 ${isHoveringPreview ? 'scale-110 brightness-90' : ''}`} />
+                    <img src={imageUrl} alt="Aperçu menu" className={`w-full h-full object-cover transition-all duration-300 ${isHoveringPreview ? 'scale-110 brightness-90' : ''}`} />
                     <div className={`absolute inset-0 bg-black/30 flex items-center justify-center gap-2 transition-opacity ${isHoveringPreview ? 'opacity-100' : 'opacity-0'}`}>
                       <button type="button" onClick={clearImage} className="p-2 rounded-lg bg-white/90 text-red-500 hover:bg-white transition-colors shadow-sm">
                         <span className="material-symbols-outlined text-sm">delete</span>
@@ -324,25 +373,75 @@ export default function GererCollection() {
                       </button>
                     </div>
                   </div>
+                ) : (
+                  <label className={`block border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${isDragging ? 'border-brand bg-brand/10 scale-[1.02] shadow-lg' : 'border-slate-200 hover:border-brand/40 hover:bg-brand/5'}`}
+                    onDrop={handleDrop} onDragOver={handleDragOver} onDragLeave={handleDragLeave}>
+                    <div className={`transition-transform ${isDragging ? 'scale-110' : ''}`}>
+                      <span className={`material-symbols-outlined text-4xl mb-2 block transition-colors ${isDragging ? 'text-brand' : 'text-slate-300'}`}>{isDragging ? 'file_download' : 'cloud_upload'}</span>
+                      <p className="text-xs font-bold text-slate-500">{isDragging ? 'Lâchez pour importer' : 'Cliquer ou glisser'}</p>
+                      <p className="text-[10px] text-slate-400 mt-1">PNG, JPG, WebP — max 2 Mo</p>
+                    </div>
+                    <input ref={fileInputRef} type="file" className="hidden" accept="image/*" onChange={(e) => processFile(e.target.files?.[0])} />
+                  </label>
+                )}
+                {imageUrl && <input ref={fileInputRef} type="file" className="hidden" accept="image/*" onChange={(e) => processFile(e.target.files?.[0])} />}
+              </div>
+
+              {/* ── Image Homepage Bento ── */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-slate-400 text-base">home</span>
+                  <p className="text-xs font-bold text-slate-600">Image Page d'accueil</p>
+                  {homepagePosition && (() => {
+                    const dim = homepagePosition === 'principale' ? '800 × 850 px' : '600 × 420 px'
+                    return <span className="ml-auto text-[10px] font-mono bg-brand/10 text-brand px-2 py-0.5 rounded-full">{dim}</span>
+                  })()}
+                  {!homepagePosition && <span className="ml-auto text-[10px] font-mono bg-slate-100 text-slate-400 px-2 py-0.5 rounded-full">Choisir une position</span>}
                 </div>
-              ) : (
-                <label
-                  className={`block border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${
-                    isDragging ? 'border-brand bg-brand/10 scale-[1.02] shadow-lg' : 'border-slate-200 hover:border-brand/40 hover:bg-brand/5'
-                  }`}
-                  onDrop={handleDrop} onDragOver={handleDragOver} onDragLeave={handleDragLeave}>
-                  <div className={`transition-transform ${isDragging ? 'scale-110' : ''}`}>
-                    <span className={`material-symbols-outlined text-4xl mb-2 block transition-colors ${isDragging ? 'text-brand' : 'text-slate-300'}`}>
-                      {isDragging ? 'file_download' : 'cloud_upload'}
-                    </span>
-                    <p className="text-xs font-bold text-slate-500">{isDragging ? 'Lâchez pour importer' : 'Cliquer ou glisser une image'}</p>
-                    <p className="text-[10px] text-slate-400 mt-1">PNG, JPG, WebP — max 2 Mo</p>
-                    <p className="text-[10px] text-brand/60 mt-1 font-medium">Ratio recommandé : 1:1 (carré)</p>
+                {homepagePosition ? (
+                  <>
+                    <p className="text-[10px] text-slate-400 -mt-1">
+                      {homepagePosition === 'principale'
+                        ? 'Grande carte gauche — format portrait 800 × 850 px (ratio ~16:17)'
+                        : homepagePosition === 'secondaire-haut'
+                          ? 'Carte droite haute — format paysage 600 × 420 px (ratio ~10:7)'
+                          : 'Carte droite basse — format paysage 600 × 420 px (ratio ~10:7)'}
+                    </p>
+                    {bentoImageUrl ? (
+                      <div
+                        className={`relative rounded-lg overflow-hidden border border-slate-200 bg-slate-50 cursor-pointer group ${homepagePosition === 'principale' ? 'aspect-[16/17]' : 'aspect-[10/7]'}`}
+                        onMouseEnter={() => setIsHoveringBentoPreview(true)} onMouseLeave={() => setIsHoveringBentoPreview(false)}>
+                        <img src={bentoImageUrl} alt="Aperçu homepage" className={`w-full h-full object-cover transition-all duration-300 ${isHoveringBentoPreview ? 'scale-110 brightness-90' : ''}`} />
+                        <div className={`absolute inset-0 bg-black/30 flex items-center justify-center gap-2 transition-opacity ${isHoveringBentoPreview ? 'opacity-100' : 'opacity-0'}`}>
+                          <button type="button" onClick={clearBentoImage} className="p-2 rounded-lg bg-white/90 text-red-500 hover:bg-white transition-colors shadow-sm">
+                            <span className="material-symbols-outlined text-sm">delete</span>
+                          </button>
+                          <button type="button" onClick={() => bentoFileInputRef.current?.click()} className="p-2 rounded-lg bg-white/90 text-slate-700 hover:bg-white transition-colors shadow-sm">
+                            <span className="material-symbols-outlined text-sm">swap_horiz</span>
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <label className={`block border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${isBentoDragging ? 'border-brand bg-brand/10 scale-[1.02] shadow-lg' : 'border-slate-200 hover:border-brand/40 hover:bg-brand/5'}`}
+                        onDrop={handleBentoDrop} onDragOver={handleBentoDragOver} onDragLeave={handleBentoDragLeave}>
+                        <div className={`transition-transform ${isBentoDragging ? 'scale-110' : ''}`}>
+                          <span className={`material-symbols-outlined text-4xl mb-2 block transition-colors ${isBentoDragging ? 'text-brand' : 'text-slate-300'}`}>{isBentoDragging ? 'file_download' : 'cloud_upload'}</span>
+                          <p className="text-xs font-bold text-slate-500">{isBentoDragging ? 'Lâchez pour importer' : 'Cliquer ou glisser'}</p>
+                          <p className="text-[10px] text-slate-400 mt-1">PNG, JPG, WebP — max 2 Mo</p>
+                        </div>
+                        <input ref={bentoFileInputRef} type="file" className="hidden" accept="image/*" onChange={(e) => processBentoFile(e.target.files?.[0])} />
+                      </label>
+                    )}
+                    {bentoImageUrl && <input ref={bentoFileInputRef} type="file" className="hidden" accept="image/*" onChange={(e) => processBentoFile(e.target.files?.[0])} />}
+                  </>
+                ) : (
+                  <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center bg-slate-50/50">
+                    <span className="material-symbols-outlined text-3xl text-slate-200 mb-2 block">home</span>
+                    <p className="text-xs text-slate-400">Sélectionnez d'abord une position dans la section <span className="font-bold">Visibilité</span> pour activer cette image.</p>
                   </div>
-                  <input ref={fileInputRef} type="file" className="hidden" accept="image/*" onChange={(e) => processFile(e.target.files?.[0])} />
-                </label>
-              )}
-              {imageUrl && <input ref={fileInputRef} type="file" className="hidden" accept="image/*" onChange={(e) => processFile(e.target.files?.[0])} />}
+                )}
+              </div>
+
             </div>
           </div>
 
@@ -533,8 +632,69 @@ export default function GererCollection() {
               <h2 className="text-sm font-bold text-slate-700">Visibilité</h2>
             </div>
             <div className="p-6 space-y-4">
+              {/* ── Page d'accueil — position bento ───────────── */}
+              <div className="pb-4 border-b border-slate-100">
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="material-symbols-outlined text-slate-400 text-lg">home</span>
+                  <div>
+                    <p className="text-sm font-bold text-slate-700">Page d'accueil</p>
+                    <p className="text-[11px] text-slate-400">Choisissez l'emplacement dans la grille bento</p>
+                  </div>
+                </div>
+                {/* Mini bento grid preview */}
+                <div className="grid grid-cols-12 gap-1 h-20 mt-3">
+                  {/* Left large card (principale) */}
+                  <button
+                    type="button"
+                    onClick={() => setHomepagePosition(homepagePosition === 'principale' ? '' : 'principale')}
+                    className={`col-span-7 relative rounded-lg border-2 transition-all text-white text-[9px] font-black uppercase tracking-wider flex items-end p-2 overflow-hidden ${
+                      homepagePosition === 'principale'
+                        ? 'border-brand bg-brand shadow-md'
+                        : 'border-slate-200 bg-slate-100 text-slate-400 hover:border-slate-300'
+                    }`}
+                  >
+                    {imageUrl && <img src={imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover opacity-40" />}
+                    <span className="relative">{homepagePosition === 'principale' ? '✓ Principale' : 'Principale'}</span>
+                  </button>
+                  {/* Right column — 2 stacked cards */}
+                  <div className="col-span-5 grid grid-rows-2 gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setHomepagePosition(homepagePosition === 'secondaire-haut' ? '' : 'secondaire-haut')}
+                      className={`relative rounded-lg border-2 transition-all text-[8px] font-black uppercase tracking-wider flex items-end p-1.5 overflow-hidden ${
+                        homepagePosition === 'secondaire-haut'
+                          ? 'border-brand bg-brand text-white shadow-md'
+                          : 'border-slate-200 bg-slate-100 text-slate-400 hover:border-slate-300'
+                      }`}
+                    >
+                      {imageUrl && <img src={imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover opacity-40" />}
+                      <span className="relative">{homepagePosition === 'secondaire-haut' ? '✓ Haut' : 'Haut'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setHomepagePosition(homepagePosition === 'secondaire-bas' ? '' : 'secondaire-bas')}
+                      className={`relative rounded-lg border-2 transition-all text-[8px] font-black uppercase tracking-wider flex items-end p-1.5 overflow-hidden ${
+                        homepagePosition === 'secondaire-bas'
+                          ? 'border-brand bg-brand text-white shadow-md'
+                          : 'border-slate-200 bg-slate-100 text-slate-400 hover:border-slate-300'
+                      }`}
+                    >
+                      {imageUrl && <img src={imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover opacity-40" />}
+                      <span className="relative">{homepagePosition === 'secondaire-bas' ? '✓ Bas' : 'Bas'}</span>
+                    </button>
+                  </div>
+                </div>
+                {homepagePosition ? (
+                  <p className="text-[10px] text-brand font-bold mt-2 flex items-center gap-1">
+                    <span className="material-symbols-outlined text-xs">check_circle</span>
+                    Affiché en position « {homepagePosition} » sur la homepage
+                  </p>
+                ) : (
+                  <p className="text-[10px] text-slate-400 mt-2">Non affiché sur la homepage</p>
+                )}
+              </div>
+
               {[
-                { label: 'Page d\'accueil', desc: 'Afficher sur la homepage', state: visHomepage, set: setVisHomepage, icon: 'home' },
                 { label: 'Menu principal', desc: 'Afficher dans la navigation', state: visMenu, set: setVisMenu, icon: 'menu' },
                 { label: 'Application mobile', desc: 'Visible sur le mobile', state: visMobile, set: setVisMobile, icon: 'smartphone' },
               ].map((v) => (
@@ -550,38 +710,16 @@ export default function GererCollection() {
                 </div>
               ))}
 
-              {/* Catégorie parente dans le menu — visible uniquement si visMenu */}
+              {/* En vedette dans le menu — catégorie déduite automatiquement des "Catégories liées" */}
               {visMenu && (
                 <div className="pt-4 border-t border-slate-100">
-                  <Label>Catégorie parente dans le menu</Label>
-                  <p className="text-[10px] text-slate-400 mb-3">Choisissez sous quelle catégorie cette collection apparaîtra dans le menu du site.</p>
-                  <div className="flex flex-wrap gap-2">
-                    {allCategories.filter(c => !c.parentId).map((cat) => (
-                      <button
-                        key={cat.id}
-                        type="button"
-                        onClick={() => setMenuParentCategory(menuParentCategory === cat.nom ? '' : cat.nom)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
-                          menuParentCategory === cat.nom
-                            ? 'border-badge bg-badge/10 text-badge'
-                            : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'
-                        }`}
-                      >
-                        {menuParentCategory === cat.nom && <span className="material-symbols-outlined text-xs align-middle mr-1">check</span>}
-                        {cat.nom}
-                      </button>
-                    ))}
-                  </div>
-                  {!menuParentCategory && (
-                    <p className="text-[10px] text-amber-500 mt-2 flex items-center gap-1">
-                      <span className="material-symbols-outlined text-xs">warning</span>
-                      Aucune catégorie sélectionnée — la collection n'apparaîtra pas dans le menu.
-                    </p>
-                  )}
-
-                  {/* Menu Featured toggle */}
-                  {menuParentCategory && (
-                    <div className="mt-4 pt-4 border-t border-slate-100">
+                  {menuParentCategory ? (
+                    <>
+                      <div className="flex items-center gap-2 mb-4">
+                        <span className="material-symbols-outlined text-brand text-sm">auto_awesome</span>
+                        <p className="text-[11px] text-slate-500">Catégorie parente déduite :</p>
+                        <span className="text-[11px] font-bold text-badge bg-badge/10 px-2 py-0.5 rounded-full">{menuParentCategory}</span>
+                      </div>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <span className="material-symbols-outlined text-amber-500 text-lg">star</span>
@@ -601,7 +739,12 @@ export default function GererCollection() {
                           </p>
                         ) : null
                       })()}
-                    </div>
+                    </>
+                  ) : (
+                    <p className="text-[10px] text-amber-500 flex items-center gap-1">
+                      <span className="material-symbols-outlined text-xs">warning</span>
+                      Liez une catégorie principale dans « Catégories liées » pour que la collection apparaisse dans le menu.
+                    </p>
                   )}
                 </div>
               )}
@@ -784,7 +927,7 @@ export default function GererCollection() {
               <div className="flex flex-wrap gap-1.5 mt-3">
                 {visMenu && menuParentCategory && <span className="text-[9px] font-bold uppercase tracking-wider text-brand bg-brand/10 px-2 py-0.5 rounded-full">Menu → {menuParentCategory}</span>}
                 {menuFeatured && <span className="text-[9px] font-bold uppercase tracking-wider text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">★ En vedette</span>}
-                {visHomepage && <span className="text-[9px] font-bold uppercase tracking-wider text-brand bg-brand/5 px-2 py-0.5 rounded-full">Homepage</span>}
+                {homepagePosition && <span className="text-[9px] font-bold uppercase tracking-wider text-brand bg-brand/5 px-2 py-0.5 rounded-full">Homepage</span>}
                 {visMobile && <span className="text-[9px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">Mobile</span>}
               </div>
 

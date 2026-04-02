@@ -35,6 +35,10 @@ public class AppearanceService {
             entity.setSecondaryColor(request.getSecondaryColor());
         if (request.getButtonColor() != null)
             entity.setButtonColor(request.getButtonColor());
+        if (request.getButtonHoverColor() != null)
+            entity.setButtonHoverColor(request.getButtonHoverColor());
+        if (request.getButtonTextColor() != null)
+            entity.setButtonTextColor(request.getButtonTextColor());
         if (request.getSidebarColor() != null)
             entity.setSidebarColor(request.getSidebarColor());
         if (request.getBadgeColor() != null)
@@ -57,6 +61,8 @@ public class AppearanceService {
             entity.setLogoMain(request.getLogoMain());
         if (request.getLogoLight() != null)
             entity.setLogoLight(request.getLogoLight());
+        if (request.getLogoNavbar() != null)
+            entity.setLogoNavbar(request.getLogoNavbar());
         if (request.getFavicon() != null)
             entity.setFavicon(request.getFavicon());
         if (request.getLoader() != null)
@@ -150,6 +156,8 @@ public class AppearanceService {
                 .primaryColor(e.getPrimaryColor())
                 .secondaryColor(e.getSecondaryColor())
                 .buttonColor(e.getButtonColor())
+                .buttonHoverColor(e.getButtonHoverColor())
+                .buttonTextColor(e.getButtonTextColor())
                 .sidebarColor(e.getSidebarColor())
                 .badgeColor(e.getBadgeColor())
                 .fontPrimary(e.getFontPrimary())
@@ -159,6 +167,7 @@ public class AppearanceService {
                 .fontBadge(e.getFontBadge())
                 .logoMain(e.getLogoMain())
                 .logoLight(e.getLogoLight())
+                .logoNavbar(e.getLogoNavbar())
                 .favicon(e.getFavicon())
                 .loader(e.getLoader())
                 .sidebarStyle(e.getSidebarStyle())

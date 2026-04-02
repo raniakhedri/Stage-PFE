@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useState, useEffect } from 'react'
 
 const products = [
   { name: 'BLAZER STRUCTURÉ', price: '129,00 DT', img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAO1WaJWUWGKeVkVIHdSfE6aFy8co2whumXdnYE4ZXrrYX2W7-1bJZvsE5v-tdS84cObJhShv_k-MxlGx1RpNhv2_mdDV0p7NXMiUJ4drgEl1bWyDEGRyYum9mDC77ux0M_IbtIl6UYn_fRoiQASjnHxOvsjreFJwNoLn3vtNrXjwnlvbyxz7_IgVjsdxwsBuZw-9NldoyqVkEeKzc6RO7MHBKOrI2Q0-cs7DEj-J1wrFlh5_yPw5ife_ufFWYFoKw-2t7y4CxGWAip' },
@@ -16,84 +16,220 @@ const sliderItems = [
 
 export default function Home() {
   const sliderRef = useRef(null)
+  const [heroBanners, setHeroBanners] = useState([])
+  const [heroIdx, setHeroIdx] = useState(0)
+  const [direction, setDirection] = useState('next')
+  const [homepageCols, setHomepageCols] = useState({})
+
+  const heroBanner = heroBanners[heroIdx] || null
+
+  const goPrev = () => {
+    setDirection('prev')
+    setHeroIdx(i => (i - 1 + heroBanners.length) % heroBanners.length)
+  }
+  const goNext = () => {
+    setDirection('next')
+    setHeroIdx(i => (i + 1) % heroBanners.length)
+  }
+
+  useEffect(() => {
+    const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'
+    try {
+      const userStr = localStorage.getItem('user')
+      const segment = userStr ? JSON.parse(userStr)?.segmentName || '' : ''
+      const url = `${baseURL}/public/banners?position=HOMEPAGE_HERO${segment ? `&segment=${segment}` : ''}`
+      fetch(url)
+        .then((r) => r.ok ? r.json() : { data: [] })
+        .then((json) => {
+          const list = json?.data
+          if (Array.isArray(list) && list.length > 0) {
+            const sorted = [...list].sort((a, b) => (a.priorite ?? 99) - (b.priorite ?? 99))
+            setHeroBanners(sorted)
+            setHeroIdx(0)
+          }
+        })
+        .catch(() => {})
+    } catch {
+      // fail silently
+    }
+  }, [])
+
+  // Fetch homepage bento collections
+  useEffect(() => {
+    const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'
+    fetch(`${baseURL}/public/collections/homepage`)
+      .then(r => r.ok ? r.json() : [])
+      .then(data => {
+        const list = Array.isArray(data) ? data : (data?.data || [])
+        const map = {}
+        list.forEach(c => { if (c.homepagePosition) map[c.homepagePosition] = c })
+        if (Object.keys(map).length > 0) setHomepageCols(map)
+      })
+      .catch(() => {})
+  }, [])
+
+  // Auto-advance slideshow
+  useEffect(() => {
+    if (heroBanners.length <= 1) return
+    const delay = (heroBanners[heroIdx]?.dureeSecondes || 5) * 1000
+    const timer = setTimeout(() => {
+      setDirection('next')
+      setHeroIdx((i) => (i + 1) % heroBanners.length)
+    }, delay)
+    return () => clearTimeout(timer)
+  }, [heroIdx, heroBanners])
 
   return (
     <>
       {/* ─── Hero Section ─── */}
       <section className="relative h-screen w-full overflow-hidden flex items-end justify-center pb-24 px-12">
-        <div className="absolute inset-0 bg-neutral-200">
-          <img
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuB1RXwJF0X1lzLRrqKyOkzfSZr45Lf5b8cBPMzvicjV_4PZnVZ4CHeXF7fOZMjtWOVG37NfQ9_Ozid8qHE7nkGB8b2e4GHpAWXwnwSg7_GbWg1DP_tEFSNME5kiJyhOllfyl_F4GXorXw6Fgt0Ayz1Y40KH2x60mxphb327Esosm0wj3Dxqa0dkia5PB1nIqsTtNPb_CX5Y-o1_TbRY-Cf1bYKI6TOxsKp_j3Hzm9DIfd6eGjUPPpmaGvcpz5ZLhzp1JtMuHsgzcVUd"
-            alt="High fashion editorial"
-            className="w-full h-full object-cover"
-          />
+
+        {/* Background — key forces remount on each slide to restart animation */}
+        <div
+          key={`bg-${heroIdx}`}
+          className={`absolute inset-0 bg-neutral-900 ${
+            heroBanner?.animation === 'slide'
+              ? `hero-slide-${direction}`
+              : `hero-${heroBanner?.animation || 'fade'}`
+          }`}
+        >
+          {heroBanner?.imageUrl && (
+            <img
+              src={heroBanner.imageUrl}
+              alt={heroBanner.titre || 'Hero banner'}
+              className="w-full h-full object-cover"
+            />
+          )}
         </div>
-        <div className="relative z-10 flex flex-col items-center gap-8">
-          <h1 className="text-white text-5xl md:text-8xl font-black tracking-[-0.04em] uppercase text-center leading-none">
-            NOUVELLE COLLECTION
+
+        {/* Dark gradient at bottom for text legibility */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent z-[1]" />
+
+        {/* Text content — key remounts so text also animates */}
+        <div key={`content-${heroIdx}`} className="relative z-10 flex flex-col items-center gap-8 hero-content-reveal">
+          <h1 className="text-white text-5xl md:text-8xl font-black tracking-[-0.04em] uppercase text-center leading-none drop-shadow-lg">
+            {heroBanner?.titre || 'NOUVELLE COLLECTION'}
           </h1>
+          {heroBanner?.sousTitre && (
+            <p className="text-white/80 text-lg md:text-xl font-medium text-center tracking-wide drop-shadow">
+              {heroBanner.sousTitre}
+            </p>
+          )}
           <a
-            href="#"
-            className="bg-white text-black px-10 py-4 font-bold tracking-[0.1em] text-[12px] uppercase hover:bg-black hover:text-white"
+            href={heroBanner?.ctaLien || '#'}
+            className="bg-white text-black px-10 py-4 font-bold tracking-[0.1em] text-[12px] uppercase hover:bg-black hover:text-white transition-colors"
           >
-            Explorer
+            {heroBanner?.ctaTexte || 'Explorer'}
           </a>
         </div>
+
+        {/* Left arrow */}
+        {heroBanners.length > 1 && (
+          <button
+            onClick={goPrev}
+            className="absolute left-5 md:left-8 top-1/2 -translate-y-1/2 z-20 w-11 h-11 flex items-center justify-center border border-white/30 bg-white/10 backdrop-blur-sm text-white hover:bg-white hover:text-black transition-all duration-300"
+            aria-label="Précédent"
+          >
+            <span className="material-symbols-outlined text-[22px]">chevron_left</span>
+          </button>
+        )}
+
+        {/* Right arrow */}
+        {heroBanners.length > 1 && (
+          <button
+            onClick={goNext}
+            className="absolute right-5 md:right-8 top-1/2 -translate-y-1/2 z-20 w-11 h-11 flex items-center justify-center border border-white/30 bg-white/10 backdrop-blur-sm text-white hover:bg-white hover:text-black transition-all duration-300"
+            aria-label="Suivant"
+          >
+            <span className="material-symbols-outlined text-[22px]">chevron_right</span>
+          </button>
+        )}
+
+        {/* Slide indicator dots */}
+        {heroBanners.length > 1 && (
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+            {heroBanners.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => { setDirection(i > heroIdx ? 'next' : 'prev'); setHeroIdx(i) }}
+                className={`w-2 h-2 rounded-full transition-all ${
+                  i === heroIdx ? 'bg-white scale-125' : 'bg-white/40 hover:bg-white/70'
+                }`}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* ─── Visual Collection Grid (Bento/Editorial) ─── */}
-      <section className="py-24 px-6 md:px-12 bg-surface">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 h-auto md:h-[800px]">
-          {/* Large left panel */}
-          <div className="md:col-span-7 relative group overflow-hidden bg-surface-container min-h-[400px]">
-            <img
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDPiNrei9BjRqTBUPeWHJzFDqJsZzfmOrVKDymZVubtmkteFbO0KR0Fhn5T8LXFhfJUbsVpG9BW6iLnzIGpdmqpHuhFTET1XKFqUY-o8dG1pW8UoIizaN8ZLrPviR5eBFowBe2rjpXZ6DfBihAlnBogclJtSC-vwdFngHWnz23oEiIIEq95M2P4LYOy2VjUvO_Jo4hvFxH0Oww23apzIvZq_BXifxHfk02a6ZmNgbn3jIpOQiAZksQoZdRrMI1ZY_3eTNCLWNmubKED"
-              alt="New In collection"
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute bottom-10 left-10">
-              <h2 className="text-white text-4xl font-bold uppercase mb-4">NEW IN</h2>
-              <a className="text-white border-b border-white pb-1 text-[11px] font-bold uppercase tracking-widest" href="#">
-                Voir plus
-              </a>
-            </div>
-          </div>
+      <section className="w-full bg-surface overflow-hidden" style={{ height: '100vh', boxSizing: 'border-box', padding: '72px 16px 16px 16px' }}>
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4" style={{ height: '100%' }}>
+          {/* Large left panel — principale */}
+          {(() => {
+            const col = homepageCols['principale']
+            return (
+              <div className="md:col-span-7 relative overflow-hidden bg-surface-container" style={{ minHeight: 0 }}>
+                {(col?.bannerUrl || col?.imageUrl) && (
+                  <img src={col.bannerUrl || col.imageUrl} alt={col.nom || 'Collection'} className="w-full h-full object-cover" />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                <div className="absolute bottom-10 left-10">
+                  <h2 className="text-white text-4xl font-bold uppercase mb-4">{col?.nom || 'NEW IN'}</h2>
+                  <a className="text-white border-b border-white pb-1 text-[11px] font-bold uppercase tracking-widest" href={col ? `/collections/${col.id}` : '#'}>
+                    Voir plus
+                  </a>
+                </div>
+              </div>
+            )
+          })()}
 
           {/* Right two stacked panels */}
-          <div className="md:col-span-5 grid grid-rows-2 gap-4">
-            <div className="relative group overflow-hidden bg-surface-container min-h-[200px]">
-              <img
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCmDAzRwjilcshlB77XIYgdAOFq1WOC2bW9CIrWQGKDSO_sZcLEvgI-mlshRoMW72TNTHDgpClu4zsYL58P2R41BLvf5egf6FWamCRsfjWXkqtJKRV2Q4FJWy4k4EDGZWVzJ72Te7yGS9HHIr7e_7V5cvfLaiku53xpo1dxPZ7zeNak20sk7UmqBUWTLh5wEDBhZoEIZhhx-YY_HPN0Xjv9byT6q17J85fsPtKQNdqT3QvufEzEJzXdNu5MTkuk6r1NQNZcZb1gaDVg"
-                alt="Summer collection"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute bottom-10 left-10">
-                <h2 className="text-white text-3xl font-bold uppercase mb-4">SUMMER</h2>
-                <a className="text-white border-b border-white pb-1 text-[11px] font-bold uppercase tracking-widest" href="#">
-                  Voir plus
-                </a>
-              </div>
-            </div>
-            <div className="relative group overflow-hidden bg-surface-container min-h-[200px]">
-              <img
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJclfC_uMNJ0cVszfLpEsjgjU2NGaafPl7VIwRK0N_fiPFaWmRZkBZkORc32HiCcZmTVcUsc6bSBDxAJjQq915pLH5HY07rGAIcZVTFGU5tDeXMCi0M0qYcq6RsybMP8eYSC3ddQGJ24c0afE4qPz0CtXzWni1EwJmxnHBm40shFKEHvwv--pAoAyrOXvZHzWoZ0jqM9jWanrnOdS7HENVesV3NaMDTb-su0AR87CK-ug11Jh7caMxyPe_hJ5BpPwtSO7mqUyI-qQ2"
-                alt="Essentials"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute bottom-10 left-10">
-                <h2 className="text-white text-3xl font-bold uppercase mb-4">ESSENTIALS</h2>
-                <a className="text-white border-b border-white pb-1 text-[11px] font-bold uppercase tracking-widest" href="#">
-                  Voir plus
-                </a>
-              </div>
-            </div>
+          <div className="md:col-span-5 grid grid-rows-2 gap-4" style={{ minHeight: 0 }}>
+            {/* Right top — secondaire-haut */}
+            {(() => {
+              const col = homepageCols['secondaire-haut']
+              return (
+                <div className="relative overflow-hidden bg-surface-container" style={{ minHeight: 0 }}>
+                  {(col?.bannerUrl || col?.imageUrl)
+                    ? <img src={col.bannerUrl || col.imageUrl} alt={col.nom || 'Collection'} className="w-full h-full object-cover" />
+                    : <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCmDAzRwjilcshlB77XIYgdAOFq1WOC2bW9CIrWQGKDSO_sZcLEvgI-mlshRoMW72TNTHDgpClu4zsYL58P2R41BLvf5egf6FWamCRsfjWXkqtJKRV2Q4FJWy4k4EDGZWVzJ72Te7yGS9HHIr7e_7V5cvfLaiku53xpo1dxPZ7zeNak20sk7UmqBUWTLh5wEDBhZoEIZhhx-YY_HPN0Xjv9byT6q17J85fsPtKQNdqT3QvufEzEJzXdNu5MTkuk6r1NQNZcZb1gaDVg" alt="Summer collection" className="w-full h-full object-cover" />
+                  }
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                  <div className="absolute bottom-10 left-10">
+                    <h2 className="text-white text-3xl font-bold uppercase mb-4">{col?.nom || 'SUMMER'}</h2>
+                    <a className="text-white border-b border-white pb-1 text-[11px] font-bold uppercase tracking-widest" href={col ? `/collections/${col.id}` : '#'}>
+                      Voir plus
+                    </a>
+                  </div>
+                </div>
+              )
+            })()}
+            {/* Right bottom — secondaire-bas */}
+            {(() => {
+              const col = homepageCols['secondaire-bas']
+              return (
+                <div className="relative overflow-hidden bg-surface-container" style={{ minHeight: 0 }}>
+                  {(col?.bannerUrl || col?.imageUrl)
+                    ? <img src={col.bannerUrl || col.imageUrl} alt={col.nom || 'Collection'} className="w-full h-full object-cover" />
+                    : <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJclfC_uMNJ0cVszfLpEsjgjU2NGaafPl7VIwRK0N_fiPFaWmRZkBZkORc32HiCcZmTVcUsc6bSBDxAJjQq915pLH5HY07rGAIcZVTFGU5tDeXMCi0M0qYcq6RsybMP8eYSC3ddQGJ24c0afE4qPz0CtXzWni1EwJmxnHBm40shFKEHvwv--pAoAyrOXvZHzWoZ0jqM9jWanrnOdS7HENVesV3NaMDTb-su0AR87CK-ug11Jh7caMxyPe_hJ5BpPwtSO7mqUyI-qQ2" alt="Essentials" className="w-full h-full object-cover" />
+                  }
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                  <div className="absolute bottom-10 left-10">
+                    <h2 className="text-white text-3xl font-bold uppercase mb-4">{col?.nom || 'ESSENTIALS'}</h2>
+                    <a className="text-white border-b border-white pb-1 text-[11px] font-bold uppercase tracking-widest" href={col ? `/collections/${col.id}` : '#'}>
+                      Voir plus
+                    </a>
+                  </div>
+                </div>
+              )
+            })()}
           </div>
         </div>
       </section>
 
       {/* ─── New Products Grid ─── */}
-      <section className="py-24 px-6 md:px-12 bg-surface">
-        <div className="flex justify-between items-end mb-16">
+      <section className="w-full bg-surface overflow-hidden flex flex-col px-6 md:px-12 pb-10" style={{ height: '100vh', paddingTop: '72px' }}>
+        <div className="flex justify-between items-end mb-8 shrink-0">
           <div>
             <h2 className="text-[11px] font-bold tracking-[0.2em] uppercase text-neutral-400 mb-2">
               Saison 2026
@@ -104,21 +240,21 @@ export default function Home() {
             Tout voir
           </a>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-12">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-6 flex-1 min-h-0">
           {products.map((p) => (
-            <div key={p.name} className="group cursor-pointer">
-              <div className="bg-white mb-6 relative overflow-hidden aspect-[3/4]">
+            <div key={p.name} className="group cursor-pointer flex flex-col min-h-0">
+              <div className="bg-white relative overflow-hidden flex-1 min-h-0">
                 <img
                   src={p.img}
                   alt={p.name}
                   className="w-full h-full object-cover grayscale"
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300" />
-                <button className="absolute bottom-0 left-0 w-full bg-black text-white py-4 opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-300 font-bold text-[11px] uppercase tracking-widest">
+                <button className="absolute bottom-0 left-0 w-full bg-black text-white py-3 opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-300 font-bold text-[11px] uppercase tracking-widest">
                   AJOUTER AU PANIER
                 </button>
               </div>
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-1 pt-3 shrink-0">
                 <span className="text-[13px] font-bold uppercase tracking-tight">{p.name}</span>
                 <span className="text-[12px] text-neutral-500 font-medium">{p.price}</span>
               </div>

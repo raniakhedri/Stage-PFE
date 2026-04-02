@@ -28,6 +28,8 @@ public class AppearanceSettings {
     private String primaryColor;
     private String secondaryColor;
     private String buttonColor;
+    private String buttonHoverColor; // hover background on buttons (FO)
+    private String buttonTextColor; // text color inside buttons (FO)
     private String sidebarColor;
     private String badgeColor;
 
@@ -42,7 +44,9 @@ public class AppearanceSettings {
     @Column(columnDefinition = "TEXT")
     private String logoMain;
     @Column(columnDefinition = "TEXT")
-    private String logoLight;
+    private String logoLight; // transparent-header variant (FO navbar)
+    @Column(columnDefinition = "TEXT")
+    private String logoNavbar; // dedicated navbar logo (FO, optional override)
     @Column(columnDefinition = "TEXT")
     private String favicon;
     @Column(columnDefinition = "TEXT")

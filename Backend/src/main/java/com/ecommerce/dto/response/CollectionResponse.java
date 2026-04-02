@@ -40,6 +40,8 @@ public class CollectionResponse {
 
     private String menuParentCategory;
 
+    private String homepagePosition;
+
     private List<String> linkedCategories;
 
     private String metaTitle;

@@ -207,7 +207,7 @@ export default function SignupForm({ onSwitch }) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-primary text-on-primary py-4 font-label text-xs tracking-[0.15em] uppercase font-bold hover:bg-zinc-800 active:scale-[0.98] transition-colors disabled:opacity-50"
+            className="w-full fo-btn py-4 font-label text-xs tracking-[0.15em] uppercase font-bold active:scale-[0.98] transition-colors disabled:opacity-50"
           >
             {loading ? 'Création...' : 'Créer mon compte'}
           </button>

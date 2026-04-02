@@ -19,4 +19,9 @@ public class PublicCollectionController {
     public ResponseEntity<List<CollectionResponse>> getMenuCollections() {
         return ResponseEntity.ok(collectionService.getMenuCollections());
     }
+
+    @GetMapping("/homepage")
+    public ResponseEntity<List<CollectionResponse>> getHomepageCollections() {
+        return ResponseEntity.ok(collectionService.getHomepageCollections());
+    }
 }

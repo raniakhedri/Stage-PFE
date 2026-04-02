@@ -2,6 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── CSS custom properties — fixed original site colors ── */
+:root {
+  --fo-brand: 0 91 61;          /* #005b3d — brand accent (logo text, borders) */
+  --fo-primary: 0 0 0;          /* #000000 — main buttons / active elements */
+  --fo-primary-hover: 38 38 38; /* #262626 — button hover */
+  --fo-btn-text: 255 255 255;   /* #ffffff — button text */
+  --fo-font-headline: 'Public Sans';
+  --fo-font-body: 'Public Sans';
+}
+
+/* ── Dynamic button utilities driven by CSS variables ── */
+.fo-btn {
+  background-color: rgb(var(--fo-primary));
+  color: rgb(var(--fo-btn-text));
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.fo-btn:hover {
+  background-color: rgb(var(--fo-primary-hover));
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -71,7 +91,66 @@ body {
   100% { opacity: 1; transform: scale(1); }
 }
 
-/* Scrollbar — minimal */
+/* ── Hero banner animations ── */
+
+/* Fade — opacity crossfade */
+.hero-fade {
+  animation: heroBannerFade 1s ease forwards;
+}
+/* Slide from right (next) */
+.hero-slide-next {
+  animation: heroBannerSlideNext 0.9s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+/* Slide from left (prev) */
+.hero-slide-prev {
+  animation: heroBannerSlidePrev 0.9s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+/* Zoom — dramatic scale-in */
+.hero-zoom {
+  animation: heroBannerZoom 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+/* Ken Burns — cinematic slow zoom (luxury brands style) */
+.hero-ken-burns {
+  animation: heroBannerKenBurns 12s ease forwards;
+}
+/* Blur — out-of-focus to sharp */
+.hero-blur {
+  animation: heroBannerBlur 1s ease forwards;
+}
+/* Text content reveal — always applied */
+.hero-content-reveal {
+  animation: heroContentReveal 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes heroBannerFade {
+  0%   { opacity: 0; }
+  100% { opacity: 1; }
+}
+@keyframes heroBannerSlideNext {
+  0%   { transform: translateX(100%); }
+  100% { transform: translateX(0); }
+}
+@keyframes heroBannerSlidePrev {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(0); }
+}
+@keyframes heroBannerZoom {
+  0%   { opacity: 0; transform: scale(1.25); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes heroBannerKenBurns {
+  0%   { opacity: 0; transform: scale(1) translate(0, 0); }
+  6%   { opacity: 1; }
+  100% { opacity: 1; transform: scale(1.12) translate(-2%, -1%); }
+}
+@keyframes heroBannerBlur {
+  0%   { opacity: 0; filter: blur(24px); transform: scale(1.06); }
+  100% { opacity: 1; filter: blur(0); transform: scale(1); }
+}
+@keyframes heroContentReveal {
+  0%   { opacity: 0; transform: translateY(36px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #c6c6c6; }

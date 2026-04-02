@@ -92,6 +92,7 @@ function App() {
             <Route path="/commandes/:id" element={<DetailCommande />} />
             <Route path="/bannieres" element={<Bannieres />} />
             <Route path="/bannieres/nouveau" element={<AjouterBanniere />} />
+            <Route path="/bannieres/edit/:id" element={<AjouterBanniere />} />
             <Route path="/tva-livraison" element={<TvaLivraison />} />
             <Route path="/avis" element={<Avis />} />
             <Route path="/promotions" element={<Promotions />} />

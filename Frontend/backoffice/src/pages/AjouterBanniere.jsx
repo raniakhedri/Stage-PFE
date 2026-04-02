@@ -1,8 +1,9 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import CustomSelect from '../components/ui/CustomSelect'
 import PageHeader from '../components/ui/PageHeader'
+import { bannerApi } from '../api/bannerApi'
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 const Label = ({ children }) => <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">{children}</label>
@@ -21,18 +22,10 @@ const Toggle = ({ checked, onChange, label, desc }) => (
   </div>
 )
 
-const positionOptions = [
-  { value: 'homepage-hero', label: 'Homepage Hero' },
-  { value: 'section-promo', label: 'Section Promo' },
-  { value: 'page-categorie', label: 'Page Catégorie' },
-  { value: 'popup', label: 'Popup' },
-  { value: 'footer', label: 'Footer' },
-]
-
 const prioriteOptions = [
-  { value: '1', label: '1 — Haute' },
-  { value: '2', label: '2 — Moyenne' },
-  { value: '3', label: '3 — Faible' },
+  { value: 1, label: '1 — Haute' },
+  { value: 2, label: '2 — Moyenne' },
+  { value: 3, label: '3 — Faible' },
 ]
 
 const ctaTypeOptions = [
@@ -42,16 +35,26 @@ const ctaTypeOptions = [
 ]
 
 const audienceOptions = [
-  { value: 'tous', label: 'Tous les utilisateurs' },
-  { value: 'vip', label: 'Clients VIP' },
-  { value: 'nouveaux', label: 'Nouveaux clients' },
-  { value: 'b2b', label: 'B2B Clients' },
+  { value: 'ALL', label: 'Tous les utilisateurs' },
+  { value: 'VIP', label: 'Clients VIP' },
+  { value: 'NOUVEAU', label: 'Nouveaux clients' },
+  { value: 'FIDELE', label: 'Clients fidèles' },
+  { value: 'INACTIF', label: 'Clients inactifs' },
+]
+
+const statutOptions = [
+  { value: 'ACTIF', label: 'Actif' },
+  { value: 'BROUILLON', label: 'Brouillon' },
+  { value: 'PROGRAMME', label: 'Programmé' },
+  { value: 'EXPIRE', label: 'Expiré' },
 ]
 
 const animOptions = [
-  { value: 'fade', label: 'Fade' },
-  { value: 'slide', label: 'Slide' },
-  { value: 'zoom', label: 'Zoom' },
+  { value: 'fade',      label: 'Fade — fondu doux' },
+  { value: 'slide',     label: 'Slide — glissement' },
+  { value: 'zoom',      label: 'Zoom — zoom arrière' },
+  { value: 'ken-burns', label: 'Ken Burns — zoom lent cinématique' },
+  { value: 'blur',      label: 'Blur — flou → net' },
 ]
 
 const alignOptions = [
@@ -63,9 +66,12 @@ const alignOptions = [
 // ── Component ──────────────────────────────────────────────────────────────────
 export default function AjouterBanniere() {
   const navigate = useNavigate()
+  const { id } = useParams()
+  const isEditing = Boolean(id)
 
   // ─ Content
   const [desktopImage, setDesktopImage] = useState('')
+  const [desktopImageName, setDesktopImageName] = useState('')
   const [mobileImage, setMobileImage] = useState('')
   const [videoUrl, setVideoUrl] = useState('')
 
@@ -80,8 +86,8 @@ export default function AjouterBanniere() {
   const [ctaLien, setCtaLien] = useState('')
 
   // ─ Position
-  const [position, setPosition] = useState('homepage-hero')
-  const [priorite, setPriorite] = useState('1')
+  const [position, setPosition] = useState('HOMEPAGE_HERO')
+  const [priorite, setPriorite] = useState(2)
 
   // ─ Planning
   const [dateDebut, setDateDebut] = useState('')
@@ -90,21 +96,18 @@ export default function AjouterBanniere() {
   const [heureFin, setHeureFin] = useState('')
 
   // ─ Ciblage
-  const [audience, setAudience] = useState('tous')
+  const [audience, setAudience] = useState('ALL')
   const [pays, setPays] = useState('')
 
   // ─ Animation
   const [animation, setAnimation] = useState('fade')
 
-  // ─ SEO
-  const [altImage, setAltImage] = useState('')
-  const [titreSeo, setTitreSeo] = useState('')
-
   // ─ Switches
   const [visibleHomepage, setVisibleHomepage] = useState(true)
   const [visibleMobile, setVisibleMobile] = useState(true)
   const [visibleDesktop, setVisibleDesktop] = useState(true)
-  const [statutActif, setStatutActif] = useState(true)
+  const [statut, setStatut] = useState('ACTIF')
+  const [dureeSecondes, setDureeSecondes] = useState(5)
 
   // ─ A/B Test
   const [abTestEnabled, setAbTestEnabled] = useState(false)
@@ -116,20 +119,126 @@ export default function AjouterBanniere() {
   // ─ Live preview tab
   const [previewDevice, setPreviewDevice] = useState('desktop')
 
+  // ─ Loading
+  const [saving, setSaving] = useState(false)
+  const [loadingData, setLoadingData] = useState(isEditing)
+
+  // ─ Load existing banner for edit mode
+  useEffect(() => {
+    if (!isEditing) return
+    const load = async () => {
+      try {
+        const data = await bannerApi.getById(id)
+        setTitre(data.titre || '')
+        setSousTitre(data.sousTitre || '')
+        setDesktopImage(data.imageUrl || '')
+        setCtaTexte(data.ctaTexte || '')
+        setCtaLien(data.ctaLien || '')
+        setPosition(data.position || 'HOMEPAGE_HERO')
+        setPriorite(data.priorite || 2)
+        setDateDebut(data.dateDebut || '')
+        setDateFin(data.dateFin || '')
+        setAudience(data.audience || 'ALL')
+        setStatut(data.statut || 'BROUILLON')
+        setDureeSecondes(data.dureeSecondes || 5)
+        setAnimation(data.animation || 'fade')
+      } catch {
+        toast.error('Erreur lors du chargement de la bannière')
+        navigate('/bannieres')
+      } finally {
+        setLoadingData(false)
+      }
+    }
+    load()
+  }, [id, isEditing, navigate])
+
+  // ─ Auto-set statut based on dateDebut
+  useEffect(() => {
+    if (!dateDebut) {
+      // No start date → default ACTIF (only if not already forced to BROUILLON/EXPIRE by user)
+      setStatut(prev => (prev === 'PROGRAMME' ? 'ACTIF' : prev))
+      return
+    }
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const start = new Date(dateDebut)
+    if (start > today) {
+      setStatut('PROGRAMME')
+    } else {
+      setStatut(prev => (prev === 'PROGRAMME' ? 'ACTIF' : prev))
+    }
+  }, [dateDebut])
+
+  // ─ Convert file to base64
+  const fileToBase64 = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+
   // ─ Submit
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!titre.trim()) { toast.error('Le titre est obligatoire'); return }
-    toast.success('Bannière créée avec succès !')
-    navigate('/bannieres')
+
+    const payload = {
+      titre: titre.trim(),
+      sousTitre: sousTitre.trim(),
+      imageUrl: desktopImage || null,
+      ctaTexte: ctaTexte.trim(),
+      ctaLien: ctaLien.trim(),
+      position,
+      audience,
+      statut,
+      priorite: Number(priorite),
+      dateDebut: dateDebut || null,
+      dateFin: dateFin || null,
+      actif: statut === 'ACTIF',
+      ordre: 10,
+      dureeSecondes: Number(dureeSecondes),
+      animation,
+    }
+
+    try {
+      setSaving(true)
+      if (isEditing) {
+        await bannerApi.update(id, payload)
+        toast.success('Bannière mise à jour !')
+      } else {
+        await bannerApi.create(payload)
+        toast.success('Bannière créée avec succès !')
+      }
+      navigate('/bannieres')
+    } catch (err) {
+      const msg = err?.response?.data?.message || 'Erreur lors de l\'enregistrement'
+      toast.error(msg)
+    } finally {
+      setSaving(false)
+    }  }
+
+  if (loadingData) {
+    return (
+      <div className="p-6 flex items-center justify-center h-64">
+        <div className="flex flex-col items-center gap-3 text-slate-400">
+          <span className="material-symbols-outlined text-4xl text-slate-200 animate-spin">progress_activity</span>
+          <span className="text-sm">Chargement de la bannière…</span>
+        </div>
+      </div>
+    )
   }
 
   return (
     <form onSubmit={handleSubmit} className="p-6 space-y-6 max-w-[1600px] mx-auto w-full">
       {/* Header */}
-      <PageHeader title="Ajouter une bannière" subtitle="Créez et planifiez une nouvelle campagne visuelle pour votre boutique.">
+      <PageHeader
+        title={isEditing ? 'Modifier la bannière' : 'Ajouter une bannière'}
+        subtitle={isEditing ? 'Mettez à jour votre campagne visuelle.' : 'Créez et planifiez une nouvelle campagne visuelle pour votre boutique.'}
+      >
         <PageHeader.SecondaryBtn icon="arrow_back" onClick={() => navigate('/bannieres')}>Retour</PageHeader.SecondaryBtn>
-        <PageHeader.PrimaryBtn icon="save" type="submit">Enregistrer</PageHeader.PrimaryBtn>
+        <PageHeader.PrimaryBtn icon="save" type="submit" disabled={saving}>
+          {saving ? 'Enregistrement…' : isEditing ? 'Mettre à jour' : 'Enregistrer'}
+        </PageHeader.PrimaryBtn>
       </PageHeader>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -148,10 +257,16 @@ export default function AjouterBanniere() {
                 <div>
                   <Label>Image Desktop</Label>
                   {desktopImage ? (
-                    <div className="relative bg-slate-50 rounded-lg border border-slate-200 p-4 flex items-center gap-3">
-                      <span className="material-symbols-outlined text-brand">image</span>
-                      <span className="text-sm text-slate-700 truncate flex-1">{desktopImage}</span>
-                      <button type="button" onClick={() => setDesktopImage('')} className="text-red-400 hover:text-red-500">
+                    <div className="relative bg-slate-50 rounded-lg border border-slate-200 overflow-hidden">
+                      {desktopImage.startsWith('data:') || desktopImage.startsWith('http') ? (
+                        <img src={desktopImage} alt="preview" className="w-full h-28 object-cover" />
+                      ) : (
+                        <div className="p-4 flex items-center gap-3">
+                          <span className="material-symbols-outlined text-brand">image</span>
+                          <span className="text-sm text-slate-700 truncate flex-1">{desktopImageName || desktopImage}</span>
+                        </div>
+                      )}
+                      <button type="button" onClick={() => { setDesktopImage(''); setDesktopImageName('') }} className="absolute top-2 right-2 bg-white/80 backdrop-blur text-red-400 hover:text-red-500 p-1 rounded-full shadow">
                         <span className="material-symbols-outlined text-sm">close</span>
                       </button>
                     </div>
@@ -160,7 +275,14 @@ export default function AjouterBanniere() {
                       <span className="material-symbols-outlined text-3xl text-slate-300 mb-2 block">cloud_upload</span>
                       <p className="text-xs font-bold text-slate-500">Glissez ou cliquez</p>
                       <p className="text-[10px] text-slate-400 mt-1">Recommandé: 1920×600px</p>
-                      <input type="file" className="hidden" accept="image/*" onChange={(e) => { if (e.target.files?.[0]) setDesktopImage(e.target.files[0].name) }} />
+                      <input type="file" className="hidden" accept="image/*" onChange={async (e) => {
+                        const file = e.target.files?.[0]
+                        if (file) {
+                          setDesktopImageName(file.name)
+                          const b64 = await fileToBase64(file)
+                          setDesktopImage(b64)
+                        }
+                      }} />
                     </label>
                   )}
                 </div>
@@ -230,15 +352,14 @@ export default function AjouterBanniere() {
             </div>
           </div>
 
-          {/* 3. CTA + Position */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* CTA */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
-                <span className="material-symbols-outlined text-brand">ads_click</span>
-                <h3 className="text-sm font-bold text-slate-700">CTA (Call to Action)</h3>
-              </div>
-              <div className="p-6 space-y-5">
+          {/* 3. CTA + Priorité */}
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
+              <span className="material-symbols-outlined text-brand">ads_click</span>
+              <h3 className="text-sm font-bold text-slate-700">CTA (Call to Action)</h3>
+            </div>
+            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="space-y-5">
                 <div>
                   <Label>Texte du bouton</Label>
                   <Input value={ctaTexte} onChange={(e) => setCtaTexte(e.target.value)} placeholder="Ex: Acheter maintenant" />
@@ -252,23 +373,10 @@ export default function AjouterBanniere() {
                   <Input value={ctaLien} onChange={(e) => setCtaLien(e.target.value)} placeholder="/categorie/vestes ou https://..." />
                 </div>
               </div>
-            </div>
-
-            {/* Position */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
-                <span className="material-symbols-outlined text-brand">location_on</span>
-                <h3 className="text-sm font-bold text-slate-700">Position</h3>
-              </div>
-              <div className="p-6 space-y-5">
-                <div>
-                  <Label>Emplacement</Label>
-                  <CustomSelect value={position} onChange={setPosition} options={positionOptions} />
-                </div>
-                <div>
-                  <Label>Priorité d'affichage</Label>
-                  <CustomSelect value={priorite} onChange={setPriorite} options={prioriteOptions} />
-                </div>
+              <div>
+                <Label>Priorité d'affichage</Label>
+                <CustomSelect value={priorite} onChange={setPriorite} options={prioriteOptions} />
+                <p className="text-[10px] text-slate-400 mt-2">Définit l'ordre d'apparition dans le slideshow (1 = affiché en premier)</p>
               </div>
             </div>
           </div>
@@ -324,47 +432,73 @@ export default function AjouterBanniere() {
             </div>
           </div>
 
-          {/* 5. Animation + SEO */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Animation */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
-                <span className="material-symbols-outlined text-brand">animation</span>
-                <h3 className="text-sm font-bold text-slate-700">Animation</h3>
-              </div>
-              <div className="p-6">
-                <Label>Type d'animation</Label>
-                <CustomSelect value={animation} onChange={setAnimation} options={animOptions} />
-                {/* Preview animation */}
-                <div className="mt-4 bg-slate-50 rounded-lg p-4 border border-slate-200 text-center">
-                  <span className="material-symbols-outlined text-brand/40 text-3xl">{animation === 'fade' ? 'blur_on' : animation === 'slide' ? 'swipe_right' : 'zoom_in'}</span>
-                  <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase">{animation}</p>
-                </div>
-              </div>
+          {/* 5. Animation */}
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
+              <span className="material-symbols-outlined text-brand">animation</span>
+              <h3 className="text-sm font-bold text-slate-700">Animation</h3>
             </div>
-
-            {/* SEO */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
-                <span className="material-symbols-outlined text-brand">travel_explore</span>
-                <h3 className="text-sm font-bold text-slate-700">SEO</h3>
-              </div>
-              <div className="p-6 space-y-5">
-                <div>
-                  <Label>Alt Image</Label>
-                  <Input value={altImage} onChange={(e) => setAltImage(e.target.value)} placeholder="Ex: Veste hiver noire homme workwear" />
-                  <p className="text-[10px] text-slate-400 mt-1">Décrivez l'image pour Google & accessibilité</p>
-                </div>
-                <div>
-                  <Label>Titre SEO</Label>
-                  <Input value={titreSeo} onChange={(e) => setTitreSeo(e.target.value)} placeholder="Ex: Promotion hiver 2026 | WorkwearPro" />
-                  <p className="text-[10px] text-slate-400 mt-1">{titreSeo.length}/60 caractères recommandés</p>
-                </div>
+            <div className="p-6">
+              <Label>Type d'animation</Label>
+              <CustomSelect value={animation} onChange={setAnimation} options={animOptions} />
+              {/* Preview animation */}
+              <div className="mt-4 bg-slate-50 rounded-lg p-4 border border-slate-200 text-center">
+                <span className="material-symbols-outlined text-brand/40 text-3xl">{animation === 'fade' ? 'blur_on' : animation === 'slide' ? 'swipe_right' : 'zoom_in'}</span>
+                <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase">{animation}</p>
               </div>
             </div>
           </div>
 
-          {/* 6. A/B Test */}
+          {/* 6. Paramètres */}
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
+              <span className="material-symbols-outlined text-brand">toggle_on</span>
+              <h3 className="text-sm font-bold text-slate-700">Paramètres</h3>
+            </div>
+            <div className="px-6 py-4 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Statut</label>
+                <CustomSelect value={statut} onChange={setStatut} options={statutOptions} />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Durée d'affichage (slideshow)</label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number" min={1} max={60}
+                    value={dureeSecondes}
+                    onChange={(e) => setDureeSecondes(Math.max(1, Number(e.target.value)))}
+                    className="w-20 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-brand outline-none text-center font-bold"
+                  />
+                  <span className="text-sm text-slate-500">secondes avant la bannière suivante</span>
+                </div>
+              </div>
+              <div className="divide-y divide-slate-100">
+                <Toggle checked={visibleHomepage} onChange={setVisibleHomepage} label="Visible sur Homepage" desc="Afficher sur la page d'accueil" />
+                <Toggle checked={visibleDesktop} onChange={setVisibleDesktop} label="Visible Desktop" desc="Afficher sur écrans larges" />
+                <Toggle checked={visibleMobile} onChange={setVisibleMobile} label="Visible Mobile" desc="Afficher sur appareils mobiles" />
+              </div>
+            </div>
+          </div>
+
+          {/* 6b. Résumé */}
+          <div className="bg-slate-50 rounded-xl border border-slate-200 p-5 space-y-3">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Résumé</p>
+            <div className="space-y-2">
+              {[
+                { label: 'Priorité', val: prioriteOptions.find((o) => o.value === priorite)?.label },
+                { label: 'Audience', val: audienceOptions.find((o) => o.value === audience)?.label },
+                { label: 'Statut', val: statutOptions.find((o) => o.value === statut)?.label },
+                { label: 'A/B Test', val: abTestEnabled ? 'Activé' : 'Désactivé' },
+              ].map((r) => (
+                <div key={r.label} className="flex items-center justify-between">
+                  <span className="text-xs text-slate-500">{r.label}</span>
+                  <span className="text-xs font-bold text-slate-700">{r.val}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 7. A/B Test */}
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -434,10 +568,10 @@ export default function AjouterBanniere() {
         </div>
 
         {/* ───── RIGHT COLUMN (1/3) ───── */}
-        <div className="space-y-6">
+        <div className="space-y-6 lg:sticky lg:top-6 lg:self-start">
 
-          {/* Live Preview */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden sticky top-6">
+          {/* Live Preview — seul dans la colonne droite */}
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-brand">preview</span>
@@ -455,23 +589,20 @@ export default function AjouterBanniere() {
             <div className="p-4">
               <div className={`mx-auto border-2 border-slate-100 rounded-lg overflow-hidden transition-all ${previewDevice === 'desktop' ? 'w-full aspect-[16/5]' : 'w-44 aspect-[9/16] mx-auto'}`}>
                 <div className="w-full h-full bg-gradient-to-br from-brand/10 to-brand/5 flex flex-col items-center justify-center p-4 text-center relative">
-                  {(desktopImage || mobileImage) && (
-                    <div className="absolute top-2 right-2">
-                      <span className="material-symbols-outlined text-brand/30 text-sm">image</span>
-                    </div>
+                  {desktopImage && (desktopImage.startsWith('data:') || desktopImage.startsWith('http')) && (
+                    <img src={desktopImage} alt="preview" className="absolute inset-0 w-full h-full object-cover" />
                   )}
-                  <span className="material-symbols-outlined text-brand/20 text-4xl mb-2">view_carousel</span>
-                  <p className={`font-bold text-slate-700 ${previewDevice === 'mobile' ? 'text-xs' : 'text-sm'} ${alignement === 'left' ? 'self-start text-left' : alignement === 'right' ? 'self-end text-right' : ''}`}>
-                    {titre || 'Titre de la bannière'}
-                  </p>
-                  <p className={`text-slate-500 mt-0.5 ${previewDevice === 'mobile' ? 'text-[9px]' : 'text-[11px]'} ${alignement === 'left' ? 'self-start text-left' : alignement === 'right' ? 'self-end text-right' : ''}`}>
-                    {sousTitre || 'Sous-titre de la bannière'}
-                  </p>
-                  {(ctaTexte || true) && (
-                    <button type="button" className={`mt-2 bg-brand text-white font-bold rounded shadow-sm ${previewDevice === 'mobile' ? 'text-[8px] px-2 py-1' : 'text-[10px] px-3 py-1.5'}`}>
+                  <div className="relative z-10 flex flex-col items-center text-center">
+                    <p className={`font-bold text-white drop-shadow-lg ${previewDevice === 'mobile' ? 'text-xs' : 'text-sm'} ${alignement === 'left' ? 'self-start text-left' : alignement === 'right' ? 'self-end text-right' : ''}`}>
+                      {titre || 'Titre de la bannière'}
+                    </p>
+                    <p className={`text-white/80 drop-shadow mt-0.5 ${previewDevice === 'mobile' ? 'text-[9px]' : 'text-[11px]'} ${alignement === 'left' ? 'self-start text-left' : alignement === 'right' ? 'self-end text-right' : ''}`}>
+                      {sousTitre || 'Sous-titre de la bannière'}
+                    </p>
+                    <button type="button" className={`mt-2 bg-white text-slate-900 font-bold rounded shadow-sm ${previewDevice === 'mobile' ? 'text-[8px] px-2 py-1' : 'text-[10px] px-3 py-1.5'}`}>
                       {ctaTexte || 'Bouton CTA'}
                     </button>
-                  )}
+                  </div>
                 </div>
               </div>
               {/* Preview info */}
@@ -485,38 +616,6 @@ export default function AjouterBanniere() {
             </div>
           </div>
 
-          {/* Paramètres / Switches */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
-              <span className="material-symbols-outlined text-brand">toggle_on</span>
-              <h3 className="text-sm font-bold text-slate-700">Paramètres</h3>
-            </div>
-            <div className="px-6 py-2 divide-y divide-slate-100">
-              <Toggle checked={statutActif} onChange={setStatutActif} label="Statut actif" desc="Activer immédiatement après enregistrement" />
-              <Toggle checked={visibleHomepage} onChange={setVisibleHomepage} label="Visible sur Homepage" desc="Afficher sur la page d'accueil" />
-              <Toggle checked={visibleDesktop} onChange={setVisibleDesktop} label="Visible Desktop" desc="Afficher sur écrans larges" />
-              <Toggle checked={visibleMobile} onChange={setVisibleMobile} label="Visible Mobile" desc="Afficher sur appareils mobiles" />
-            </div>
-          </div>
-
-          {/* Summary quick */}
-          <div className="bg-slate-50 rounded-xl border border-slate-200 p-5 space-y-3">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Résumé</p>
-            <div className="space-y-2">
-              {[
-                { label: 'Position', val: positionOptions.find((o) => o.value === position)?.label },
-                { label: 'Priorité', val: prioriteOptions.find((o) => o.value === priorite)?.label },
-                { label: 'Audience', val: audienceOptions.find((o) => o.value === audience)?.label },
-                { label: 'Animation', val: animation },
-                { label: 'A/B Test', val: abTestEnabled ? 'Activé' : 'Désactivé' },
-              ].map((r) => (
-                <div key={r.label} className="flex items-center justify-between">
-                  <span className="text-xs text-slate-500">{r.label}</span>
-                  <span className="text-xs font-bold text-slate-700">{r.val}</span>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </form>

@@ -44,7 +44,7 @@ export default function Cart() {
           <p className="font-headline font-bold text-xl uppercase tracking-tight mb-4">Votre panier est vide</p>
           <Link
             to="/"
-            className="inline-block bg-primary text-on-primary px-10 py-4 font-bold tracking-[0.1em] text-[12px] uppercase hover:bg-neutral-800"
+            className="inline-block fo-btn px-10 py-4 font-bold tracking-[0.1em] text-[12px] uppercase"
           >
             Continuer vos achats
           </Link>
@@ -216,7 +216,7 @@ export default function Cart() {
                 <span className="font-headline font-black text-base uppercase tracking-tighter">Total</span>
                 <span className="font-headline font-black text-xl tracking-tighter">{fmt(total)}</span>
               </div>
-              <button className="w-full bg-primary text-on-primary py-4 font-headline font-bold text-[11px] tracking-[0.2em] uppercase hover:bg-neutral-800 flex justify-center items-center gap-3">
+              <button className="w-full fo-btn py-4 font-headline font-bold text-[11px] tracking-[0.2em] uppercase flex justify-center items-center gap-3">
                 Passer au paiement
                 <span className="material-symbols-outlined text-sm">arrow_forward</span>
               </button>

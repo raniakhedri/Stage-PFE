@@ -37,6 +37,15 @@ public class CollectionService {
                 .toList();
     }
 
+    // ── Get homepage bento collections (public) ───────────────────────
+    @Transactional(readOnly = true)
+    public List<CollectionResponse> getHomepageCollections() {
+        return collectionRepository.findAll().stream()
+                .filter(c -> c.getHomepagePosition() != null && !c.getHomepagePosition().isBlank())
+                .map(this::mapToResponse)
+                .toList();
+    }
+
     // ── Get collection by ID ───────────────────────────────────────────
     @Transactional(readOnly = true)
     public CollectionResponse getCollectionById(Long id) {
@@ -74,6 +83,7 @@ public class CollectionService {
                 .dateFin(request.getDateFin())
                 .menuFeatured(request.isMenuFeatured())
                 .menuParentCategory(request.getMenuParentCategory())
+                .homepagePosition(request.getHomepagePosition())
                 .linkedCategories(joinCategories(request.getLinkedCategories()))
                 .metaTitle(request.getMetaTitle())
                 .metaDescription(request.getMetaDescription())
@@ -113,6 +123,7 @@ public class CollectionService {
         collection.setDateFin(request.getDateFin());
         collection.setMenuFeatured(request.isMenuFeatured());
         collection.setMenuParentCategory(request.getMenuParentCategory());
+        collection.setHomepagePosition(request.getHomepagePosition());
         collection.setLinkedCategories(joinCategories(request.getLinkedCategories()));
         collection.setMetaTitle(request.getMetaTitle());
         collection.setMetaDescription(request.getMetaDescription());
@@ -179,6 +190,7 @@ public class CollectionService {
                 .dateFin(c.getDateFin())
                 .menuFeatured(c.isMenuFeatured())
                 .menuParentCategory(c.getMenuParentCategory())
+                .homepagePosition(c.getHomepagePosition())
                 .linkedCategories(splitCategories(c.getLinkedCategories()))
                 .metaTitle(c.getMetaTitle())
                 .metaDescription(c.getMetaDescription())

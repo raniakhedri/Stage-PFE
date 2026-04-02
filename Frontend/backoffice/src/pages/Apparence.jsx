@@ -223,10 +223,13 @@ const DEFAULTS = {
   whatsapp: '',
   logoMain: '',
   logoLight: '',
+  logoNavbar: '',
   logoScale: 100,
   logoAlign: 'left',
   favicon: '',
   loader: '',
+  buttonHoverColor: '',
+  buttonTextColor: '#ffffff',
 }
 
 const SCOPE_TABS = [
@@ -403,71 +406,80 @@ export default function Apparence() {
             {/* ════════════ LEFT COLUMN ════════════ */}
             <div className="col-span-12 lg:col-span-8 space-y-8">
 
-              {/* ── Couleurs ──────────────────────── */}
+              {/* ── Couleurs (BO only) ────────────────── */}
+              {activeScope === 'backoffice' && (
               <SectionCard icon="palette" title="Couleurs">
                 <div className="space-y-6">
-                  {/* — Row 1: Boutons + Sidebar — */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <ColorPicker
-                      label="Boutons"
-                      sub="Boutons d'action principaux"
-                      value={current.buttonColor}
-                      onChange={set('buttonColor')}
-                    />
-                    <ColorPicker
-                      label="Sidebar"
-                      sub="Menu latéral, icônes actives"
-                      value={current.sidebarColor}
-                      onChange={set('sidebarColor')}
-                    />
-                  </div>
-                  {/* — Row 2: Badges + Général — */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <ColorPicker
-                      label="Badges &amp; Étiquettes"
-                      sub="Tags, collections, statuts"
-                      value={current.badgeColor}
-                      onChange={set('badgeColor')}
-                    />
-                    <ColorPicker
-                      label="Accent général"
-                      sub="Focus, liens, divers"
-                      value={current.primaryColor}
-                      onChange={set('primaryColor')}
-                    />
-                  </div>
+                  {activeScope === 'backoffice' ? (
+                    <>
+                      {/* — BO: Boutons + Sidebar — */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <ColorPicker label="Boutons" sub="Boutons d'action principaux" value={current.buttonColor} onChange={set('buttonColor')} />
+                        <ColorPicker label="Sidebar" sub="Menu latéral, icônes actives" value={current.sidebarColor} onChange={set('sidebarColor')} />
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <ColorPicker label="Badges &amp; Étiquettes" sub="Tags, collections, statuts" value={current.badgeColor} onChange={set('badgeColor')} />
+                        <ColorPicker label="Accent général" sub="Focus, liens, divers" value={current.primaryColor} onChange={set('primaryColor')} />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {/* — FO: Boutons CTA + Accent marque — */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <ColorPicker label="Couleur boutons CTA" sub="Fond des boutons (panier, CTA…)" value={current.buttonColor} onChange={set('buttonColor')} />
+                        <ColorPicker label="Couleur de marque" sub="Logo, liens, accents" value={current.primaryColor} onChange={set('primaryColor')} />
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <ColorPicker label="Survol des boutons" sub="Fond au survol (vide = auto –15%)" value={current.buttonHoverColor} onChange={set('buttonHoverColor')} />
+                        <ColorPicker label="Texte des boutons" sub="Couleur du texte dans les boutons" value={current.buttonTextColor} onChange={set('buttonTextColor')} />
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <ColorPicker label="Badges &amp; Promotions" sub="Tags, collections, étiquettes" value={current.badgeColor} onChange={set('badgeColor')} />
+                      </div>
+                    </>
+                  )}
                   {/* — Live mini-preview — */}
                   <div className="bg-slate-50 rounded-xl p-5 border border-slate-100">
                     <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-3">Aperçu</p>
                     <div className="flex flex-wrap items-center gap-3">
                       <button
-                        className="text-white px-5 py-2 rounded-lg text-xs font-bold shadow-sm"
-                        style={{ backgroundColor: current.buttonColor }}
+                        className="px-5 py-2 rounded-lg text-xs font-bold shadow-sm transition-colors"
+                        style={{
+                          backgroundColor: current.buttonColor,
+                          color: activeScope === 'frontoffice' ? (current.buttonTextColor || '#ffffff') : '#ffffff',
+                        }}
+                        onMouseEnter={e => { if (activeScope === 'frontoffice') e.currentTarget.style.backgroundColor = current.buttonHoverColor || current.buttonColor }}
+                        onMouseLeave={e => e.currentTarget.style.backgroundColor = current.buttonColor}
                       >
-                        Bouton
+                        {activeScope === 'frontoffice' ? 'Ajouter au panier' : 'Bouton'}
                       </button>
-                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold"
-                        style={{ backgroundColor: current.sidebarColor + '1A', color: current.sidebarColor }}>
-                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: current.sidebarColor }} />
-                        Menu actif
-                      </div>
+                      {activeScope === 'backoffice' && (
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold"
+                          style={{ backgroundColor: current.sidebarColor + '1A', color: current.sidebarColor }}>
+                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: current.sidebarColor }} />
+                          Menu actif
+                        </div>
+                      )}
+                      {activeScope === 'frontoffice' && (
+                        <span className="text-sm font-black tracking-widest uppercase" style={{ color: current.primaryColor }}>
+                          GMIR
+                        </span>
+                      )}
                       <span className="px-3 py-1 text-[10px] font-bold rounded-full uppercase"
                         style={{ backgroundColor: current.badgeColor + '1A', color: current.badgeColor }}>
                         Summer 2026
                       </span>
-                      <span className="px-3 py-1 text-[10px] font-bold rounded-full uppercase"
-                        style={{ backgroundColor: current.badgeColor + '1A', color: current.badgeColor }}>
-                        Best Sellers
-                      </span>
                       <span className="text-xs font-semibold underline" style={{ color: current.primaryColor }}>
-                        Lien accent
+                        {activeScope === 'frontoffice' ? 'Voir la collection' : 'Lien accent'}
                       </span>
                     </div>
                   </div>
                 </div>
               </SectionCard>
+              )}
 
-              {/* ── Typographie ────────────────────── */}
+              {/* ── Typographie (BO only) ─────────────── */}
+              {activeScope === 'backoffice' && (
               <SectionCard icon="text_fields" title="Typographie">
                 <div className="space-y-6">
                   {/* — Row 1: Titres + Corps de texte — */}
@@ -503,24 +515,26 @@ export default function Apparence() {
                       </p>
                     </div>
                   </div>
-                  {/* — Row 2: Sidebar + Boutons — */}
+                  {/* — Row 2: Sidebar (BO only) + Boutons — */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="material-symbols-outlined text-brand text-base">menu</span>
-                        <p className="text-sm font-bold text-slate-800">Sidebar &amp; Navigation</p>
+                    {activeScope === 'backoffice' && (
+                      <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="material-symbols-outlined text-brand text-base">menu</span>
+                          <p className="text-sm font-bold text-slate-800">Sidebar &amp; Navigation</p>
+                        </div>
+                        <p className="text-[11px] text-slate-500">Menu latéral, liens de navigation</p>
+                        <CustomSelect
+                          value={current.fontSidebar}
+                          onChange={set('fontSidebar')}
+                          options={FONT_OPTIONS}
+                        />
+                        <div className="flex items-center gap-2 text-sm text-slate-700" style={{ fontFamily: current.fontSidebar }}>
+                          <span className="material-symbols-outlined text-base text-brand">dashboard</span>
+                          Dashboard
+                        </div>
                       </div>
-                      <p className="text-[11px] text-slate-500">Menu latéral, liens de navigation</p>
-                      <CustomSelect
-                        value={current.fontSidebar}
-                        onChange={set('fontSidebar')}
-                        options={FONT_OPTIONS}
-                      />
-                      <div className="flex items-center gap-2 text-sm text-slate-700" style={{ fontFamily: current.fontSidebar }}>
-                        <span className="material-symbols-outlined text-base text-brand">dashboard</span>
-                        Dashboard
-                      </div>
-                    </div>
+                    )}
                     <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="material-symbols-outlined text-brand text-base">smart_button</span>
@@ -534,7 +548,7 @@ export default function Apparence() {
                       />
                       <div className="flex gap-2">
                         <span className="px-4 py-1.5 text-xs font-bold text-white rounded-lg" style={{ fontFamily: current.fontButton, backgroundColor: current.buttonColor }}>
-                          Enregistrer
+                          {activeScope === 'frontoffice' ? 'Explorer' : 'Enregistrer'}
                         </span>
                         <span className="px-4 py-1.5 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-lg" style={{ fontFamily: current.fontButton }}>
                           Annuler
@@ -571,14 +585,14 @@ export default function Apparence() {
                     <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-4">
                       <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Aperçu combiné</p>
                       <p className="font-bold text-slate-900" style={{ fontFamily: current.fontPrimary }}>
-                        Commandes récentes
+                        {activeScope === 'frontoffice' ? 'NOUVELLE COLLECTION' : 'Commandes récentes'}
                       </p>
                       <p className="text-xs text-slate-500" style={{ fontFamily: current.fontSecondary }}>
-                        Gérez et suivez les commandes de vos clients.
+                        {activeScope === 'frontoffice' ? 'Découvrez la saison été 2026.' : 'Gérez et suivez les commandes.'}
                       </p>
                       <div className="flex items-center gap-2">
                         <span className="px-3 py-1 text-[10px] font-bold text-white rounded-lg" style={{ fontFamily: current.fontButton, backgroundColor: current.buttonColor }}>
-                          Ajouter
+                          {activeScope === 'frontoffice' ? 'Explorer' : 'Ajouter'}
                         </span>
                         <span className="px-2 py-0.5 text-[9px] font-bold uppercase rounded-full" style={{ fontFamily: current.fontBadge, backgroundColor: current.badgeColor + '1A', color: current.badgeColor }}>
                           Best Sellers
@@ -591,15 +605,18 @@ export default function Apparence() {
                     </div>
                   </div>
                 </div>
-              </SectionCard>
-
+              </SectionCard>              )}
               {/* ── Logos ──────────────────────────── */}
               <SectionCard icon="image" title="Logos &amp; Iconographie">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {[
-                    { field: 'logoMain', icon: 'cloud_upload',    label: 'Logo Principal', sub: 'SVG, PNG (max 2MB)' },
-                    { field: 'logoLight', icon: 'brightness_high', label: 'Logo Mode Sombre', sub: 'Version claire pour fond sombre' },
-                  ].map((item) => (
+                <div className={`grid grid-cols-1 gap-4 ${activeScope === 'frontoffice' ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
+                  {(activeScope === 'frontoffice' ? [
+                    { field: 'logoMain',  icon: 'cloud_upload',    label: 'Logo Principal',    sub: 'SVG, PNG — version par défaut' },
+                    { field: 'logoNavbar', icon: 'view_compact',   label: 'Logo Navbar',        sub: 'Affiché dans la barre de navigation (remplace le principal)' },
+                    { field: 'logoLight', icon: 'brightness_high', label: 'Logo Transparent',   sub: 'Affiché quand le header est sur fond sombre (hero)' },
+                  ] : [
+                    { field: 'logoMain',  icon: 'cloud_upload',    label: 'Logo Principal',     sub: 'SVG, PNG (max 2MB)' },
+                    { field: 'logoLight', icon: 'brightness_high', label: 'Logo Mode Sombre',   sub: 'Version claire pour fond sombre' },
+                  ]).map((item) => (
                     <LogoUpload
                       key={item.field}
                       icon={item.icon}
@@ -611,8 +628,8 @@ export default function Apparence() {
                   ))}
                 </div>
 
-                {/* ── Logo Scale Slider ──────────────────── */}
-                {current.logoMain && (
+                {/* ── Logo Scale Slider (BO only) ────────────────── */}
+                {activeScope === 'backoffice' && current.logoMain && (
                   <div className="mt-6 pt-6 border-t border-slate-100">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
@@ -763,7 +780,8 @@ export default function Apparence() {
                 </section>
               )}
 
-              {/* ── Avancé ───────────────────────── */}
+              {/* ── Avancé (BO only) ────────────────── */}
+              {activeScope === 'backoffice' && (
               <section className="bg-white rounded-custom border border-slate-200 p-6 shadow-sm">
                 <h3 className="text-xs font-bold mb-5 uppercase text-slate-400 tracking-widest">
                   Avancé
@@ -804,6 +822,7 @@ export default function Apparence() {
                   </div>
                 </div>
               </section>
+              )}
 
             </div>
 
@@ -823,8 +842,114 @@ export default function Apparence() {
                   </div>
 
                   <div className="p-5 space-y-5 bg-slate-50">
-                    {/* Sample Card */}
-                    <div className="bg-white border border-slate-200 shadow-sm p-4 space-y-3" style={{ borderRadius: `${current.borderRadius}px` }}>
+
+                    {activeScope === 'frontoffice' ? (
+                      /* ── FO: Realistic navbar preview ── */
+                      <div className="space-y-3">
+                        {/* Browser chrome */}
+                        <div className="bg-slate-200 rounded-t-lg px-3 py-2 flex items-center gap-2">
+                          <div className="flex gap-1">
+                            <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
+                            <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
+                            <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
+                          </div>
+                          <div className="flex-1 bg-white rounded px-2 py-0.5 text-[9px] text-slate-400 font-mono truncate">
+                            localhost:3001
+                          </div>
+                        </div>
+
+                        {/* Navbar — solid (scrolled) */}
+                        <div>
+                          <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Navigation (défilée)</p>
+                          <div className="bg-white border border-slate-200 shadow-sm px-4 py-3 flex items-center justify-between">
+                            {/* Left — search icon */}
+                            <div className="flex items-center gap-1.5 flex-1">
+                              <span className="material-symbols-outlined text-slate-500" style={{ fontSize: 14 }}>search</span>
+                              <span className="text-[8px] text-slate-300 uppercase tracking-widest hidden sm:inline">SEARCH</span>
+                            </div>
+                            {/* Center — Logo */}
+                            <div className="flex flex-col items-center gap-0.5 flex-1 justify-center">
+                              {(current.logoNavbar || current.logoMain) ? (
+                                <img
+                                  src={current.logoNavbar || current.logoMain}
+                                  alt={current.brandName || 'Logo'}
+                                  className="h-8 w-auto object-contain"
+                                />
+                              ) : (
+                                <>
+                                  <span className="font-black tracking-[0.15em] uppercase text-[11px]" style={{ color: '#005b3d' }}>
+                                    {current.brandName || 'GMIR'}
+                                  </span>
+                                  <span className="text-[7px] tracking-[0.3em] uppercase" style={{ color: '#005b3d' }}>
+                                    {current.slogan || 'JEWELRY'}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                            {/* Right — icons */}
+                            <div className="flex items-center gap-2 flex-1 justify-end">
+                              <span className="material-symbols-outlined text-slate-500" style={{ fontSize: 14 }}>person</span>
+                              <span className="material-symbols-outlined text-slate-500" style={{ fontSize: 14 }}>shopping_bag</span>
+                              <span className="material-symbols-outlined text-slate-500" style={{ fontSize: 14 }}>menu</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Navbar — transparent (hero) */}
+                        <div>
+                          <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Navigation (hero — transparente)</p>
+                          <div className="relative overflow-hidden rounded" style={{ height: 64 }}>
+                            {/* Hero background */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-stone-700 to-stone-500" />
+                            <div className="relative z-10 px-4 h-full flex items-center justify-between">
+                              {/* Left */}
+                              <div className="flex items-center gap-1.5 flex-1">
+                                <span className="material-symbols-outlined text-white/80" style={{ fontSize: 14 }}>search</span>
+                                <span className="text-[8px] text-white/40 uppercase tracking-widest hidden sm:inline">SEARCH</span>
+                              </div>
+                              {/* Center */}
+                              <div className="flex flex-col items-center gap-0.5 flex-1 justify-center">
+                                {(current.logoLight || current.logoNavbar || current.logoMain) ? (
+                                  <img
+                                    src={current.logoLight || current.logoNavbar || current.logoMain}
+                                    alt={current.brandName || 'Logo'}
+                                    className="h-8 w-auto object-contain"
+                                  />
+                                ) : (
+                                  <>
+                                    <span className="font-black tracking-[0.15em] uppercase text-[11px] text-white">
+                                      {current.brandName || 'GMIR'}
+                                    </span>
+                                    <span className="text-[7px] tracking-[0.3em] uppercase text-white/70">
+                                      {current.slogan || 'JEWELRY'}
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                              {/* Right */}
+                              <div className="flex items-center gap-2 flex-1 justify-end">
+                                <span className="material-symbols-outlined text-white/80" style={{ fontSize: 14 }}>person</span>
+                                <span className="material-symbols-outlined text-white/80" style={{ fontSize: 14 }}>shopping_bag</span>
+                                <span className="material-symbols-outlined text-white/80" style={{ fontSize: 14 }}>menu</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Brand info */}
+                        {(current.brandName || current.slogan) && (
+                          <div className="bg-white border border-slate-100 rounded-lg px-4 py-3 space-y-1">
+                            <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-2">Identité</p>
+                            {current.brandName && <p className="text-sm font-black tracking-widest uppercase" style={{ color: '#005b3d' }}>{current.brandName}</p>}
+                            {current.slogan && <p className="text-[10px] tracking-[0.25em] uppercase text-slate-400">{current.slogan}</p>}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      /* ── BO: default component preview ── */
+                      <>
+                      {/* Sample Card */}
+                      <div className="bg-white border border-slate-200 shadow-sm p-4 space-y-3" style={{ borderRadius: `${current.borderRadius}px` }}>
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-bold text-slate-800 font-heading">Carte exemple</span>
                         <span
@@ -940,6 +1065,8 @@ export default function Apparence() {
                         </div>
                       </div>
                     </div>
+                    </>
+                    )}
                   </div>
                 </section>
 

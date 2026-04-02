@@ -4,21 +4,30 @@ import { toast } from 'react-toastify'
 import KpiCard from '../components/ui/KpiCard'
 import PageHeader from '../components/ui/PageHeader'
 import CustomSelect from '../components/ui/CustomSelect'
+import { bannerApi } from '../api/bannerApi'
 
-// ── Mock Data ──────────────────────────────────────────────────────────────────
+// ── Enums → Display helpers ─────────────────────────────────────────────────
 const positionColors = {
-  'Homepage Hero': 'bg-indigo-50 text-indigo-700 border-indigo-100',
-  'Section Promo': 'bg-amber-50 text-amber-700 border-amber-100',
-  'Popup':         'bg-pink-50 text-pink-700 border-pink-100',
-  'Page Catégorie':'bg-cyan-50 text-cyan-700 border-cyan-100',
-  'Footer':        'bg-slate-100 text-slate-600 border-slate-200',
+  'HOMEPAGE_HERO': 'bg-indigo-50 text-indigo-700 border-indigo-100',
+  'SECTION_PROMO': 'bg-amber-50 text-amber-700 border-amber-100',
+  'POPUP':         'bg-pink-50 text-pink-700 border-pink-100',
+  'PAGE_CATEGORIE':'bg-cyan-50 text-cyan-700 border-cyan-100',
+  'FOOTER':        'bg-slate-100 text-slate-600 border-slate-200',
 }
 
 const statutConfig = {
-  'Actif':      { bg: 'bg-badge/10 text-badge', dot: 'bg-badge' },
-  'Programmé':  { bg: 'bg-blue-100 text-blue-700',       dot: 'bg-blue-500' },
-  'Expiré':     { bg: 'bg-slate-100 text-slate-500',     dot: 'bg-slate-400' },
-  'Brouillon':  { bg: 'bg-yellow-100 text-yellow-700',   dot: 'bg-yellow-500' },
+  'ACTIF':      { bg: 'bg-badge/10 text-badge',           dot: 'bg-badge' },
+  'PROGRAMME':  { bg: 'bg-blue-100 text-blue-700',        dot: 'bg-blue-500' },
+  'EXPIRE':     { bg: 'bg-slate-100 text-slate-500',      dot: 'bg-slate-400' },
+  'BROUILLON':  { bg: 'bg-yellow-100 text-yellow-700',    dot: 'bg-yellow-500' },
+}
+
+const audienceBadge = {
+  'ALL':     'bg-slate-100 text-slate-600',
+  'VIP':     'bg-amber-50 text-amber-700 border border-amber-100',
+  'NOUVEAU': 'bg-blue-50 text-blue-700 border border-blue-100',
+  'FIDELE':  'bg-green-50 text-green-700 border border-green-100',
+  'INACTIF': 'bg-gray-100 text-gray-500',
 }
 
 const prioriteConfig = {
@@ -27,133 +36,27 @@ const prioriteConfig = {
   3: { label: 'Faible',  icon: 'south',                 color: 'text-slate-400' },
 }
 
-const mockBannieres = [
-  {
-    id: 1,
-    titre: 'Summer Industrial Essentials',
-    sousTitre: 'Collection Éclat d\'Été 2024',
-    image: 'summer-industrial.jpg',
-    position: 'Homepage Hero',
-    ciblage: ['Desktop', 'Mobile'],
-    audience: 'B2B Clients',
-    priorite: 1,
-    statut: 'Actif',
-    dateDebut: '24 Oct 2023',
-    dateFin: 'Indéfini',
-    vues: 12500,
-    clics: 820,
-    ctr: 6.56,
-    ctaTexte: 'Découvrir',
-    ctaType: 'catégorie',
-    actif: true,
-    abTest: true,
-  },
-  {
-    id: 2,
-    titre: 'Heavy Duty Accessories',
-    sousTitre: 'Protection & Durabilité Extrême',
-    image: 'heavy-duty.jpg',
-    position: 'Section Promo',
-    ciblage: ['Desktop'],
-    audience: 'Tous Clients',
-    priorite: 2,
-    statut: 'Programmé',
-    dateDebut: '01 Nov 2023',
-    dateFin: '15 Déc 2023',
-    vues: 0,
-    clics: 0,
-    ctr: 0,
-    ctaTexte: 'Acheter',
-    ctaType: 'produit',
-    actif: true,
-    abTest: false,
-  },
-  {
-    id: 3,
-    titre: 'Flash Sale Winter 23',
-    sousTitre: 'Campagne Hiver Passée',
-    image: 'winter-flash.jpg',
-    position: 'Popup',
-    ciblage: ['Mobile'],
-    audience: 'Nouveaux Clients',
-    priorite: 3,
-    statut: 'Expiré',
-    dateDebut: '01 Sep 2023',
-    dateFin: '15 Sep 2023',
-    vues: 7500,
-    clics: 38,
-    ctr: 0.51,
-    ctaTexte: 'Shop Now',
-    ctaType: 'lien externe',
-    actif: false,
-    abTest: false,
-  },
-  {
-    id: 4,
-    titre: 'Rentrée Pro 2024',
-    sousTitre: 'Équipez vos équipes à prix réduit',
-    image: 'rentree-pro.jpg',
-    position: 'Homepage Hero',
-    ciblage: ['Desktop', 'Mobile'],
-    audience: 'Clients VIP',
-    priorite: 1,
-    statut: 'Actif',
-    dateDebut: '01 Sep 2024',
-    dateFin: '31 Oct 2024',
-    vues: 9800,
-    clics: 610,
-    ctr: 6.22,
-    ctaTexte: 'Voir la collection',
-    ctaType: 'catégorie',
-    actif: true,
-    abTest: true,
-  },
-  {
-    id: 5,
-    titre: 'Promo Chaussures Sécurité',
-    sousTitre: '-30% sur toute la gamme',
-    image: 'chaussures-secu.jpg',
-    position: 'Page Catégorie',
-    ciblage: ['Desktop'],
-    audience: 'Tous Clients',
-    priorite: 2,
-    statut: 'Brouillon',
-    dateDebut: '',
-    dateFin: '',
-    vues: 0,
-    clics: 0,
-    ctr: 0,
-    ctaTexte: 'Acheter maintenant',
-    ctaType: 'catégorie',
-    actif: false,
-    abTest: false,
-  },
-  {
-    id: 6,
-    titre: 'Black Friday Workwear',
-    sousTitre: 'Offres exclusives -50%',
-    image: 'black-friday.jpg',
-    position: 'Section Promo',
-    ciblage: ['Desktop', 'Mobile'],
-    audience: 'Tous Clients',
-    priorite: 1,
-    statut: 'Programmé',
-    dateDebut: '25 Nov 2024',
-    dateFin: '02 Déc 2024',
-    vues: 0,
-    clics: 0,
-    ctr: 0,
-    ctaTexte: 'Profiter',
-    ctaType: 'produit',
-    actif: true,
-    abTest: false,
-  },
+const statutOptions = [
+  { value: '', label: 'Tous les statuts' },
+  { value: 'ACTIF', label: 'Actif' },
+  { value: 'PROGRAMME', label: 'Programmé' },
+  { value: 'EXPIRE', label: 'Expiré' },
+  { value: 'BROUILLON', label: 'Brouillon' },
 ]
-
-const statutOptions = ['Tous les statuts', 'Actif', 'Programmé', 'Expiré', 'Brouillon']
-const positionOptions = ['Toutes positions', 'Homepage Hero', 'Section Promo', 'Popup', 'Page Catégorie', 'Footer']
-const ctaTypeOptions = ['Tous les CTA', 'produit', 'catégorie', 'lien externe']
-const periodeOptions = ['Toutes les dates', 'Actif maintenant', 'Prochaine semaine', 'Ce mois']
+const positionOptions = [
+  { value: '', label: 'Toutes positions' },
+  { value: 'HOMEPAGE_HERO', label: 'Homepage Hero' },
+  { value: 'SECTION_PROMO', label: 'Section Promo' },
+  { value: 'POPUP', label: 'Popup' },
+  { value: 'PAGE_CATEGORIE', label: 'Page Catégorie' },
+  { value: 'FOOTER', label: 'Footer' },
+]
+const periodeOptions = [
+  { value: '', label: 'Toutes les dates' },
+  { value: 'now', label: 'Actif maintenant' },
+  { value: 'week', label: 'Prochaine semaine' },
+  { value: 'month', label: 'Ce mois' },
+]
 
 // ── Component ──────────────────────────────────────────────────────────────────
 export default function Bannieres() {
@@ -161,13 +64,13 @@ export default function Bannieres() {
 
   // Filters
   const [search, setSearch] = useState('')
-  const [filterStatut, setFilterStatut] = useState('Tous les statuts')
-  const [filterPosition, setFilterPosition] = useState('Toutes positions')
-  const [filterCta, setFilterCta] = useState('Tous les CTA')
-  const [filterPeriode, setFilterPeriode] = useState('Toutes les dates')
+  const [filterStatut, setFilterStatut] = useState('')
+  const [filterPosition, setFilterPosition] = useState('')
+  const [filterPeriode, setFilterPeriode] = useState('')
 
   // Data state
-  const [bannieres, setBannieres] = useState(mockBannieres)
+  const [bannieres, setBannieres] = useState([])
+  const [loading, setLoading] = useState(true)
   const [dragIdx, setDragIdx] = useState(null)
   const [overIdx, setOverIdx] = useState(null)
 
@@ -181,61 +84,73 @@ export default function Bannieres() {
   const [page, setPage] = useState(1)
   const perPage = 10
 
+  // ── Fetch banners ─────────────────────────────────────────────────────────
+  const fetchBanners = async () => {
+    try {
+      setLoading(true)
+      const list = await bannerApi.getAll()
+      setBannieres(list)
+    } catch {
+      toast.error('Erreur lors du chargement des bannières')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { fetchBanners() }, [])
+
   // Filtered
   const filtered = bannieres.filter((b) => {
-    if (search && !b.titre.toLowerCase().includes(search.toLowerCase()) && !b.position.toLowerCase().includes(search.toLowerCase())) return false
-    if (filterStatut !== 'Tous les statuts' && b.statut !== filterStatut) return false
-    if (filterPosition !== 'Toutes positions' && b.position !== filterPosition) return false
-    if (filterCta !== 'Tous les CTA' && b.ctaType !== filterCta) return false
+    if (search && !b.titre.toLowerCase().includes(search.toLowerCase()) && !(b.positionLabel || b.position).toLowerCase().includes(search.toLowerCase())) return false
+    if (filterStatut && b.statut !== filterStatut) return false
+    if (filterPosition && b.position !== filterPosition) return false
+    if (filterPeriode === 'now') {
+      const today = new Date()
+      const start = b.dateDebut ? new Date(b.dateDebut) : null
+      const end = b.dateFin ? new Date(b.dateFin) : null
+      if (start && today < start) return false
+      if (end && today > end) return false
+    }
     return true
   })
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage))
   const paginated = filtered.slice((page - 1) * perPage, page * perPage)
 
   // KPIs
-  const actives = bannieres.filter((b) => b.statut === 'Actif').length
-  const programmees = bannieres.filter((b) => b.statut === 'Programmé').length
-  const expirees = bannieres.filter((b) => b.statut === 'Expiré').length
+  const actives    = bannieres.filter((b) => b.statut === 'ACTIF').length
+  const programmees = bannieres.filter((b) => b.statut === 'PROGRAMME').length
+  const expirees   = bannieres.filter((b) => b.statut === 'EXPIRE').length
 
-  // Smart Insights
-  const sorted = [...bannieres].filter((b) => b.vues > 0).sort((a, b) => b.ctr - a.ctr)
-  const best = sorted[0] || null
-  const worst = sorted[sorted.length - 1] || null
+  // Smart Insights — best priorité=1 active, next scheduled
+  const bestActive  = bannieres.find((b) => b.statut === 'ACTIF' && b.priorite === 1) || bannieres.find((b) => b.statut === 'ACTIF') || null
+  const nextSched   = bannieres.find((b) => b.statut === 'PROGRAMME') || null
 
   // Toggle actif
-  const toggleActif = (id) => {
-    setBannieres((prev) => prev.map((b) => b.id === id ? { ...b, actif: !b.actif } : b))
-    toast.success('Statut mis à jour')
-  }
-
-  // Duplicate
-  const dupliquer = (id) => {
-    const original = bannieres.find((b) => b.id === id)
-    if (!original) return
-    const copy = { ...original, id: Date.now(), titre: original.titre + ' (copie)', vues: 0, clics: 0, ctr: 0, statut: 'Brouillon', actif: false }
-    setBannieres((prev) => [...prev, copy])
-    toast.success('Bannière dupliquée')
+  const toggleActif = async (id) => {
+    try {
+      const updated = await bannerApi.toggleActif(id)
+      setBannieres((prev) => prev.map((b) => b.id === id ? { ...b, actif: updated.actif } : b))
+      toast.success('Statut mis à jour')
+    } catch {
+      toast.error('Erreur lors de la mise à jour')
+    }
   }
 
   // Delete
-  const supprimer = (id) => {
-    setBannieres((prev) => prev.filter((b) => b.id !== id))
-    toast.success('Bannière supprimée')
+  const supprimer = async (id) => {
+    if (!window.confirm('Supprimer cette bannière ?')) return
+    try {
+      await bannerApi.remove(id)
+      setBannieres((prev) => prev.filter((b) => b.id !== id))
+      toast.success('Bannière supprimée')
+    } catch {
+      toast.error('Erreur lors de la suppression')
+    }
   }
 
-  // Drag & Drop reorder
+  // Drag & Drop reorder (local visual-only)
   const handleDragStart = (idx) => setDragIdx(idx)
   const handleDragOver = (e, idx) => { e.preventDefault(); setOverIdx(idx) }
-  const handleDrop = (idx) => {
-    if (dragIdx === null || dragIdx === idx) { setDragIdx(null); setOverIdx(null); return }
-    const reordered = [...bannieres]
-    const [removed] = reordered.splice(dragIdx, 1)
-    reordered.splice(idx, 0, removed)
-    setBannieres(reordered)
-    setDragIdx(null)
-    setOverIdx(null)
-    toast.success('Ordre mis à jour')
-  }
   const handleDragEnd = () => { setDragIdx(null); setOverIdx(null) }
 
   // Hover preview
@@ -245,11 +160,6 @@ export default function Bannieres() {
     setHoverBanner(b)
   }
   const handleImageMouseLeave = () => setHoverBanner(null)
-
-  // Reset filters
-  const resetFilters = () => {
-    setSearch(''); setFilterStatut('Tous les statuts'); setFilterPosition('Toutes positions'); setFilterCta('Tous les CTA'); setFilterPeriode('Toutes les dates')
-  }
 
   // Close modal on escape
   useEffect(() => {
@@ -271,8 +181,8 @@ export default function Bannieres() {
 
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <KpiCard label="Bannières Actives" value={actives} sub={`+2 ce mois`} subColor="text-brand" icon="check_circle" iconBg="bg-badge/10 text-badge" progress={75} progressColor="bg-brand" />
-        <KpiCard label="Programmées" value={String(programmees).padStart(2, '0')} sub="Prochaine: Lundi" subColor="text-blue-600" icon="schedule" iconBg="bg-blue-50 text-blue-600" progress={30} progressColor="bg-blue-500" />
+        <KpiCard label="Bannières Actives" value={actives} sub={`${bannieres.length} au total`} subColor="text-brand" icon="check_circle" iconBg="bg-badge/10 text-badge" progress={bannieres.length ? Math.round(actives / bannieres.length * 100) : 0} progressColor="bg-brand" />
+        <KpiCard label="Programmées" value={String(programmees).padStart(2, '0')} sub={nextSched ? `Prochaine: ${nextSched.titre.slice(0, 20)}` : 'Aucune planifiée'} subColor="text-blue-600" icon="schedule" iconBg="bg-blue-50 text-blue-600" progress={30} progressColor="bg-blue-500" />
         <KpiCard label="Expirées" value={expirees} sub="Archivées" subColor="text-slate-400" icon="history" iconBg="bg-slate-100 text-slate-500" progress={100} progressColor="bg-slate-400" />
       </div>
 
@@ -283,36 +193,42 @@ export default function Bannieres() {
           <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Smart Insights</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {best && (
+          {bestActive ? (
             <div className="bg-white rounded-lg border border-slate-200 p-4 flex items-start gap-3">
               <div className="p-2 bg-brand/5 rounded-lg">
                 <span className="material-symbols-outlined text-brand">emoji_events</span>
               </div>
               <div>
-                <p className="text-[10px] font-bold text-brand uppercase tracking-wider">Meilleure bannière</p>
-                <p className="text-sm font-bold text-slate-800 mt-0.5">{best.titre}</p>
+                <p className="text-[10px] font-bold text-brand uppercase tracking-wider">Bannière prioritaire active</p>
+                <p className="text-sm font-bold text-slate-800 mt-0.5">{bestActive.titre}</p>
                 <div className="flex items-center gap-3 mt-1">
-                  <span className="text-xs text-slate-500">CTR: <span className="font-bold text-brand">{best.ctr}%</span></span>
-                  <span className="text-xs text-slate-500">{best.clics.toLocaleString()} clics</span>
-                  <span className="text-xs text-slate-500">{best.vues.toLocaleString()} vues</span>
+                  <span className="text-xs text-slate-500">Position: <span className="font-bold text-slate-700">{bestActive.positionLabel}</span></span>
+                  <span className="text-xs text-slate-500">Audience: <span className="font-bold text-slate-700">{bestActive.audienceLabel}</span></span>
                 </div>
               </div>
             </div>
+          ) : (
+            <div className="bg-white rounded-lg border border-dashed border-slate-200 p-4 flex items-center justify-center text-slate-300 text-xs">
+              Aucune bannière active
+            </div>
           )}
-          {worst && worst.id !== best?.id && (
+          {nextSched ? (
             <div className="bg-white rounded-lg border border-slate-200 p-4 flex items-start gap-3">
-              <div className="p-2 bg-amber-50 rounded-lg">
-                <span className="material-symbols-outlined text-amber-600">warning</span>
+              <div className="p-2 bg-blue-50 rounded-lg">
+                <span className="material-symbols-outlined text-blue-600">schedule</span>
               </div>
               <div>
-                <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">À améliorer</p>
-                <p className="text-sm font-bold text-slate-800 mt-0.5">{worst.titre}</p>
+                <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Prochaine bannière programmée</p>
+                <p className="text-sm font-bold text-slate-800 mt-0.5">{nextSched.titre}</p>
                 <div className="flex items-center gap-3 mt-1">
-                  <span className="text-xs text-slate-500">CTR: <span className="font-bold text-red-500">{worst.ctr}%</span></span>
-                  <span className="text-xs text-slate-500">{worst.clics.toLocaleString()} clics</span>
-                  <span className="text-xs text-slate-500">{worst.vues.toLocaleString()} vues</span>
+                  <span className="text-xs text-slate-500">Début: <span className="font-bold text-slate-700">{nextSched.dateDebut || '—'}</span></span>
+                  <span className="text-xs text-slate-500">Fin: <span className="font-bold text-slate-700">{nextSched.dateFin || '—'}</span></span>
                 </div>
               </div>
+            </div>
+          ) : (
+            <div className="bg-white rounded-lg border border-dashed border-slate-200 p-4 flex items-center justify-center text-slate-300 text-xs">
+              Aucune bannière programmée
             </div>
           )}
         </div>
@@ -336,9 +252,8 @@ export default function Bannieres() {
           <div className="flex flex-wrap gap-3">
           <CustomSelect value={filterStatut} onChange={setFilterStatut} options={statutOptions} size="sm" className="min-w-[150px]" />
           <CustomSelect value={filterPosition} onChange={setFilterPosition} options={positionOptions} size="sm" className="min-w-[150px]" />
-          <CustomSelect value={filterCta} onChange={setFilterCta} options={ctaTypeOptions} size="sm" className="min-w-[140px]" />
           <CustomSelect value={filterPeriode} onChange={setFilterPeriode} options={periodeOptions} size="sm" className="min-w-[150px]" />
-          <button onClick={resetFilters} className="p-2.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-custom transition-colors" title="Réinitialiser">
+          <button onClick={() => { setSearch(''); setFilterStatut(''); setFilterPosition(''); setFilterPeriode('') }} className="p-2.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-custom transition-colors" title="Réinitialiser">
             <span className="material-symbols-outlined text-lg">refresh</span>
           </button>
           </div>
@@ -355,29 +270,46 @@ export default function Bannieres() {
                 <th className="px-4 py-3 w-24">Image</th>
                 <th className="px-4 py-3 min-w-[180px]">Titre & Détails</th>
                 <th className="px-4 py-3">Position</th>
-                <th className="px-4 py-3">Ciblage</th>
+                <th className="px-4 py-3">Audience</th>
                 <th className="px-4 py-3 text-center">Priorité</th>
-                <th className="px-4 py-3">Performance</th>
                 <th className="px-4 py-3">Diffusion</th>
                 <th className="px-4 py-3 text-center">Actif</th>
                 <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {paginated.map((b, idx) => {
-                const stat = statutConfig[b.statut] || statutConfig['Brouillon']
+              {loading ? (
+                <tr>
+                  <td colSpan={9} className="px-4 py-16 text-center">
+                    <div className="flex flex-col items-center gap-3 text-slate-400">
+                      <span className="material-symbols-outlined text-4xl text-slate-200 animate-spin">progress_activity</span>
+                      <span className="text-sm">Chargement des bannières…</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : paginated.map((b, idx) => {
+                const stat = statutConfig[b.statut] || statutConfig['BROUILLON']
                 const prio = prioriteConfig[b.priorite] || prioriteConfig[3]
                 const posClass = positionColors[b.position] || 'bg-slate-100 text-slate-600 border-slate-200'
-                const isExpired = b.statut === 'Expiré'
+                const audClass = audienceBadge[b.audience] || audienceBadge['ALL']
+                const isExpired = b.statut === 'EXPIRE'
                 const realIdx = bannieres.findIndex((x) => x.id === b.id)
                 return (
                   <tr
                     key={b.id}
                     draggable
-                    onDragStart={() => handleDragStart(realIdx)}
-                    onDragOver={(e) => handleDragOver(e, realIdx)}
-                    onDrop={() => handleDrop(realIdx)}
-                    onDragEnd={handleDragEnd}
+                    onDragStart={() => setDragIdx(realIdx)}
+                    onDragOver={(e) => { e.preventDefault(); setOverIdx(realIdx) }}
+                    onDrop={() => {
+                      if (dragIdx === null || dragIdx === realIdx) { setDragIdx(null); setOverIdx(null); return }
+                      const reordered = [...bannieres]
+                      const [removed] = reordered.splice(dragIdx, 1)
+                      reordered.splice(realIdx, 0, removed)
+                      setBannieres(reordered)
+                      setDragIdx(null); setOverIdx(null)
+                      toast.success('Ordre mis à jour')
+                    }}
+                    onDragEnd={() => { setDragIdx(null); setOverIdx(null) }}
                     className={`hover:bg-slate-50 transition-colors group ${isExpired ? 'bg-slate-50/30' : ''} ${overIdx === realIdx ? 'border-t-2 border-brand' : ''}`}
                   >
                     {/* Drag handle */}
@@ -389,13 +321,21 @@ export default function Bannieres() {
                     <td className="px-4 py-2.5">
                       <div
                         className={`w-16 h-10 rounded-md overflow-hidden bg-slate-100 border border-slate-200 shadow-sm cursor-pointer relative group-hover:scale-105 transition-transform duration-300 ${isExpired ? 'opacity-50 grayscale' : ''}`}
-                        onMouseEnter={(e) => handleImageMouseEnter(e, b)}
-                        onMouseLeave={handleImageMouseLeave}
+                        onMouseEnter={(e) => {
+                          const r = e.currentTarget.getBoundingClientRect()
+                          setHoverPos({ top: r.bottom + 8, left: r.left })
+                          setHoverBanner(b)
+                        }}
+                        onMouseLeave={() => setHoverBanner(null)}
                         onClick={() => setPreviewBanner(b)}
                       >
-                        <div className="w-full h-full bg-gradient-to-br from-brand/20 to-brand/5 flex items-center justify-center">
-                          <span className="material-symbols-outlined text-brand/40 text-xl">image</span>
-                        </div>
+                        {b.imageUrl ? (
+                          <img src={b.imageUrl} alt={b.titre} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-brand/20 to-brand/5 flex items-center justify-center">
+                            <span className="material-symbols-outlined text-brand/40 text-xl">image</span>
+                          </div>
+                        )}
                         <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <span className="material-symbols-outlined text-white text-sm">zoom_in</span>
                         </div>
@@ -406,30 +346,20 @@ export default function Bannieres() {
                     <td className="px-4 py-2.5">
                       <p className={`text-sm font-bold leading-tight uppercase ${isExpired ? 'text-slate-400' : 'text-slate-900'}`}>{b.titre}</p>
                       <p className={`text-[11px] mt-0.5 ${isExpired ? 'text-slate-300' : 'text-slate-500'}`}>{b.sousTitre}</p>
-                      {b.abTest && (
-                        <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 bg-violet-50 text-violet-600 text-[9px] font-bold rounded border border-violet-100 uppercase">
-                          <span className="material-symbols-outlined text-[10px]">science</span> A/B Test
-                        </span>
-                      )}
                     </td>
 
                     {/* Position badge */}
                     <td className="px-4 py-2.5">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold font-badge uppercase tracking-wide border ${posClass}`}>
-                        {b.position}
+                        {b.positionLabel || b.position}
                       </span>
                     </td>
 
-                    {/* Ciblage */}
+                    {/* Audience */}
                     <td className="px-4 py-2.5">
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-1.5">
-                          {b.ciblage.includes('Desktop') && <span className="material-symbols-outlined text-slate-400 text-sm">desktop_windows</span>}
-                          {b.ciblage.includes('Mobile') && <span className="material-symbols-outlined text-slate-400 text-sm">smartphone</span>}
-                          <span className="text-[10px] text-slate-300">|</span>
-                          <span className="text-[11px] text-slate-600 font-medium">{b.audience}</span>
-                        </div>
-                      </div>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${audClass}`}>
+                        {b.audienceLabel || b.audience}
+                      </span>
                     </td>
 
                     {/* Priority */}
@@ -440,34 +370,12 @@ export default function Bannieres() {
                       </div>
                     </td>
 
-                    {/* Performance */}
-                    <td className="px-4 py-2.5">
-                      {b.vues > 0 ? (
-                        <div className="space-y-0.5">
-                          <div className="flex items-center gap-1.5">
-                            <span className="material-symbols-outlined text-slate-400 text-[13px]">visibility</span>
-                            <span className="text-[11px] text-slate-600">{b.vues.toLocaleString()}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="material-symbols-outlined text-slate-400 text-[13px]">ads_click</span>
-                            <span className="text-[11px] text-slate-600">{b.clics.toLocaleString()}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <span className={`material-symbols-outlined text-[13px] ${b.ctr >= 3 ? 'text-brand' : b.ctr >= 1 ? 'text-amber-600' : 'text-red-500'}`}>trending_up</span>
-                            <span className={`text-[11px] font-bold ${b.ctr >= 3 ? 'text-brand' : b.ctr >= 1 ? 'text-amber-600' : 'text-red-500'}`}>{b.ctr}%</span>
-                          </div>
-                        </div>
-                      ) : (
-                        <span className="text-[11px] text-slate-300 italic">Aucune donnée</span>
-                      )}
-                    </td>
-
                     {/* Diffusion / Status */}
                     <td className="px-4 py-2.5">
                       <div className="flex flex-col gap-1">
                         <span className={`inline-flex items-center gap-1.5 w-fit px-2 py-0.5 rounded-full text-[10px] font-bold font-badge ${stat.bg}`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${stat.dot}`}></span>
-                          {b.statut.toUpperCase()}
+                          {b.statutLabel || b.statut}
                         </span>
                         {(b.dateDebut || b.dateFin) && (
                           <div className="text-[10px] text-slate-500 whitespace-nowrap">
@@ -496,12 +404,6 @@ export default function Bannieres() {
                         <button onClick={() => setPreviewBanner(b)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all" title="Aperçu">
                           <span className="material-symbols-outlined text-[18px]">visibility</span>
                         </button>
-                        <button className="p-1.5 text-slate-400 hover:text-violet-600 hover:bg-violet-50 rounded-md transition-all" title="Voir sur site">
-                          <span className="material-symbols-outlined text-[18px]">open_in_new</span>
-                        </button>
-                        <button onClick={() => dupliquer(b.id)} className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-all" title="Dupliquer">
-                          <span className="material-symbols-outlined text-[18px]">content_copy</span>
-                        </button>
                         <button onClick={() => supprimer(b.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all" title="Supprimer">
                           <span className="material-symbols-outlined text-[18px]">delete</span>
                         </button>
@@ -510,9 +412,9 @@ export default function Bannieres() {
                   </tr>
                 )
               })}
-              {paginated.length === 0 && (
+              {!loading && paginated.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="px-4 py-12 text-center text-slate-400 text-sm">
+                  <td colSpan={9} className="px-4 py-12 text-center text-slate-400 text-sm">
                     <span className="material-symbols-outlined text-4xl text-slate-200 mb-2 block">image_not_supported</span>
                     Aucune bannière ne correspond aux filtres.
                   </td>
@@ -525,7 +427,7 @@ export default function Bannieres() {
         {/* Pagination */}
         <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between">
           <p className="text-xs text-slate-500">
-            Affichage de <span className="font-bold text-slate-700">{((page - 1) * perPage) + 1}–{Math.min(page * perPage, filtered.length)}</span> sur <span className="font-bold text-slate-700">{filtered.length}</span> bannières
+            Affichage de <span className="font-bold text-slate-700">{filtered.length === 0 ? 0 : ((page - 1) * perPage) + 1}–{Math.min(page * perPage, filtered.length)}</span> sur <span className="font-bold text-slate-700">{filtered.length}</span> bannières
           </p>
           <div className="flex items-center gap-1">
             <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 disabled:opacity-30">
@@ -550,63 +452,77 @@ export default function Bannieres() {
           style={{ position: 'fixed', top: hoverPos.top, left: hoverPos.left, zIndex: 9999 }}
           className="pointer-events-none animate-in fade-in"
         >
-          <div className="w-72 h-40 rounded-xl overflow-hidden border-2 border-brand/20 shadow-2xl bg-gradient-to-br from-brand/20 to-brand/5">
-            <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center">
-              <span className="material-symbols-outlined text-brand/30 text-4xl mb-2">image</span>
-              <p className="text-sm font-bold text-slate-700">{hoverBanner.titre}</p>
-              <p className="text-[10px] text-slate-400 mt-0.5">{hoverBanner.position} • {hoverBanner.ciblage.join(', ')}</p>
-            </div>
+          <div className="w-72 h-40 rounded-xl overflow-hidden border-2 border-brand/20 shadow-2xl">
+            {hoverBanner.imageUrl ? (
+              <img src={hoverBanner.imageUrl} alt={hoverBanner.titre} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-brand/20 to-brand/5 flex flex-col items-center justify-center p-4 text-center">
+                <span className="material-symbols-outlined text-brand/30 text-4xl mb-2">image</span>
+                <p className="text-sm font-bold text-slate-700">{hoverBanner.titre}</p>
+                <p className="text-[10px] text-slate-400 mt-0.5">{hoverBanner.positionLabel} • {hoverBanner.audienceLabel}</p>
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* Full-screen preview modal */}
+      {/* Full-screen hero preview — identical to Home.jsx */}
       {previewBanner && (
-        <div className="fixed inset-0 bg-black/70 z-[9999] flex items-center justify-center p-8" onClick={() => setPreviewBanner(null)}>
-          <div className="relative bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-              <div>
-                <h3 className="text-lg font-bold text-slate-900">{previewBanner.titre}</h3>
-                <p className="text-xs text-slate-500">{previewBanner.sousTitre}</p>
+        <div className="fixed inset-0 z-[9999] overflow-hidden">
+          {/* Background image — exactly like Home.jsx */}
+          <div className="absolute inset-0 bg-neutral-900">
+            {previewBanner.imageUrl ? (
+              <img
+                src={previewBanner.imageUrl}
+                alt={previewBanner.titre}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <span className="material-symbols-outlined text-white/20 text-[120px]">image</span>
               </div>
-              <button onClick={() => setPreviewBanner(null)} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-                <span className="material-symbols-outlined text-slate-400">close</span>
-              </button>
-            </div>
-            {/* Preview area */}
-            <div className="p-6">
-              <div className="w-full aspect-[16/5] bg-gradient-to-br from-brand/10 to-brand/5 rounded-xl flex flex-col items-center justify-center border-2 border-dashed border-badge/20">
-                <span className="material-symbols-outlined text-brand/30 text-6xl mb-3">view_carousel</span>
-                <p className="text-lg font-bold text-slate-700">{previewBanner.titre}</p>
-                <p className="text-sm text-slate-500 mt-1">{previewBanner.sousTitre}</p>
-                {previewBanner.ctaTexte && (
-                  <button className="mt-4 px-6 py-2 bg-btn text-white font-bold rounded-lg text-sm shadow-lg">
-                    {previewBanner.ctaTexte}
-                  </button>
-                )}
-              </div>
-              {/* Info grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
-                <div className="bg-slate-50 rounded-lg p-3 text-center">
-                  <p className="text-[10px] text-slate-400 uppercase font-bold">Position</p>
-                  <p className="text-sm font-bold text-slate-700 mt-1">{previewBanner.position}</p>
-                </div>
-                <div className="bg-slate-50 rounded-lg p-3 text-center">
-                  <p className="text-[10px] text-slate-400 uppercase font-bold">CTR</p>
-                  <p className="text-sm font-bold text-slate-700 mt-1">{previewBanner.ctr}%</p>
-                </div>
-                <div className="bg-slate-50 rounded-lg p-3 text-center">
-                  <p className="text-[10px] text-slate-400 uppercase font-bold">Vues</p>
-                  <p className="text-sm font-bold text-slate-700 mt-1">{previewBanner.vues.toLocaleString()}</p>
-                </div>
-                <div className="bg-slate-50 rounded-lg p-3 text-center">
-                  <p className="text-[10px] text-slate-400 uppercase font-bold">Clics</p>
-                  <p className="text-sm font-bold text-slate-700 mt-1">{previewBanner.clics.toLocaleString()}</p>
-                </div>
-              </div>
+            )}
+          </div>
+
+          {/* Dark gradient overlay — identical to Home.jsx */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent z-[1]" />
+
+          {/* Text content — identical layout/styles to Home.jsx */}
+          <div className="absolute inset-0 flex flex-col items-center justify-end pb-24 px-12 z-10">
+            <div className="flex flex-col items-center gap-8">
+              <h1 className="text-white text-5xl md:text-8xl font-black tracking-[-0.04em] uppercase text-center leading-none drop-shadow-lg">
+                {previewBanner.titre || 'NOUVELLE COLLECTION'}
+              </h1>
+              {previewBanner.sousTitre && (
+                <p className="text-white/80 text-lg md:text-xl font-medium text-center tracking-wide drop-shadow">
+                  {previewBanner.sousTitre}
+                </p>
+              )}
+              {previewBanner.ctaTexte && (
+                <span className="bg-white text-black px-10 py-4 font-bold tracking-[0.1em] text-[12px] uppercase cursor-default">
+                  {previewBanner.ctaTexte}
+                </span>
+              )}
             </div>
           </div>
+
+          {/* Top-left badge */}
+          <div className="absolute top-6 left-6 z-20 flex items-center gap-2 bg-black/40 backdrop-blur-sm text-white px-4 py-2 text-[11px] font-bold uppercase tracking-widest">
+            <span className="material-symbols-outlined text-[15px]">preview</span>
+            Aperçu — Home Page
+          </div>
+
+          {/* Close button */}
+          <button
+            onClick={() => setPreviewBanner(null)}
+            className="absolute top-6 right-6 z-20 w-11 h-11 flex items-center justify-center bg-black/40 backdrop-blur-sm text-white hover:bg-white hover:text-black transition-all duration-300"
+            aria-label="Fermer"
+          >
+            <span className="material-symbols-outlined text-[20px]">close</span>
+          </button>
+
+          {/* Click outside to close */}
+          <div className="absolute inset-0 z-[5]" onClick={() => setPreviewBanner(null)} />
         </div>
       )}
     </div>

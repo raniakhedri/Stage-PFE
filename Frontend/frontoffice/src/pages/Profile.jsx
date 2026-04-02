@@ -133,7 +133,7 @@ export default function Profile() {
                     <button
                       className={`px-6 py-2 text-[11px] font-bold tracking-widest uppercase ${
                         order.actionStyle === 'primary'
-                          ? 'bg-primary text-on-primary'
+                          ? 'fo-btn'
                           : 'border border-primary text-primary hover:bg-primary hover:text-on-primary'
                       }`}
                     >
