@@ -191,7 +191,7 @@ public class DataSeeder implements CommandLineRunner {
         }
 
         private void seedSuperAdmin() {
-                if (userRepository.existsByEmail(adminEmail)) {
+                if (userRepository.existsByEmailIgnoreCase(adminEmail)) {
                         log.info("Super Admin déjà existant, skip seed.");
                         return;
                 }
@@ -205,7 +205,7 @@ public class DataSeeder implements CommandLineRunner {
                 User superAdmin = User.builder()
                                 .firstName("Super")
                                 .lastName("Admin")
-                                .email(adminEmail)
+                                .email(adminEmail.toLowerCase().trim())
                                 .password(passwordEncoder.encode(adminPassword))
                                 .role(superAdminRole)
                                 .segment(defaultSegment)

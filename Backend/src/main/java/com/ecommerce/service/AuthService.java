@@ -41,7 +41,7 @@ public class AuthService {
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
+        if (userRepository.existsByEmailIgnoreCase(request.getEmail())) {
             throw new IllegalArgumentException("Cet email est déjà utilisé");
         }
 
@@ -87,7 +87,7 @@ public class AuthService {
 
             UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
 
-            User user = userRepository.findByEmail(principal.getEmail())
+            User user = userRepository.findByEmailIgnoreCase(principal.getEmail())
                     .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
 
             if (user.getStatus() == AccountStatus.BLOCKED) {

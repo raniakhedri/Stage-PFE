@@ -38,7 +38,7 @@ public class UserService {
     // ── Admin: Create user ────────────────────────────────────────────────────
     @Transactional
     public UserResponse createUser(CreateUserRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
+        if (userRepository.existsByEmailIgnoreCase(request.getEmail())) {
             throw new IllegalArgumentException("Cet email est déjà utilisé");
         }
 
@@ -93,7 +93,7 @@ public class UserService {
         if (request.getLastName() != null)
             user.setLastName(request.getLastName());
         if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
-            if (userRepository.existsByEmail(request.getEmail())) {
+            if (userRepository.existsByEmailIgnoreCase(request.getEmail())) {
                 throw new IllegalArgumentException("Cet email est déjà utilisé");
             }
             user.setEmail(request.getEmail().toLowerCase().trim());

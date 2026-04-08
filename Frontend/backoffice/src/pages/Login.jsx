@@ -59,7 +59,8 @@ export default function Login() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@gmirjewelry.com"
+                placeholder="Admin@Antigoneagency.com
+"
                 required
                 className="w-full px-3 py-2.5 text-sm rounded-lg border border-slate-200 focus:ring-1 focus:ring-brand focus:border-brand outline-none"
               />
