@@ -11,4 +11,11 @@ export const productApi = {
   delete:           (id)      => apiClient.delete(`${BASE}/${id}`).then(r => r.data),
   toggleArchive:    (id)      => apiClient.patch(`${BASE}/${id}/archive`).then(r => r.data),
   toggleDeactivate: (id)      => apiClient.patch(`${BASE}/${id}/deactivate`).then(r => r.data),
+  uploadImage:      (file)    => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return apiClient.post('/admin/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }).then(r => r.data)
+  },
 }

@@ -1,0 +1,96 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #fef8f3;
+  color: #1d1b19;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+.mega-menu-trigger:hover .mega-menu {
+  display: grid;
+}
+
+/* Liquid wave fill button */
+.btn-liquid {
+  position: relative;
+  overflow: hidden;
+  z-index: 0;
+  transition: color 0.4s ease;
+}
+.btn-liquid::before {
+  content: '';
+  position: absolute;
+  left: -10%;
+  bottom: 0;
+  width: 120%;
+  height: 0%;
+  background: var(--btn-wave-bg, #C4A55A);
+  border-radius: 40% 40% 0 0;
+  transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1), border-radius 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: -1;
+}
+.btn-liquid:hover::before {
+  height: 100%;
+  border-radius: 0;
+}
+.btn-liquid:hover {
+  color: var(--btn-wave-text, #fff);
+}
+
+/* Variant: outline buttons (glass style) */
+.btn-liquid-outline {
+  position: relative;
+  overflow: hidden;
+  z-index: 0;
+  transition: color 0.4s ease, border-color 0.4s ease;
+}
+.btn-liquid-outline::before {
+  content: '';
+  position: absolute;
+  left: -10%;
+  bottom: 0;
+  width: 120%;
+  height: 0%;
+  background: var(--btn-wave-bg, rgba(255,255,255,0.25));
+  border-radius: 40% 40% 0 0;
+  transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1), border-radius 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: -1;
+}
+.btn-liquid-outline:hover::before {
+  height: 100%;
+  border-radius: 0;
+}
+
+/* Variant: dark fill (for add-to-cart etc.) */
+.btn-liquid-dark {
+  position: relative;
+  overflow: hidden;
+  z-index: 0;
+  transition: color 0.4s ease;
+}
+.btn-liquid-dark::before {
+  content: '';
+  position: absolute;
+  left: -10%;
+  bottom: 0;
+  width: 120%;
+  height: 0%;
+  background: var(--btn-wave-bg, #C4A55A);
+  border-radius: 40% 40% 0 0;
+  transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1), border-radius 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: -1;
+}
+.btn-liquid-dark:hover::before {
+  height: 100%;
+  border-radius: 0;
+}
+.btn-liquid-dark:hover {
+  color: var(--btn-wave-text, #163328);
+}

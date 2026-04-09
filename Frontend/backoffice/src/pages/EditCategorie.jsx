@@ -85,8 +85,8 @@ export default function EditCategorie() {
   const maxPosition = existingCount
 
   // Auto-generate meta SEO
-  const metaTitle = nom ? `${nom} — GMIR Jewelry` : ''
-  const metaDesc = nom ? (description || `Découvrez notre sélection ${nom} chez GMIR Jewelry. Livraison rapide et retours gratuits.`) : ''
+  const metaTitle = nom ? `${nom} — NaturEssence` : ''
+  const metaDesc = nom ? (description || `Découvrez notre sélection ${nom} chez NaturEssence. Livraison rapide et retours gratuits.`) : ''
 
   // Auto-generate slug from nom + parent prefix
   const generateSlugPart = (val) => {
@@ -562,8 +562,8 @@ export default function EditCategorie() {
                 <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-white">
                   <span className="material-symbols-outlined text-slate-400 text-sm">search</span>
                   <div className="flex flex-col items-center">
-                    <span className="text-[10px] font-black tracking-[0.12em] text-[#005b3d]">GMIR</span>
-                    <span className="text-[5px] tracking-[0.25em] text-[#005b3d]">JEWELRY</span>
+                    <span className="text-[10px] font-black tracking-[0.12em] text-[#005b3d]">NATUR</span>
+                    <span className="text-[5px] tracking-[0.25em] text-[#005b3d]">ESSENCE</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-slate-400 text-[10px]">person</span>

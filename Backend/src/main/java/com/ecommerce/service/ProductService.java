@@ -152,11 +152,12 @@ public class ProductService {
                 .dimensionWidth(request.getDimensionWidth())
                 .dimensionHeight(request.getDimensionHeight())
                 .specificFees(request.isSpecificFees())
-                .colors(request.getColors())
-                .sizes(request.getSizes())
+                .latin(request.getLatin())
+                .bio(request.isBio())
+                .volumes(request.getVolumes())
                 .performance(request.getPerformance())
                 .imageUrl(request.getImageUrl())
-                .colorImages(request.getColorImages())
+                .images(request.getImages())
                 .upsellTags(request.getUpsellTags())
                 .build();
 
@@ -217,11 +218,12 @@ public class ProductService {
         product.setDimensionWidth(request.getDimensionWidth());
         product.setDimensionHeight(request.getDimensionHeight());
         product.setSpecificFees(request.isSpecificFees());
-        product.setColors(request.getColors());
-        product.setSizes(request.getSizes());
+        product.setLatin(request.getLatin());
+        product.setBio(request.isBio());
+        product.setVolumes(request.getVolumes());
         product.setPerformance(request.getPerformance());
         product.setImageUrl(request.getImageUrl());
-        product.setColorImages(request.getColorImages());
+        product.setImages(request.getImages());
         product.setUpsellTags(request.getUpsellTags());
 
         if (request.getCategoryId() != null) {
@@ -378,11 +380,12 @@ public class ProductService {
                 .dimensionWidth(p.getDimensionWidth())
                 .dimensionHeight(p.getDimensionHeight())
                 .specificFees(p.isSpecificFees())
-                .colors(p.getColors())
-                .sizes(p.getSizes())
+                .latin(p.getLatin())
+                .bio(p.isBio())
+                .volumes(p.getVolumes())
                 .performance(p.getPerformance())
                 .imageUrl(p.getImageUrl())
-                .colorImages(p.getColorImages())
+                .images(p.getImages())
                 .upsellTags(p.getUpsellTags())
                 .variants(variantResponses)
                 .createdAt(p.getCreatedAt())

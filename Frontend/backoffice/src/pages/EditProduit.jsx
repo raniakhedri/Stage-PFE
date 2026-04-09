@@ -6,110 +6,12 @@ import PageHeader from '../components/ui/PageHeader'
 import { productApi } from '../api/productApi'
 import { categoryApi } from '../api/categoryApi'
 import { collectionApi } from '../api/collectionApi'
-// ── Palette de couleurs françaises (79 couleurs) ─────────────────────────────
-const COLOR_MAP = {
-  'jaune':            '#FFCE3B',
-  'citron':           '#FFD100',
-  'mais':             '#FFB600',
-  'maïs':             '#FFB600',
-  'orange clair':     '#FF6A2D',
-  'orange':           '#EE4C26',
-  'orange rouge':     '#CD312E',
-  'rouge':            '#B01E35',
-  'fuchsia fonce':    '#B32759',
-  'fuchsia foncé':    '#B32759',
-  'couleur chair':    '#FFD39F',
-  'jaune pastel':     '#FFC26D',
-  'bronze':           '#C68D44',
-  'moutard':          '#C9952E',
-  'vert pastel':      '#D0B674',
-  'vert olive':       '#6E6C31',
-  'daim marron':      '#8D593B',
-  'marron':           '#644637',
-  'abricot':          '#FF9760',
-  'saumon':           '#FF8A7C',
-  'peche':            '#E55951',
-  'pêche':            '#E55951',
-  'mandarine':        '#DB7E47',
-  'rouille':          '#9E5530',
-  'terre':            '#A53E30',
-  'vineux':           '#832A34',
-  'cardinal':         '#552D35',
-  'rose tendre':      '#FFA8A2',
-  'rose vieux':       '#EA87A5',
-  'rose vif':         '#FF727E',
-  'cyclamen':         '#E53865',
-  'fuchsia':          '#B8246B',
-  'pourpre':          '#81265F',
-  'lilas':            '#B48C9C',
-  'violet':           '#632D79',
-  'souris':           '#9F8F78',
-  'beige':            '#9F816B',
-  'beige brun':       '#846450',
-  'chocolat':         '#493B35',
-  'gris clair':       '#BDBFC3',
-  'gris':             '#878485',
-  'anthracite':       '#5E5E61',
-  'noir':             '#2B2F2F',
-  'avocat':           '#89884D',
-  'limon':            '#BFD723',
-  'vert mousse':      '#888A21',
-  'vert gazon':       '#40B23D',
-  'vert':             '#008A3C',
-  'vert billard':     '#184D3C',
-  'loden vert':       '#3F5532',
-  'vert fonce':       '#274939',
-  'vert foncé':       '#274939',
-  'vert emeraude':    '#50BB85',
-  "vert d'emeraude":  '#50BB85',
-  "vert d'émeraude":  '#50BB85',
-  'vert glace':       '#009C85',
-  'vert glacé':       '#009C85',
-  'turquoise':        '#007993',
-  'bleu violet':      '#4FA9B0',
-  'bleu clair':       '#3488A0',
-  'bleu barbeau':     '#0067A3',
-  'bleu marine':      '#36384D',
-  'blanc':            '#FFFFF1',
-  'gris bleu':        '#87B1C1',
-  'aigue marine':     '#6487B0',
-  'bleu royal':       '#17478E',
-  'bleu cobalt':      '#303C82',
-  'blue de cobalt':   '#303C82',
-  'lavande fonce':    '#58518E',
-  'lavande foncé':    '#58518E',
-  'lavande':          '#7C76AA',
-  'reseda':           '#8A927D',
-  'réseda':           '#8A927D',
-  'rose':             '#C77BA7',
-  'babyrose':         '#FFCCC9',
-  'baby rose':        '#FFCCC9',
-  'jaune canari':     '#FFEA3C',
-  "jaune d'or":       '#D4741A',
-  'vert tendre':      '#86B487',
-  'couleur de peau':  '#FFD5B3',
-  'vert de cart':     '#007F50',
-  'aubergine':        '#401B3C',
-  'hyacinthe':        '#D94DA0',
-  'chameau':          '#9C7551',
-  'baby jaune':       '#FFEBAA',
-  'baby bleu':        '#89A9D0',
-  'rose pastel':      '#F1B2BB',
-  'beige clair':      '#C2A88C',
-  'chameau clair':    '#D8B291',
-  'vert grenouille':  '#5B6C3D',
-  'ecru':             '#FFFBE4',
-  'écru':             '#FFFBE4',
+// ── Catalogue de contenances (cosmétiques) ───────────────────────────────────
+const VOLUME_CATALOG = {
+  liquides: { label: 'Liquides (ml)', volumes: ['5ml', '10ml', '15ml', '30ml', '50ml', '100ml', '200ml', '250ml'] },
+  solides:  { label: 'Solides (g)',   volumes: ['50g', '100g', '150g', '200g', '250g', '500g'] },
 }
 
-function resolveColor(val) {
-  if (!val) return '#cccccc'
-  const trimmed = val.trim().toLowerCase()
-  if (COLOR_MAP[trimmed]) return COLOR_MAP[trimmed]
-  if (/^#([0-9a-f]{3}){1,2}$/i.test(val.trim())) return val.trim()
-  if (/^rgb/i.test(val.trim())) return val.trim()
-  return '#cccccc'
-}
 // ── Mock product data keyed by id ─────────────────────────────────────────────
 const mockProducts = {
   1: {
@@ -199,12 +101,7 @@ const mockProducts = {
   },
 }
 
-// ── Catalogue de tailles ──────────────────────────────────────────────────
-const SIZE_CATALOG = {
-  standard:   { label: 'Standard',   sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'] },
-  eu:         { label: 'EU',          sizes: ['36', '38', '40', '42', '44', '46', '48', '50', '52'] },
-  chaussures: { label: 'Chaussures', sizes: ['39', '40', '41', '42', '43', '44', '45', '46'] },
-}
+
 
 // ── Toggle ─────────────────────────────────────────────────────────────────────
 function Toggle({ checked, onChange }) {
@@ -272,6 +169,14 @@ function Section({ title, children, rightSlot }) {
 
 
 // ── Page ───────────────────────────────────────────────────────────────────────
+// Resolve image URL: /uploads/xxx → full backend URL, http(s) URLs → as-is
+const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') || 'http://localhost:8080'
+function resolveImgUrl(url) {
+  if (!url) return ''
+  if (url.startsWith('http://') || url.startsWith('https://')) return url
+  return `${API_BASE}${url.startsWith('/') ? '' : '/'}${url}`
+}
+
 function EditProduit() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -300,12 +205,16 @@ function EditProduit() {
   const [visibility, setVisibility] = useState({ site: true, category: false, pinnedSub: false })
   const [metaTitle, setMetaTitle] = useState('')
 
-  const [colors, setColors] = useState('')
-  const [sizeType, setSizeType] = useState(null)
-  const [selectedSizes, setSelectedSizes] = useState([])
+  // Cosmetics-specific
+  const [latin, setLatin] = useState('')
+  const [bio, setBio] = useState(false)
+
+  // Variants (volume-based)
+  const [volumeType, setVolumeType] = useState('liquides')
+  const [selectedVolumes, setSelectedVolumes] = useState([])
   const [variants, setVariants] = useState([])
-  const [colorImages, setColorImages] = useState({})
-  const [activeColorTab, setActiveColorTab] = useState('Général')
+  const [productImages, setProductImages] = useState([null, null, null, null, null])
+  const [uploadingIdx, setUploadingIdx] = useState(null)
 
   const [weight, setWeight] = useState('')
   const [length, setLength] = useState('')
@@ -344,18 +253,17 @@ function EditProduit() {
           pinnedSub: Boolean(p.pinnedInSubCategory),
         })
         setMetaTitle(p.metaTitle || '')
-        setColors(p.colors || '')
-        const rawSizes = (p.sizes || '').split(',').map((s) => s.trim()).filter(Boolean)
-        setSelectedSizes(rawSizes)
-        if (rawSizes.length > 0) {
-          if (rawSizes.every((s) => ['39','40','41','42','43','44','45','46'].includes(s))) setSizeType('chaussures')
-          else if (rawSizes.every((s) => ['36','38','40','42','44','46','48','50','52'].includes(s))) setSizeType('eu')
-          else setSizeType('standard')
+        setLatin(p.latin || '')
+        setBio(Boolean(p.bio))
+        const rawVolumes = (p.volumes || '').split(',').map((s) => s.trim()).filter(Boolean)
+        setSelectedVolumes(rawVolumes)
+        if (rawVolumes.length > 0) {
+          if (rawVolumes.some((v) => v.endsWith('g'))) setVolumeType('solides')
+          else setVolumeType('liquides')
         }
         setVariants(
           (p.variants || []).map((v, i) => ({
             id: v.id || i + 1,
-            colorSwatch: v.colorSwatch || '#2B2F2F',
             label: v.label || '',
             sku: v.sku || '',
             price: String(v.price || ''),
@@ -367,7 +275,10 @@ function EditProduit() {
         setWidth(String(p.dimensionWidth || ''))
         setHeight(String(p.dimensionHeight || ''))
         setSpecificFees(Boolean(p.specificFees))
-        try { setColorImages(JSON.parse(p.colorImages || '{}')) } catch { setColorImages({}) }
+        // Load gallery: parse images field, fallback to imageUrl
+        const imgList = p.images ? p.images.split(',').filter(Boolean) : (p.imageUrl ? [p.imageUrl] : [])
+        const padded = [...imgList, null, null, null, null, null].slice(0, 5)
+        setProductImages(padded)
       })
       .catch(() => toast.error('Impossible de charger le produit.'))
       .finally(() => setLoading(false))
@@ -386,15 +297,29 @@ function EditProduit() {
     }).catch(() => {})
   }, [])
 
-  useEffect(() => {
-    const list = colors.split(',').map(c => c.trim()).filter(Boolean)
-    setActiveColorTab(prev => list.includes(prev) ? prev : (list[0] || 'Général'))
-  }, [colors])
-
   const updateVariant = (vid, field, value) =>
     setVariants((prev) => prev.map((v) => (v.id === vid ? { ...v, [field]: value } : v)))
 
-  const removeVariant = (vid) => setVariants((prev) => prev.filter((v) => v.id !== vid))
+  const removeVariant = (vid) => {
+    const v = variants.find((x) => x.id === vid)
+    if (v) setSelectedVolumes((prev) => prev.filter((x) => x !== v.label))
+    setVariants((prev) => prev.filter((x) => x.id !== vid))
+  }
+
+  // Keep variants in sync with selected volumes
+  const toggleVolume = (vol) => {
+    const isSelected = selectedVolumes.includes(vol)
+    if (isSelected) {
+      setSelectedVolumes((prev) => prev.filter((x) => x !== vol))
+      setVariants((prev) => prev.filter((v) => v.label !== vol))
+    } else {
+      setSelectedVolumes((prev) => [...prev, vol])
+      setVariants((prev) => [
+        ...prev,
+        { id: Date.now() + Math.random(), label: vol, sku: '', price: '', stock: 0 },
+      ])
+    }
+  }
 
   const toggleBadge = (key) => setBadges((prev) => ({ ...prev, [key]: !prev[key] }))
   const toggleVisibility = (key) => setVisibility((prev) => ({ ...prev, [key]: !prev[key] }))
@@ -405,21 +330,14 @@ function EditProduit() {
     )
 
   const generateVariants = () => {
-    const colorList = colors.split(',').map((c) => c.trim()).filter(Boolean)
-    if (colorList.length === 0 || selectedSizes.length === 0) return
-    const generated = []
-    colorList.forEach((col) => {
-      const hex = resolveColor(col.toLowerCase())
-      selectedSizes.forEach((size) => {
-        generated.push({
-          id: Date.now() + Math.random(),
-          colorSwatch: hex,
-          label: `${col.charAt(0).toUpperCase() + col.slice(1)} - ${size}`,
-          sku: '',
-          stock: 0,
-        })
-      })
-    })
+    if (selectedVolumes.length === 0) return
+    const generated = selectedVolumes.map((vol) => ({
+      id: Date.now() + Math.random(),
+      label: vol,
+      sku: '',
+      price: '',
+      stock: 0,
+    }))
     setVariants(generated)
   }
 
@@ -444,29 +362,17 @@ function EditProduit() {
 
   const removeUpsellTag = (tag) => setUpsellTags((prev) => prev.filter((t) => t !== tag))
 
-  /* Capitalize first letter of each color name for consistency */
-  const normalizeColorName = (n) => n.charAt(0).toUpperCase() + n.slice(1).toLowerCase()
-
   const handleSave = async () => {
     if (!name.trim()) return toast.error('Le nom du produit est requis.')
     setSubmitting(true)
     try {
-      /* ── Normalize color names across colors, colorImages & variants ── */
-      const normalizedColors = colors.split(',').map(c => c.trim()).filter(Boolean).map(normalizeColorName).join(', ')
-      const normalizedColorImages = {}
-      for (const [key, val] of Object.entries(colorImages)) {
-        normalizedColorImages[normalizeColorName(key.trim())] = val
-      }
-      const normalizedVariants = variants.map((v) => {
-        const parts = v.label.split(' - ')
-        const nLabel = parts.length >= 2 ? `${normalizeColorName(parts[0].trim())} - ${parts.slice(1).join(' - ').trim()}` : v.label
-        return { ...v, label: nLabel }
-      })
-
       const payload = {
         nom: name.trim(),
         sku,
         description,
+        latin: latin.trim() || null,
+        bio,
+        volumes: selectedVolumes.join(','),
         categoryId: subCategory ? parseInt(subCategory) : (category ? parseInt(category) : null),
         collectionIds: collections.map((id) => parseInt(id)),
         salePrice: parseFloat(salePrice) || 0,
@@ -474,7 +380,8 @@ function EditProduit() {
         promoPrice: promoActive ? (parseFloat(promoPrice) || 0) : 0,
         promoStart: promoStart || null,
         promoEnd: promoEnd || null,
-        stock: normalizedVariants.reduce((sum, v) => sum + (parseInt(v.stock) || 0), 0),
+        stock: variants.reduce((sum, v) => sum + (parseInt(v.stock) || 0), 0),
+        statut: 'actif',
         badgeNouveau: badges.nouveau,
         badgeBestSeller: badges.bestSeller,
         badgePromo: badges.promo,
@@ -488,15 +395,13 @@ function EditProduit() {
         dimensionWidth: parseFloat(width) || 0,
         dimensionHeight: parseFloat(height) || 0,
         specificFees,
-        colors: normalizedColors,
-        sizes: selectedSizes.join(', '),
-        colorImages: JSON.stringify(normalizedColorImages),
-        variants: normalizedVariants.map((v) => ({
+        imageUrl: productImages.filter(Boolean)[0] || null,
+        images: productImages.filter(Boolean).join(',') || null,
+        variants: variants.map((v) => ({
           id: v.id,
           label: v.label,
-          colorSwatch: v.colorSwatch,
           sku: v.sku,
-          price: parseFloat(salePrice) || 0,
+          price: parseFloat(v.price) || parseFloat(salePrice) || 0,
           stock: parseInt(v.stock) || 0,
         })),
       }
@@ -539,13 +444,25 @@ function EditProduit() {
               <div className="space-y-6">
                 <div>
                   <Label required>Nom du produit</Label>
-                  <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Veste Softshell HV Orange" />
+                  <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Huile Essentielle de Lavande Vraie" />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <Label>Référence (SKU Parent)</Label>
-                    <Input value={sku} onChange={(e) => setSku(e.target.value)} placeholder="WW-VS-2024" />
+                    <Label>Nom latin / INCI</Label>
+                    <Input value={latin} onChange={(e) => setLatin(e.target.value)} placeholder="Ex: Lavandula angustifolia" />
+                  </div>
+                  <div>
+                    <Label>Référence (SKU)</Label>
+                    <Input value={sku} onChange={(e) => setSku(e.target.value)} placeholder="NE-LAV-10" />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 p-4 bg-emerald-50/50 rounded-lg border border-emerald-100 cursor-pointer" onClick={() => setBio(!bio)}>
+                  <input type="checkbox" checked={bio} onChange={() => setBio(!bio)} className="w-5 h-5 text-emerald-600 rounded focus:ring-emerald-500 cursor-pointer accent-emerald-600" />
+                  <div>
+                    <p className="text-sm font-bold text-slate-700">Certification Bio</p>
+                    <p className="text-[10px] text-slate-400">Produit certifié agriculture biologique</p>
                   </div>
                 </div>
 
@@ -626,65 +543,51 @@ function EditProduit() {
                   onClick={generateVariants}
                   className="text-xs font-bold text-brand bg-brand/10 px-3 py-1.5 rounded-full hover:bg-brand/20 transition-all flex items-center gap-1"
                 >
-                  <span className="material-symbols-outlined text-sm">auto_awesome</span>
-                  Générer les combinaisons
+                  <span className="material-symbols-outlined text-sm">refresh</span>
+                  Régénérer les variantes
                 </button>
               }
             >
               <div className="space-y-8">
                 <div className="space-y-6 pb-8 border-b border-slate-100">
                   <div>
-                    <Label>Couleurs</Label>
-                    <Input
-                      value={colors}
-                      onChange={(e) => setColors(e.target.value)}
-                      placeholder="Noir, Blanc, Orange"
-                    />
-                  </div>
-                  <div>
-                    <Label>Tailles</Label>
-                    <p className="text-[10px] text-slate-400 mb-3">Choisissez d'abord le type, puis les tailles disponibles.</p>
-                    {/* Choix du type */}
+                    <Label>Contenances</Label>
+                    <p className="text-[10px] text-slate-400 mb-3">Choisissez d'abord le type, puis les contenances disponibles.</p>
                     <div className="flex flex-wrap gap-2 mb-4">
-                      {Object.entries(SIZE_CATALOG).map(([key, { label }]) => (
+                      {Object.entries(VOLUME_CATALOG).map(([key, { label }]) => (
                         <button
                           key={key}
                           type="button"
-                          onClick={() => { setSizeType(key); setSelectedSizes([]) }}
+                          onClick={() => { setVolumeType(key); setSelectedVolumes([]); setVariants([]) }}
                           className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
-                            sizeType === key
+                            volumeType === key
                               ? 'border-brand bg-brand/10 text-brand'
                               : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'
                           }`}
                         >
-                          {sizeType === key && (
+                          {volumeType === key && (
                             <span className="material-symbols-outlined text-xs align-middle mr-1">check</span>
                           )}
                           {label}
                         </button>
                       ))}
                     </div>
-                    {/* Boutons de taille */}
-                    {sizeType && (
+                    {volumeType && (
                       <div className="flex flex-wrap gap-2 pt-3 border-t border-slate-100">
-                        {SIZE_CATALOG[sizeType].sizes.map((s) => {
-                          const active = selectedSizes.includes(s)
+                        {VOLUME_CATALOG[volumeType].volumes.map((vol) => {
+                          const active = selectedVolumes.includes(vol)
                           return (
                             <button
-                              key={s}
+                              key={vol}
                               type="button"
-                              onClick={() =>
-                                setSelectedSizes((prev) =>
-                                  prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]
-                                )
-                              }
+                              onClick={() => toggleVolume(vol)}
                               className={`min-w-[2.75rem] px-2 py-1.5 rounded-lg text-xs font-bold border transition-all text-center ${
                                 active
                                   ? 'border-brand bg-brand text-white'
                                   : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'
                               }`}
                             >
-                              {s}
+                              {vol}
                             </button>
                           )
                         })}
@@ -697,7 +600,7 @@ function EditProduit() {
                   <table className="w-full">
                     <thead>
                       <tr className="text-left border-b border-slate-100">
-                        {['Variante', 'SKU', 'Stock', 'Action'].map((h, i) => (
+                        {['Contenance', 'SKU', 'Stock', 'Action'].map((h, i) => (
                           <th
                             key={h}
                             className={`pb-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 ${i === 3 ? 'text-right' : ''}`}
@@ -708,168 +611,69 @@ function EditProduit() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
-                      {(() => {
-                        /* Group variants by color name for SKU rowSpan */
-                        const colorGroups = []
-                        let lastColor = null
-                        variants.forEach((v, idx) => {
-                          const colorName = v.label?.split(' - ')[0]?.trim() || ''
-                          if (colorName !== lastColor) {
-                            colorGroups.push({ color: colorName, startIdx: idx, count: 1 })
-                            lastColor = colorName
-                          } else {
-                            colorGroups[colorGroups.length - 1].count++
-                          }
-                        })
-                        const colorStartSet = new Set(colorGroups.map(g => g.startIdx))
-                        const colorSpanMap = Object.fromEntries(colorGroups.map(g => [g.startIdx, g.count]))
-
-                        return variants.map((v, idx) => {
-                          const isColorStart = colorStartSet.has(idx)
-                          const colorName = v.label?.split(' - ')[0]?.trim() || ''
-                          return (
-                            <tr key={v.id} className="group hover:bg-slate-50/50">
-                              <td className="py-4 px-2">
-                                <div className="flex items-center gap-3">
-                                  <label className="relative cursor-pointer flex-shrink-0">
-                                    <div
-                                      className="w-8 h-8 rounded border border-slate-200 flex-shrink-0"
-                                      style={{ backgroundColor: resolveColor(v.colorSwatch) }}
-                                    />
-                                    <input
-                                      type="color"
-                                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                      value={/^#[0-9a-f]{6}$/i.test(v.colorSwatch) ? v.colorSwatch : resolveColor(v.colorSwatch)}
-                                      onChange={(e) => updateVariant(v.id, 'colorSwatch', e.target.value)}
-                                    />
-                                  </label>
-                                  <input
-                                    type="text"
-                                    value={v.colorSwatch}
-                                    onChange={(e) => updateVariant(v.id, 'colorSwatch', e.target.value)}
-                                    onBlur={(e) => {
-                                      const resolved = resolveColor(e.target.value)
-                                      if (resolved !== '#cccccc') updateVariant(v.id, 'colorSwatch', resolved)
-                                    }}
-                                    placeholder="rouge ou #B01E35"
-                                    className="w-28 bg-white border border-slate-200 rounded text-xs py-1.5 px-2 focus:ring-1 focus:ring-brand outline-none font-mono"
-                                  />
-                                  <span className="text-sm font-medium text-slate-700">{v.label}</span>
-                                </div>
-                              </td>
-                              {isColorStart && (
-                                <td className="py-4 px-2 align-middle" rowSpan={colorSpanMap[idx]}>
-                                  <input
-                                    type="text"
-                                    value={v.sku}
-                                    onChange={(e) => {
-                                      const newSku = e.target.value
-                                      setVariants(prev => prev.map(vr => {
-                                        const vrColor = vr.label?.split(' - ')[0]?.trim() || ''
-                                        return vrColor === colorName ? { ...vr, sku: newSku } : vr
-                                      }))
-                                    }}
-                                    className="w-full bg-white border border-slate-200 rounded text-xs py-1.5 px-2 focus:ring-1 focus:ring-brand outline-none"
-                                  />
-                                </td>
-                              )}
-                              <td className="py-4 px-2">
-                                <input
-                                  type="number"
-                                  value={v.stock}
-                                  onChange={(e) => updateVariant(v.id, 'stock', e.target.value)}
-                                  className="w-20 bg-white border border-slate-200 rounded text-xs py-1.5 px-2 focus:ring-1 focus:ring-brand outline-none"
-                                />
-                              </td>
-                              <td className="py-4 px-2 text-right">
-                                <button
-                                  onClick={() => removeVariant(v.id)}
-                                  className="text-slate-300 hover:text-red-500 transition-colors"
-                                >
-                                  <span className="material-symbols-outlined text-lg">delete</span>
-                                </button>
-                              </td>
-                            </tr>
-                          )
-                        })
-                      })()}
+                      {variants.map((v) => (
+                        <tr key={v.id} className="group hover:bg-slate-50/50">
+                          <td className="py-4 px-2">
+                            <span className="text-sm font-medium text-slate-700">{v.label}</span>
+                          </td>
+                          <td className="py-4 px-2">
+                            <input
+                              type="text"
+                              value={v.sku}
+                              onChange={(e) => updateVariant(v.id, 'sku', e.target.value)}
+                              className="w-full bg-white border border-slate-200 rounded text-xs py-1.5 px-2 focus:ring-1 focus:ring-brand outline-none"
+                            />
+                          </td>
+                          <td className="py-4 px-2">
+                            <input
+                              type="number"
+                              value={v.stock}
+                              onChange={(e) => updateVariant(v.id, 'stock', e.target.value)}
+                              className="w-20 bg-white border border-slate-200 rounded text-xs py-1.5 px-2 focus:ring-1 focus:ring-brand outline-none"
+                            />
+                          </td>
+                          <td className="py-4 px-2 text-right">
+                            <button
+                              onClick={() => removeVariant(v.id)}
+                              className="text-slate-300 hover:text-red-500 transition-colors"
+                            >
+                              <span className="material-symbols-outlined text-lg">delete</span>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
 
-                <button
-                  onClick={() =>
-                    setVariants((prev) => [
-                      ...prev,
-                      {
-                        id: Date.now(),
-                        colorSwatch: '#BDBFC3',
-                        label: 'Nouvelle variante',
-                        sku: '',
-                        price: '',
-                        stock: 0,
-                      },
-                    ])
-                  }
-                  className="flex items-center gap-2 text-xs font-bold text-brand hover:text-brand-dark transition-colors"
-                >
-                  <span className="material-symbols-outlined text-sm">add_circle</span>
-                  Ajouter une variante
-                </button>
+                {selectedVolumes.length === 0 && (
+                  <p className="text-xs text-slate-400 italic">Sélectionnez des contenances ci-dessus pour créer les variantes.</p>
+                )}
               </div>
             </Section>
 
             {/* Média & Galerie */}
             <Section title="Média & Galerie">
               <div className="space-y-5">
-                {/* Onglets couleur */}
-                <div className="flex gap-2 flex-wrap border-b border-slate-100 pb-4">
-                  {(colors.split(',').map(c => c.trim()).filter(Boolean).length > 0
-                    ? colors.split(',').map(c => c.trim()).filter(Boolean)
-                    : ['Général']
-                  ).map(col => (
-                    <button
-                      key={col}
-                      type="button"
-                      onClick={() => setActiveColorTab(col)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
-                        activeColorTab === col
-                          ? 'border-brand bg-brand/10 text-brand'
-                          : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'
-                      }`}
-                    >
-                      <span
-                        className="w-3 h-3 rounded-full border border-white flex-shrink-0"
-                        style={{ backgroundColor: resolveColor(col.toLowerCase()) }}
-                      />
-                      {col}
-                      {(colorImages[col] || []).some(Boolean) && (
-                        <span className="w-1.5 h-1.5 bg-brand rounded-full ml-0.5" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-
-                {/* 3 emplacements photo */}
                 <div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">
-                    Photos — {activeColorTab || 'Général'} <span className="normal-case font-normal">(max 3)</span>
+                    Photos du produit <span className="normal-case font-normal">(max 5)</span>
                   </p>
-                  <div className="grid grid-cols-3 gap-4">
-                    {[0, 1, 2].map((idx) => {
-                      const tabKey = activeColorTab || 'Général'
-                      const img = (colorImages[tabKey] || [])[idx]
+                  <div className="grid grid-cols-5 gap-4">
+                    {[0, 1, 2, 3, 4].map((idx) => {
+                      const img = productImages[idx]
+                      const isUploading = uploadingIdx === idx
                       return (
                         <div key={idx} className="relative group">
                           {img ? (
                             <div className="aspect-square rounded-lg border border-slate-200 overflow-hidden relative">
-                              <img src={img} alt="" className="w-full h-full object-cover" />
+                              <img src={resolveImgUrl(img)} alt="" className="w-full h-full object-cover" />
                               <button
                                 type="button"
-                                onClick={() => setColorImages(prev => {
-                                  const arr = [...(prev[tabKey] || [null, null, null])]
+                                onClick={() => setProductImages(prev => {
+                                  const arr = [...prev]
                                   arr[idx] = null
-                                  return { ...prev, [tabKey]: arr }
+                                  return arr
                                 })}
                                 className="absolute top-1 right-1 w-6 h-6 bg-white shadow-sm rounded-full flex items-center justify-center text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
                               >
@@ -882,31 +686,45 @@ function EditProduit() {
                               )}
                             </div>
                           ) : (
-                            <label className="cursor-pointer block">
-                              <div className="aspect-square rounded-lg border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-300 hover:border-brand hover:text-brand transition-all">
-                                <span className="material-symbols-outlined text-2xl mb-1">
-                                  {idx === 0 ? 'add_photo_alternate' : 'add'}
-                                </span>
-                                {idx === 0 && <p className="text-[9px] font-bold">Principale</p>}
+                            <label className={`block ${isUploading ? '' : 'cursor-pointer'}`}>
+                              <div className={`aspect-square rounded-lg border-2 border-dashed flex flex-col items-center justify-center transition-all ${
+                                isUploading ? 'border-brand bg-brand/5 text-brand' : 'border-slate-200 text-slate-300 hover:border-brand hover:text-brand'
+                              }`}>
+                                {isUploading ? (
+                                  <span className="material-symbols-outlined text-2xl animate-spin">progress_activity</span>
+                                ) : (
+                                  <>
+                                    <span className="material-symbols-outlined text-2xl mb-1">
+                                      {idx === 0 ? 'add_photo_alternate' : 'add'}
+                                    </span>
+                                    {idx === 0 && <p className="text-[9px] font-bold">Principale</p>}
+                                  </>
+                                )}
                               </div>
-                              <input
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                onChange={(e) => {
-                                  const file = e.target.files[0]
-                                  if (!file) return
-                                  const reader = new FileReader()
-                                  reader.onload = (ev) => {
-                                    setColorImages(prev => {
-                                      const arr = [...(prev[tabKey] || [null, null, null])]
-                                      arr[idx] = ev.target.result
-                                      return { ...prev, [tabKey]: arr }
-                                    })
-                                  }
-                                  reader.readAsDataURL(file)
-                                }}
-                              />
+                              {!isUploading && (
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={async (e) => {
+                                    const file = e.target.files[0]
+                                    if (!file) return
+                                    setUploadingIdx(idx)
+                                    try {
+                                      const { url } = await productApi.uploadImage(file)
+                                      setProductImages(prev => {
+                                        const arr = [...prev]
+                                        arr[idx] = url
+                                        return arr
+                                      })
+                                    } catch {
+                                      toast.error('Erreur lors de l\'upload de l\'image.')
+                                    } finally {
+                                      setUploadingIdx(null)
+                                    }
+                                  }}
+                                />
+                              )}
                             </label>
                           )}
                         </div>
@@ -1203,7 +1021,7 @@ function EditProduit() {
                           </p>
                           <div className="flex gap-0.5 mt-0.5">
                             {variants.slice(0, 3).map((v) => (
-                              <div key={v.id} className="w-2 h-2 border border-slate-200" style={{ backgroundColor: resolveColor(v.colorSwatch) }} />
+                              <span key={v.id} className="text-[5px] font-bold text-slate-400 bg-slate-100 px-0.5 rounded">{v.label}</span>
                             ))}
                           </div>
                         </div>

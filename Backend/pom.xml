@@ -12,10 +12,10 @@
     </parent>
 
     <groupId>com.ecommerce</groupId>
-    <artifactId>gmir-jewelry</artifactId>
+    <artifactId>naturessence</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>Gmir Jewelry Backend</name>
-    <description>E-commerce backend for Gmir Jewelry</description>
+    <name>NaturEssence Backend</name>
+    <description>E-commerce backend for NaturEssence</description>
 
     <properties>
         <java.version>17</java.version>

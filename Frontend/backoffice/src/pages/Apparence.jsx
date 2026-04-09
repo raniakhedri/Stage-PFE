@@ -462,7 +462,7 @@ export default function Apparence() {
                       )}
                       {activeScope === 'frontoffice' && (
                         <span className="text-sm font-black tracking-widest uppercase" style={{ color: current.primaryColor }}>
-                          GMIR
+                          NATUR
                         </span>
                       )}
                       <span className="px-3 py-1 text-[10px] font-bold rounded-full uppercase"
@@ -876,10 +876,10 @@ export default function Apparence() {
                               ) : (
                                 <>
                                   <span className="font-black tracking-[0.15em] uppercase text-[11px]" style={{ color: '#005b3d' }}>
-                                    {current.brandName || 'GMIR'}
+                                    {current.brandName || 'NATUR'}
                                   </span>
                                   <span className="text-[7px] tracking-[0.3em] uppercase" style={{ color: '#005b3d' }}>
-                                    {current.slogan || 'JEWELRY'}
+                                    {current.slogan || 'ESSENCE'}
                                   </span>
                                 </>
                               )}
@@ -916,10 +916,10 @@ export default function Apparence() {
                                 ) : (
                                   <>
                                     <span className="font-black tracking-[0.15em] uppercase text-[11px] text-white">
-                                      {current.brandName || 'GMIR'}
+                                      {current.brandName || 'NATUR'}
                                     </span>
                                     <span className="text-[7px] tracking-[0.3em] uppercase text-white/70">
-                                      {current.slogan || 'JEWELRY'}
+                                      {current.slogan || 'ESSENCE'}
                                     </span>
                                   </>
                                 )}

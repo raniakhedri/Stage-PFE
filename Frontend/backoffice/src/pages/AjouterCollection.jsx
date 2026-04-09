@@ -912,8 +912,8 @@ export default function AjouterCollection() {
                 <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-white">
                   <span className="material-symbols-outlined text-slate-400 text-sm">search</span>
                   <div className="flex flex-col items-center">
-                    <span className="text-[10px] font-black tracking-[0.12em] text-[#005b3d]">GMIR</span>
-                    <span className="text-[5px] tracking-[0.25em] text-[#005b3d]">JEWELRY</span>
+                    <span className="text-[10px] font-black tracking-[0.12em] text-[#005b3d]">NATUR</span>
+                    <span className="text-[5px] tracking-[0.25em] text-[#005b3d]">ESSENCE</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-slate-400 text-[10px]">person</span>
@@ -1036,10 +1036,10 @@ export default function AjouterCollection() {
             <div className="p-4">
               <div className="rounded-lg border border-slate-200 p-4 bg-white">
                 <p className="text-[13px] text-blue-700 font-medium truncate">
-                  {metaTitle || 'Titre de la collection — GMIR JEWELRY'}
+                  {metaTitle || 'Titre de la collection — NATURESSENCE'}
                 </p>
                 <p className="text-[11px] text-brand truncate mt-0.5">
-                  www.gmir-jewelry.com/collections/{slug || 'slug'}
+                  www.naturessence.tn/collections/{slug || 'slug'}
                 </p>
                 <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">
                   {metaDescription || 'Découvrez notre collection exclusive. Pièces uniques et raffinées.'}

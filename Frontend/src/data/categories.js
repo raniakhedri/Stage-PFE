@@ -1,0 +1,58 @@
+export const categories = [
+  {
+    slug: "essentielles",
+    name: "Huiles Essentielles",
+    description: "Découvrez l'âme des plantes à travers notre collection d'essences pures, certifiées biologiques et distillées avec un savoir-faire artisanal pour préserver leur force thérapeutique.",
+    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDnGN30brL6FKgncbq684Dc7yzwDs1N8ynSz9vKmYdF-Ak48x0UQxv_wZP-nL7t--RGLYdkUqsUZ4bgv0wUscfBMxIq_4AycutEidmjzJ204N8lVQiA1Wob6QVLpt7N8LG7yV8P_7CpgYyVFNub2Z8BOI9ypmfVGtt5LSDFQ-5nqUg-MgodrzAb14zuHC57vVcB3AVCJLHBGaN6yQqn0vL1hrfYEOm1RtNpFNiBOcUTw5lBYnKLiay5ShNNpVuL-rZOQM0UiYAzZT0w",
+    heroImage: "https://lh3.googleusercontent.com/aida-public/AB6AXuAwZV5rXNK4DMddz142zigiZkr7W1eJ6z4GbVjvDGa1ZD0ELvfQ_HHFsuSajxrY7fGhdPMlKaipVoh9LNi4IypNABGhptXA2SXxlFRs5kiRDTxDZI_z7l-aKK57qSqbY_nxD_8DT-6552yMa2-wdbAq465FAE0O8klHqkR6nXJqRoITjG36YRt-x4jbiuoobYXUDIw8iNHJlPXtsHR8GJvTujBz6xj5dAGbKAzRZnTdWboJ2PjOCUoP6vYZR4VPROp2hFCqcx1PJbu7",
+    subcategories: ["Agrumes", "Florales", "Boisées", "Épicées", "Herbacées", "Mentholées"],
+    productCount: 124,
+  },
+  {
+    slug: "vegetales",
+    name: "Huiles Végétales",
+    description: "Nos huiles végétales vierges et biologiques sont obtenues par première pression à froid, préservant ainsi toute la richesse nutritive de chaque graine et fruit.",
+    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBj2w9xMWLjwojlIpG4NjVaMHkcvjC_ZIhfT1jcTxtCBUthPYfcNDTw3_HQLX_QWep8k1Wl4GHJVSiIUEyM_llkvLVNhRCFwmVaM-Ov0cPmCsYgVh8wEDhu6V3p1T5AHBBKqw_F55Nrx9bS6uqdO7jyu1jgS2obB4drYgUFs8wh7C5PDUIZkWyJIZQh1NmsfXjMrEadupfyi9_OL5Ey8Abpdsz4r1DpjzQfzDpFKo7HB-xQM4Myk3b-Ti5Z-tcZh5Bk5-yWhnZweBij",
+    heroImage: "https://lh3.googleusercontent.com/aida-public/AB6AXuBj2w9xMWLjwojlIpG4NjVaMHkcvjC_ZIhfT1jcTxtCBUthPYfcNDTw3_HQLX_QWep8k1Wl4GHJVSiIUEyM_llkvLVNhRCFwmVaM-Ov0cPmCsYgVh8wEDhu6V3p1T5AHBBKqw_F55Nrx9bS6uqdO7jyu1jgS2obB4drYgUFs8wh7C5PDUIZkWyJIZQh1NmsfXjMrEadupfyi9_OL5Ey8Abpdsz4r1DpjzQfzDpFKo7HB-xQM4Myk3b-Ti5Z-tcZh5Bk5-yWhnZweBij",
+    subcategories: ["Visage", "Corps", "Cheveux", "Massage", "Cuisine", "Toutes"],
+    productCount: 89,
+  },
+  {
+    slug: "actifs",
+    name: "Actifs Cosmétiques",
+    description: "Des actifs puissants et concentrés pour formuler vos soins sur-mesure. Acide hyaluronique, vitamine C, rétinol végétal et bien plus.",
+    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDz8iL__02oI5EoA40Y9MwNI07Mz9HbuEsZBEVTB4UwOzVVMmTMcUUdW89YZBu5vHBmFFZLYO5vooKBRtxraxnw7_DgivzAaIqHPoykh5Cei0DQwGGg33hYJrqqkcE2EYugs0hQpHWoqNc_-eN7CYLnwbJTK0XTEPMMWl_shbrp1ZPANDHPXJVcaubVYCHADK5c4zVfsx8Fe6O6zpWc4MT2u5Nas51EwOVn0RPJ4KHnq7QO6AQWqjpFpXy53dw4dGFJR_eiTpK-YY51",
+    heroImage: "https://lh3.googleusercontent.com/aida-public/AB6AXuDz8iL__02oI5EoA40Y9MwNI07Mz9HbuEsZBEVTB4UwOzVVMmTMcUUdW89YZBu5vHBmFFZLYO5vooKBRtxraxnw7_DgivzAaIqHPoykh5Cei0DQwGGg33hYJrqqkcE2EYugs0hQpHWoqNc_-eN7CYLnwbJTK0XTEPMMWl_shbrp1ZPANDHPXJVcaubVYCHADK5c4zVfsx8Fe6O6zpWc4MT2u5Nas51EwOVn0RPJ4KHnq7QO6AQWqjpFpXy53dw4dGFJR_eiTpK-YY51",
+    subcategories: ["Anti-âge", "Hydratants", "Éclaircissants", "Purifiants", "Antioxydants", "Tous"],
+    productCount: 67,
+  },
+  {
+    slug: "beurres",
+    name: "Beurres & Cires",
+    description: "Des beurres végétaux bruts et des cires naturelles pour nourrir, protéger et sublimer votre peau et vos cheveux au quotidien.",
+    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDsey01e96i0H1WG3Qn4H0zhfInSnO3ITAZYXnxBomkCjPYc72RAnW5FBFQav4wkaR1yIMn4PoC5QA0J2KYKNMNp5FELBdfmExyPy7hiJCo0w8ejhjDpCKbtTSG9C19Jbh1LvUv4imURAuN8UeKx2iPb6Oz8cS5__QNHUcesmauB3MY4e9SA2IExbeTyOt6HBrIfjpXt2kNJq7L2c49xitdgl7CuJrtLX2Myg8_EKt97j-ve9NYmSOojU8T-2qd_7UmnSoLqgC_q9lt",
+    heroImage: "https://lh3.googleusercontent.com/aida-public/AB6AXuDsey01e96i0H1WG3Qn4H0zhfInSnO3ITAZYXnxBomkCjPYc72RAnW5FBFQav4wkaR1yIMn4PoC5QA0J2KYKNMNp5FELBdfmExyPy7hiJCo0w8ejhjDpCKbtTSG9C19Jbh1LvUv4imURAuN8UeKx2iPb6Oz8cS5__QNHUcesmauB3MY4e9SA2IExbeTyOt6HBrIfjpXt2kNJq7L2c49xitdgl7CuJrtLX2Myg8_EKt97j-ve9NYmSOojU8T-2qd_7UmnSoLqgC_q9lt",
+    subcategories: ["Beurres", "Cires", "Bases", "Émulsifiants", "Tous"],
+    productCount: 43,
+  },
+  {
+    slug: "hydrolats",
+    name: "Hydrolats",
+    description: "Eaux florales et hydrolats issus de la distillation de plantes aromatiques. Doux et polyvalents pour le soin du visage, du corps et des cheveux.",
+    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAPQYp5OBKbPGdtyL4fLsgnB9A5KLzRRxTDNgpnwxhOaJQJdeHPRi-sXu1j0qQ2sgMQUOwZ_MucWGtNV5lVsZi5pofX4fXTCuZZUhnUT2liItFOuQB4nDyEhNxuWj2Cx9H7xp1zQpLllD86uq66Bheciy9jpsGutaEcgpe4vyrWxIyRa6AgNPdbY6PiFxjVdA3SR95K1AjIawso1KcpLwOv8Bd1JMd4W7P5dsCG4wJycXMQqIeg9uoqZNjeroJTLemGfr9zIfPul678",
+    heroImage: "https://lh3.googleusercontent.com/aida-public/AB6AXuAPQYp5OBKbPGdtyL4fLsgnB9A5KLzRRxTDNgpnwxhOaJQJdeHPRi-sXu1j0qQ2sgMQUOwZ_MucWGtNV5lVsZi5pofX4fXTCuZZUhnUT2liItFOuQB4nDyEhNxuWj2Cx9H7xp1zQpLllD86uq66Bheciy9jpsGutaEcgpe4vyrWxIyRa6AgNPdbY6PiFxjVdA3SR95K1AjIawso1KcpLwOv8Bd1JMd4W7P5dsCG4wJycXMQqIeg9uoqZNjeroJTLemGfr9zIfPul678",
+    subcategories: ["Floraux", "Aromatiques", "Apaisants", "Tonifiants", "Tous"],
+    productCount: 38,
+  },
+  {
+    slug: "argiles",
+    name: "Argiles & Poudres",
+    description: "Argiles pures et poudres végétales pour des masques, gommages et soins capillaires naturels. Des trésors de la terre pour votre beauté.",
+    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBNhkRzsnXyaIMHDUXY5LFp648mWyu6oTm371Rs2wEkEwL13K516z7tZ_kOJ6Ml6qIj3-_9p-e7HVJGgDOavI6Vemrj3vUWGsYjhi91yhao3CgYIl0s3WxnvzODvbWawzoF901kmriSZseJ8C4wrtpkw_e9G2pxRMLIj7uUf6G7jwQ_AwZipfenilcYBIMSJEbe4hdbHkHp8XizQ7m3F6Cxugnp7XkRpqsKIwQmT1yLnYIYYSqxA49TXQxhun6EIgzYXwwJkMPZJg-l",
+    heroImage: "https://lh3.googleusercontent.com/aida-public/AB6AXuBNhkRzsnXyaIMHDUXY5LFp648mWyu6oTm371Rs2wEkEwL13K516z7tZ_kOJ6Ml6qIj3-_9p-e7HVJGgDOavI6Vemrj3vUWGsYjhi91yhao3CgYIl0s3WxnvzODvbWawzoF901kmriSZseJ8C4wrtpkw_e9G2pxRMLIj7uUf6G7jwQ_AwZipfenilcYBIMSJEbe4hdbHkHp8XizQ7m3F6Cxugnp7XkRpqsKIwQmT1yLnYIYYSqxA49TXQxhun6EIgzYXwwJkMPZJg-l",
+    subcategories: ["Argiles", "Poudres végétales", "Rhassoul", "Charbon actif", "Tous"],
+    productCount: 52,
+  },
+];
+
+export const getCategoryBySlug = (slug) => categories.find(c => c.slug === slug);

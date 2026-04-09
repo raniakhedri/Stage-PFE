@@ -45,6 +45,11 @@ public class ProductRequest {
     // SEO
     private String metaTitle;
 
+    // Cosmetics-specific
+    private String latin;
+    private boolean bio;
+    private String volumes;
+
     // Shipping
     private double weight;
     private double dimensionLength;
@@ -52,18 +57,12 @@ public class ProductRequest {
     private double dimensionHeight;
     private boolean specificFees;
 
-    // Variants config
-    private String colors;
-    private String sizes;
-
     // Performance
     private String performance;
 
     // Media
     private String imageUrl;
-
-    /** JSON-serialized color images map */
-    private String colorImages;
+    private String images;
 
     // Upsell
     private String upsellTags;

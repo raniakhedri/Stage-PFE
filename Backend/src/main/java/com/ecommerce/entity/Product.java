@@ -95,6 +95,18 @@ public class Product {
     @Column(columnDefinition = "boolean default false")
     private boolean pinnedInSubCategory = false;
 
+    // ── Cosmetics-specific ────────────────────────────────────────
+    /** Scientific / botanical name (e.g. "Lavandula angustifolia") */
+    private String latin;
+
+    /** Organic certification flag */
+    @Builder.Default
+    private boolean bio = false;
+
+    /** Comma-separated available volumes (e.g. "10ml,30ml,50ml,100ml") */
+    @Column(columnDefinition = "TEXT")
+    private String volumes;
+
     // ── SEO ───────────────────────────────────────────────────────
     @Column(name = "meta_title")
     private String metaTitle;
@@ -115,15 +127,6 @@ public class Product {
     @Builder.Default
     private boolean specificFees = false;
 
-    // ── Variants config (raw text, detailed variants in ProductVariant) ──
-    /** Comma-separated colour names */
-    @Column(columnDefinition = "TEXT")
-    private String colors;
-
-    /** Comma-separated size names */
-    @Column(columnDefinition = "TEXT")
-    private String sizes;
-
     // ── Performance label ─────────────────────────────────────────
     private String performance;
 
@@ -131,9 +134,9 @@ public class Product {
     @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
 
-    /** JSON map: { "Noir": ["dataUrl1","dataUrl2",null], "Rouge": [...] } */
-    @Column(name = "color_images", columnDefinition = "TEXT")
-    private String colorImages;
+    /** Comma-separated gallery image URLs */
+    @Column(columnDefinition = "TEXT")
+    private String images;
 
     // ── Upsell / Cross-sell (comma-separated product names) ───────
     @Column(name = "upsell_tags", columnDefinition = "TEXT")

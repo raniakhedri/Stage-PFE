@@ -36,7 +36,7 @@ export default function Login() {
             <span className="material-symbols-outlined text-white text-[20px]">shield</span>
           </div>
           <span className="text-xl font-bold tracking-tight text-slate-800">
-            GMIR<span className="text-brand">JEWELRY</span>
+            NATUR<span className="text-brand">ESSENCE</span>
           </span>
         </div>
 

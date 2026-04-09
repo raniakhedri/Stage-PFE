@@ -96,7 +96,7 @@ export default function Commandes() {
     try {
       setLoading(true)
       const { data } = await apiClient.get('/admin/orders')
-      setOrders(data)
+      setOrders(Array.isArray(data) ? data : (data?.content || []))
     } catch (err) {
       toast.error('Erreur lors du chargement des commandes')
     } finally {

@@ -1,8 +1,9 @@
 {
-  "name": "gmir-jewelry-frontend",
+  "name": "naturessence-frontend",
   "private": true,
+  "type": "module",
   "version": "0.0.1",
-  "description": "GMIR Jewelry — Frontend monorepo (Back Office + Front Office)",
+  "description": "NaturEssence — Frontend monorepo (Back Office + Front Office)",
   "workspaces": [
     "backoffice",
     "frontoffice"

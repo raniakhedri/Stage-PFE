@@ -466,8 +466,8 @@ export default function Categories() {
                   </div>
                   <div className="flex-1 flex justify-center">
                     <div className="flex flex-col items-center gap-0.5">
-                      <span className="text-2xl font-black tracking-[0.15em] uppercase text-[#005b3d]">GMIR</span>
-                      <span className="text-[9px] font-medium tracking-[0.35em] uppercase text-[#005b3d]">JEWELRY</span>
+                      <span className="text-2xl font-black tracking-[0.15em] uppercase text-[#005b3d]">NATUR</span>
+                      <span className="text-[9px] font-medium tracking-[0.35em] uppercase text-[#005b3d]">ESSENCE</span>
                     </div>
                   </div>
                   <div className="flex-1 flex justify-end items-center gap-5">
