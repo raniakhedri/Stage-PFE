@@ -27,7 +27,7 @@ logs/
 
 # ── Wrapper ──────────────────────────────────────────────────
 !mvnw
-!mvnw.cmd
+mvnw.cmd
 
 
 package-lock.json
