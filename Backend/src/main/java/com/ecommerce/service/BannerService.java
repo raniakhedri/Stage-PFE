@@ -40,8 +40,15 @@ public class BannerService {
         Banner banner = Banner.builder()
                 .titre(req.getTitre())
                 .sousTitre(req.getSousTitre())
+                .alignement(req.getAlignement() != null ? req.getAlignement() : "center")
                 .imageUrl(req.getImageUrl())
+                .mobileImageUrl(req.getMobileImageUrl())
+                .videoUrl(req.getVideoUrl())
+                .badgeTexte(req.getBadgeTexte() != null ? req.getBadgeTexte() : "Nouvelle Collection")
+                .badgeBgColor(req.getBadgeBgColor() != null ? req.getBadgeBgColor() : "rgba(255,255,255,0.15)")
+                .badgeTextColor(req.getBadgeTextColor() != null ? req.getBadgeTextColor() : "#ffffff")
                 .ctaTexte(req.getCtaTexte())
+                .ctaType(req.getCtaType() != null ? req.getCtaType() : "produit")
                 .ctaLien(req.getCtaLien())
                 .position(req.getPosition())
                 .audience(req.getAudience())
@@ -50,6 +57,9 @@ public class BannerService {
                 .dateDebut(req.getDateDebut())
                 .dateFin(req.getDateFin())
                 .actif(req.isActif())
+                .visibleHomepage(req.isVisibleHomepage())
+                .visibleMobile(req.isVisibleMobile())
+                .visibleDesktop(req.isVisibleDesktop())
                 .ordre(req.getOrdre())
                 .dureeSecondes(req.getDureeSecondes() > 0 ? req.getDureeSecondes() : 5)
                 .animation(req.getAnimation() != null ? req.getAnimation() : "fade")
@@ -63,8 +73,15 @@ public class BannerService {
         Banner banner = findOrThrow(id);
         banner.setTitre(req.getTitre());
         banner.setSousTitre(req.getSousTitre());
+        banner.setAlignement(req.getAlignement() != null ? req.getAlignement() : "center");
         banner.setImageUrl(req.getImageUrl());
+        banner.setMobileImageUrl(req.getMobileImageUrl());
+        banner.setVideoUrl(req.getVideoUrl());
+        banner.setBadgeTexte(req.getBadgeTexte() != null ? req.getBadgeTexte() : "Nouvelle Collection");
+        banner.setBadgeBgColor(req.getBadgeBgColor() != null ? req.getBadgeBgColor() : "rgba(255,255,255,0.15)");
+        banner.setBadgeTextColor(req.getBadgeTextColor() != null ? req.getBadgeTextColor() : "#ffffff");
         banner.setCtaTexte(req.getCtaTexte());
+        banner.setCtaType(req.getCtaType() != null ? req.getCtaType() : "produit");
         banner.setCtaLien(req.getCtaLien());
         banner.setPosition(req.getPosition());
         banner.setAudience(req.getAudience());
@@ -73,6 +90,9 @@ public class BannerService {
         banner.setDateDebut(req.getDateDebut());
         banner.setDateFin(req.getDateFin());
         banner.setActif(req.isActif());
+        banner.setVisibleHomepage(req.isVisibleHomepage());
+        banner.setVisibleMobile(req.isVisibleMobile());
+        banner.setVisibleDesktop(req.isVisibleDesktop());
         banner.setOrdre(req.getOrdre());
         banner.setDureeSecondes(req.getDureeSecondes() > 0 ? req.getDureeSecondes() : 5);
         banner.setAnimation(req.getAnimation() != null ? req.getAnimation() : "fade");
@@ -124,8 +144,15 @@ public class BannerService {
                 .id(b.getId())
                 .titre(b.getTitre())
                 .sousTitre(b.getSousTitre())
+                .alignement(b.getAlignement() != null ? b.getAlignement() : "center")
                 .imageUrl(b.getImageUrl())
+                .mobileImageUrl(b.getMobileImageUrl())
+                .videoUrl(b.getVideoUrl())
+                .badgeTexte(b.getBadgeTexte() != null ? b.getBadgeTexte() : "Nouvelle Collection")
+                .badgeBgColor(b.getBadgeBgColor() != null ? b.getBadgeBgColor() : "rgba(255,255,255,0.15)")
+                .badgeTextColor(b.getBadgeTextColor() != null ? b.getBadgeTextColor() : "#ffffff")
                 .ctaTexte(b.getCtaTexte())
+                .ctaType(b.getCtaType() != null ? b.getCtaType() : "produit")
                 .ctaLien(b.getCtaLien())
                 .position(b.getPosition())
                 .positionLabel(b.getPosition().getLabel())
@@ -137,11 +164,18 @@ public class BannerService {
                 .dateDebut(b.getDateDebut())
                 .dateFin(b.getDateFin())
                 .actif(b.isActif())
+                .visibleHomepage(boolOrDefaultTrue(b.getVisibleHomepage()))
+                .visibleMobile(boolOrDefaultTrue(b.getVisibleMobile()))
+                .visibleDesktop(boolOrDefaultTrue(b.getVisibleDesktop()))
                 .ordre(b.getOrdre())
                 .dureeSecondes(b.getDureeSecondes())
                 .animation(b.getAnimation() != null ? b.getAnimation() : "fade")
                 .createdAt(b.getCreatedAt())
                 .updatedAt(b.getUpdatedAt())
                 .build();
+    }
+
+    private boolean boolOrDefaultTrue(Boolean value) {
+        return value == null || value;
     }
 }

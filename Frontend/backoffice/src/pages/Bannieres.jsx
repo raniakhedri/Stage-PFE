@@ -36,6 +36,15 @@ const prioriteConfig = {
   3: { label: 'Faible',  icon: 'south',                 color: 'text-slate-400' },
 }
 
+const toSafeCssColor = (value, fallback) => {
+  if (typeof value !== 'string' || !value.trim()) return fallback
+  const v = value.trim()
+  const isHex = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(v)
+  const isRgb = /^rgba?\([^\)]+\)$/i.test(v)
+  const isHsl = /^hsla?\([^\)]+\)$/i.test(v)
+  return isHex || isRgb || isHsl ? v : fallback
+}
+
 const statutOptions = [
   { value: '', label: 'Tous les statuts' },
   { value: 'ACTIF', label: 'Actif' },
@@ -71,6 +80,7 @@ export default function Bannieres() {
   // Data state
   const [bannieres, setBannieres] = useState([])
   const [loading, setLoading] = useState(true)
+  const [savingOrder, setSavingOrder] = useState(false)
   const [dragIdx, setDragIdx] = useState(null)
   const [overIdx, setOverIdx] = useState(null)
 
@@ -145,6 +155,71 @@ export default function Bannieres() {
       toast.success('Bannière supprimée')
     } catch {
       toast.error('Erreur lors de la suppression')
+    }
+  }
+
+  const buildBannerPayload = (banner, overrides = {}) => ({
+    titre: banner.titre || '',
+    sousTitre: banner.sousTitre || '',
+    alignement: banner.alignement || 'center',
+    imageUrl: banner.imageUrl || null,
+    mobileImageUrl: banner.mobileImageUrl || null,
+    videoUrl: banner.videoUrl || null,
+    badgeTexte: banner.badgeTexte || 'Nouvelle Collection',
+    badgeBgColor: banner.badgeBgColor || 'rgba(255,255,255,0.15)',
+    badgeTextColor: banner.badgeTextColor || '#ffffff',
+    ctaTexte: banner.ctaTexte || '',
+    ctaType: banner.ctaType || 'produit',
+    ctaLien: banner.ctaLien || '',
+    position: banner.position || 'HOMEPAGE_HERO',
+    audience: banner.audience || 'ALL',
+    statut: banner.statut || 'BROUILLON',
+    priorite: Number.isFinite(Number(banner.priorite)) ? Number(banner.priorite) : 3,
+    dateDebut: banner.dateDebut || null,
+    dateFin: banner.dateFin || null,
+    actif: Boolean(banner.actif),
+    visibleHomepage: banner.visibleHomepage !== false,
+    visibleMobile: banner.visibleMobile !== false,
+    visibleDesktop: banner.visibleDesktop !== false,
+    ordre: Number.isFinite(Number(banner.ordre)) ? Number(banner.ordre) : 10,
+    dureeSecondes: Math.max(1, Number(banner.dureeSecondes || 5)),
+    animation: banner.animation || 'fade',
+    ...overrides,
+  })
+
+  const persistReorderedBanners = async (reordered) => {
+    const ranked = reordered.map((banner, index) => ({
+      ...banner,
+      ordre: index + 1,
+      // Keep edit form compatibility (priorité options are 1..3)
+      priorite: Math.min(index + 1, 3),
+    }))
+
+    const changed = ranked.filter((banner, index) => {
+      const prev = reordered[index]
+      return banner.ordre !== prev.ordre || banner.priorite !== prev.priorite
+    })
+
+    setBannieres(ranked)
+
+    if (!changed.length) return
+
+    try {
+      setSavingOrder(true)
+      await Promise.all(
+        changed.map((banner) =>
+          bannerApi.update(banner.id, buildBannerPayload(banner, {
+            ordre: banner.ordre,
+            priorite: banner.priorite,
+          }))
+        )
+      )
+      toast.success('Ordre et priorité mis à jour')
+    } catch {
+      toast.error('Erreur lors de la sauvegarde du nouvel ordre')
+      fetchBanners()
+    } finally {
+      setSavingOrder(false)
     }
   }
 
@@ -297,20 +372,28 @@ export default function Bannieres() {
                 return (
                   <tr
                     key={b.id}
-                    draggable
-                    onDragStart={() => setDragIdx(realIdx)}
-                    onDragOver={(e) => { e.preventDefault(); setOverIdx(realIdx) }}
-                    onDrop={() => {
+                    draggable={!savingOrder}
+                    onDragStart={() => {
+                      if (savingOrder) return
+                      setDragIdx(realIdx)
+                    }}
+                    onDragOver={(e) => {
+                      if (savingOrder) return
+                      e.preventDefault()
+                      setOverIdx(realIdx)
+                    }}
+                    onDrop={async () => {
+                      if (savingOrder) return
                       if (dragIdx === null || dragIdx === realIdx) { setDragIdx(null); setOverIdx(null); return }
                       const reordered = [...bannieres]
                       const [removed] = reordered.splice(dragIdx, 1)
                       reordered.splice(realIdx, 0, removed)
-                      setBannieres(reordered)
-                      setDragIdx(null); setOverIdx(null)
-                      toast.success('Ordre mis à jour')
+                      setDragIdx(null)
+                      setOverIdx(null)
+                      await persistReorderedBanners(reordered)
                     }}
                     onDragEnd={() => { setDragIdx(null); setOverIdx(null) }}
-                    className={`hover:bg-slate-50 transition-colors group ${isExpired ? 'bg-slate-50/30' : ''} ${overIdx === realIdx ? 'border-t-2 border-brand' : ''}`}
+                    className={`hover:bg-slate-50 transition-colors group ${isExpired ? 'bg-slate-50/30' : ''} ${overIdx === realIdx ? 'border-t-2 border-brand' : ''} ${savingOrder ? 'opacity-70' : ''}`}
                   >
                     {/* Drag handle */}
                     <td className="px-2 py-2.5">
@@ -466,65 +549,100 @@ export default function Bannieres() {
         </div>
       )}
 
-      {/* Full-screen hero preview — identical to Home.jsx */}
-      {previewBanner && (
-        <div className="fixed inset-0 z-[9999] overflow-hidden">
-          {/* Background image — exactly like Home.jsx */}
-          <div className="absolute inset-0 bg-neutral-900">
-            {previewBanner.imageUrl ? (
-              <img
-                src={previewBanner.imageUrl}
-                alt={previewBanner.titre}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <span className="material-symbols-outlined text-white/20 text-[120px]">image</span>
-              </div>
-            )}
-          </div>
+      {/* Full-screen hero preview — mirrors frontoffice hero style */}
+      {previewBanner && (() => {
+        const isYouTubeVideo = /youtube\.com|youtu\.be/i.test(previewBanner.videoUrl || '')
+        const hasVideo = Boolean(previewBanner.videoUrl)
+        const hasImage = Boolean(previewBanner.imageUrl)
+        const previewAlignmentClass =
+          previewBanner.alignement === 'center'
+            ? 'items-center text-center'
+            : previewBanner.alignement === 'right'
+              ? 'items-end text-right ml-auto'
+              : 'items-start text-left'
 
-          {/* Dark gradient overlay — identical to Home.jsx */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent z-[1]" />
+        const badgeBg = toSafeCssColor(previewBanner.badgeBgColor, 'rgba(255,255,255,0.15)')
+        const badgeText = toSafeCssColor(previewBanner.badgeTextColor, '#ffffff')
 
-          {/* Text content — identical layout/styles to Home.jsx */}
-          <div className="absolute inset-0 flex flex-col items-center justify-end pb-24 px-12 z-10">
-            <div className="flex flex-col items-center gap-8">
-              <h1 className="text-white text-5xl md:text-8xl font-black tracking-[-0.04em] uppercase text-center leading-none drop-shadow-lg">
-                {previewBanner.titre || 'NOUVELLE COLLECTION'}
-              </h1>
-              {previewBanner.sousTitre && (
-                <p className="text-white/80 text-lg md:text-xl font-medium text-center tracking-wide drop-shadow">
-                  {previewBanner.sousTitre}
-                </p>
-              )}
-              {previewBanner.ctaTexte && (
-                <span className="bg-white text-black px-10 py-4 font-bold tracking-[0.1em] text-[12px] uppercase cursor-default">
-                  {previewBanner.ctaTexte}
-                </span>
+        return (
+          <div className="fixed inset-0 z-[9999] overflow-hidden bg-black/60">
+            <div className="absolute inset-0 z-[1]" onClick={() => setPreviewBanner(null)} />
+
+            {/* Background media */}
+            <div className="absolute inset-0 z-[2] bg-neutral-900">
+              {hasVideo ? (
+                isYouTubeVideo ? (
+                  <iframe
+                    src={`${previewBanner.videoUrl}${previewBanner.videoUrl.includes('?') ? '&' : '?'}autoplay=1&mute=1&loop=1&controls=0&playsinline=1`}
+                    className="w-full h-full object-cover pointer-events-none"
+                    title={previewBanner.titre || 'Bannière vidéo'}
+                    allow="autoplay; encrypted-media"
+                  />
+                ) : (
+                  <video
+                    className="w-full h-full object-cover"
+                    src={previewBanner.videoUrl}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                  />
+                )
+              ) : hasImage ? (
+                <img src={previewBanner.imageUrl} alt={previewBanner.titre} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <span className="material-symbols-outlined text-white/20 text-[120px]">image</span>
+                </div>
               )}
             </div>
+
+            {/* Same overlay direction/intensity as frontoffice hero (explicit color, independent from backoffice theme tokens) */}
+            <div className="absolute inset-0 z-[3] bg-gradient-to-r from-[#163328]/70 to-transparent" />
+
+            {/* Hero content */}
+            <div className="absolute inset-0 z-[4] flex items-center px-8 md:px-20">
+              <div className={`max-w-2xl text-white flex flex-col ${previewAlignmentClass}`}>
+                <span
+                  className="inline-block px-3 py-1 rounded-full backdrop-blur-md text-xs font-body tracking-widest uppercase mb-6"
+                  style={{ backgroundColor: badgeBg, color: badgeText }}
+                >
+                  {previewBanner.badgeTexte || 'Nouvelle Collection'}
+                </span>
+                <h1 className="text-4xl md:text-7xl font-headline font-bold leading-tight mb-8">
+                  {previewBanner.titre || "L'Âme Pure des Plantes"}
+                </h1>
+                <p className="text-lg text-white/80 mb-10 max-w-lg font-light leading-relaxed">
+                  {previewBanner.sousTitre || "Découvrez nos extraits botaniques d'exception, sourcés de manière éthique pour sublimer vos rituels de soin quotidiens."}
+                </p>
+                {previewBanner.ctaTexte && (
+                  <span
+                    className="px-8 py-4 rounded-lg font-medium shadow-xl cursor-default whitespace-nowrap max-w-full overflow-hidden text-ellipsis"
+                    style={{ backgroundColor: '#163328', color: '#ffffff' }}
+                  >
+                    {previewBanner.ctaTexte}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Preview label */}
+            <div className="absolute top-6 left-6 z-[5] flex items-center gap-2 bg-black/40 backdrop-blur-sm text-white px-4 py-2 text-[11px] font-bold uppercase tracking-widest">
+              <span className="material-symbols-outlined text-[15px]">preview</span>
+              Aperçu — Home Page
+            </div>
+
+            {/* Close button */}
+            <button
+              onClick={() => setPreviewBanner(null)}
+              className="absolute top-6 right-6 z-[5] w-11 h-11 flex items-center justify-center bg-black/40 backdrop-blur-sm text-white hover:bg-white hover:text-black transition-all duration-300"
+              aria-label="Fermer"
+            >
+              <span className="material-symbols-outlined text-[20px]">close</span>
+            </button>
           </div>
-
-          {/* Top-left badge */}
-          <div className="absolute top-6 left-6 z-20 flex items-center gap-2 bg-black/40 backdrop-blur-sm text-white px-4 py-2 text-[11px] font-bold uppercase tracking-widest">
-            <span className="material-symbols-outlined text-[15px]">preview</span>
-            Aperçu — Home Page
-          </div>
-
-          {/* Close button */}
-          <button
-            onClick={() => setPreviewBanner(null)}
-            className="absolute top-6 right-6 z-20 w-11 h-11 flex items-center justify-center bg-black/40 backdrop-blur-sm text-white hover:bg-white hover:text-black transition-all duration-300"
-            aria-label="Fermer"
-          >
-            <span className="material-symbols-outlined text-[20px]">close</span>
-          </button>
-
-          {/* Click outside to close */}
-          <div className="absolute inset-0 z-[5]" onClick={() => setPreviewBanner(null)} />
-        </div>
-      )}
+        )
+      })()}
     </div>
   )
 }

@@ -19,9 +19,23 @@ public class BannerRequest {
 
     private String imageUrl;
 
+    private String mobileImageUrl;
+
+    private String videoUrl;
+
+    private String badgeTexte = "Nouvelle Collection";
+
+    private String badgeBgColor = "rgba(255,255,255,0.15)";
+
+    private String badgeTextColor = "#ffffff";
+
     private String ctaTexte;
 
+    private String ctaType = "produit";
+
     private String ctaLien;
+
+    private String alignement = "center";
 
     @NotNull(message = "La position est obligatoire")
     private BannerPosition position;
@@ -39,6 +53,12 @@ public class BannerRequest {
     private LocalDate dateFin;
 
     private boolean actif = false;
+
+    private boolean visibleHomepage = true;
+
+    private boolean visibleMobile = true;
+
+    private boolean visibleDesktop = true;
 
     private int ordre = 10;
 

@@ -12,8 +12,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -110,10 +113,20 @@ public class DiscountService {
     @Transactional
     public DiscountResponse toggleStatut(Long id) {
         Discount discount = findOrThrow(id);
-        discount.setStatut("actif".equals(discount.getStatut()) ? "inactif" : "actif");
+        discount.setStatut("actif".equals(normalizeStatut(discount.getStatut())) ? "inactif" : "actif");
         discount = discountRepository.save(discount);
         syncProductsPromo(discount);
         return mapToResponse(discount);
+    }
+
+    // ── Frontoffice: latest active discount for top announcement ───
+    @Transactional(readOnly = true)
+    public Optional<DiscountResponse> getLatestActiveDiscountForAnnouncement() {
+        return discountRepository.findByStatutIgnoreCaseOrderByCreatedAtDesc("actif")
+                .stream()
+                .filter(this::isDiscountCurrentlyValid)
+                .findFirst()
+                .map(this::mapToResponse);
     }
 
     // ── Helpers ────────────────────────────────────────────────────
@@ -132,6 +145,20 @@ public class DiscountService {
         return Math.max(0, prixOriginal - valeur);
     }
 
+    private boolean isDiscountCurrentlyValid(Discount discount) {
+        LocalDate today = LocalDate.now();
+        if (!"actif".equals(normalizeStatut(discount.getStatut()))) {
+            return false;
+        }
+        if (discount.getDateDebut() != null && today.isBefore(discount.getDateDebut())) {
+            return false;
+        }
+        if (discount.getDateFin() != null && today.isAfter(discount.getDateFin())) {
+            return false;
+        }
+        return true;
+    }
+
     /**
      * Sync Product entities when a discount is created/updated/toggled.
      * Sets promoActive, promoPrice, promoStart, promoEnd on each matched product.
@@ -141,7 +168,7 @@ public class DiscountService {
         if (products.isEmpty())
             return;
 
-        boolean active = "actif".equals(discount.getStatut());
+        boolean active = "actif".equals(normalizeStatut(discount.getStatut()));
         for (Product product : products) {
             if (active) {
                 double finalPrice = computeFinalPrice(discount.getType(), discount.getValeur(), product.getSalePrice());
@@ -173,6 +200,13 @@ public class DiscountService {
         if (!products.isEmpty()) {
             productRepository.saveAll(products);
         }
+    }
+
+    private String normalizeStatut(String statut) {
+        if (statut == null) {
+            return "";
+        }
+        return statut.trim().toLowerCase(Locale.ROOT);
     }
 
     /**

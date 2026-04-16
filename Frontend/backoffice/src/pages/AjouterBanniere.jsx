@@ -63,6 +63,25 @@ const alignOptions = [
   { value: 'right', label: 'Droite', icon: 'format_align_right' },
 ]
 
+const toColorPickerValue = (value, fallback) => {
+  if (typeof value !== 'string') return fallback
+  return /^#[0-9a-fA-F]{6}$/.test(value.trim()) ? value.trim() : fallback
+}
+
+const toSafeCssColor = (value, fallback) => {
+  if (typeof value !== 'string' || !value.trim()) return fallback
+  const v = value.trim()
+  const isHex = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(v)
+  const isRgb = /^rgba?\([^\)]+\)$/i.test(v)
+  const isHsl = /^hsla?\([^\)]+\)$/i.test(v)
+  return isHex || isRgb || isHsl ? v : fallback
+}
+
+const truncateText = (value, max, fallback) => {
+  const text = (typeof value === 'string' ? value.trim() : '') || fallback
+  return text.length > max ? `${text.slice(0, max - 1)}…` : text
+}
+
 // ── Component ──────────────────────────────────────────────────────────────────
 export default function AjouterBanniere() {
   const navigate = useNavigate()
@@ -73,12 +92,16 @@ export default function AjouterBanniere() {
   const [desktopImage, setDesktopImage] = useState('')
   const [desktopImageName, setDesktopImageName] = useState('')
   const [mobileImage, setMobileImage] = useState('')
+  const [mobileImageName, setMobileImageName] = useState('')
   const [videoUrl, setVideoUrl] = useState('')
 
   // ─ Texte
   const [titre, setTitre] = useState('')
   const [sousTitre, setSousTitre] = useState('')
   const [alignement, setAlignement] = useState('center')
+  const [badgeTexte, setBadgeTexte] = useState('Nouvelle Collection')
+  const [badgeBgColor, setBadgeBgColor] = useState('rgba(255,255,255,0.15)')
+  const [badgeTextColor, setBadgeTextColor] = useState('#ffffff')
 
   // ─ CTA
   const [ctaTexte, setCtaTexte] = useState('')
@@ -123,6 +146,23 @@ export default function AjouterBanniere() {
   const [saving, setSaving] = useState(false)
   const [loadingData, setLoadingData] = useState(isEditing)
 
+  const previewDeviceIsMobile = previewDevice === 'mobile'
+  const previewImage = previewDeviceIsMobile ? (mobileImage || desktopImage) : (desktopImage || mobileImage)
+  const previewHasImage = typeof previewImage === 'string' && (previewImage.startsWith('data:') || previewImage.startsWith('http'))
+  const previewIsYouTubeVideo = /youtube\.com|youtu\.be/i.test(videoUrl || '')
+  const previewAlignmentClass =
+    alignement === 'center'
+      ? 'items-center text-center mx-auto'
+      : alignement === 'right'
+        ? 'items-end text-right ml-auto'
+        : 'items-start text-left'
+  const previewTitle = truncateText(titre, previewDeviceIsMobile ? 30 : 58, 'Titre de la bannière')
+  const previewSubtitle = truncateText(sousTitre, previewDeviceIsMobile ? 40 : 85, 'Sous-titre de la bannière')
+  const previewCtaText = truncateText(ctaTexte, previewDeviceIsMobile ? 20 : 30, 'Bouton CTA')
+  const previewBadgeText = truncateText(badgeTexte, previewDeviceIsMobile ? 24 : 32, 'Nouvelle Collection')
+  const badgePreviewBg = toSafeCssColor(badgeBgColor, 'rgba(255,255,255,0.15)')
+  const badgePreviewText = toSafeCssColor(badgeTextColor, '#ffffff')
+
   // ─ Load existing banner for edit mode
   useEffect(() => {
     if (!isEditing) return
@@ -131,8 +171,15 @@ export default function AjouterBanniere() {
         const data = await bannerApi.getById(id)
         setTitre(data.titre || '')
         setSousTitre(data.sousTitre || '')
+        setAlignement(data.alignement || 'center')
+        setBadgeTexte(data.badgeTexte || 'Nouvelle Collection')
+        setBadgeBgColor(data.badgeBgColor || 'rgba(255,255,255,0.15)')
+        setBadgeTextColor(data.badgeTextColor || '#ffffff')
         setDesktopImage(data.imageUrl || '')
+        setMobileImage(data.mobileImageUrl || '')
+        setVideoUrl(data.videoUrl || '')
         setCtaTexte(data.ctaTexte || '')
+        setCtaType(data.ctaType || 'produit')
         setCtaLien(data.ctaLien || '')
         setPosition(data.position || 'HOMEPAGE_HERO')
         setPriorite(data.priorite || 2)
@@ -140,6 +187,9 @@ export default function AjouterBanniere() {
         setDateFin(data.dateFin || '')
         setAudience(data.audience || 'ALL')
         setStatut(data.statut || 'BROUILLON')
+        setVisibleHomepage(data.visibleHomepage ?? true)
+        setVisibleMobile(data.visibleMobile ?? true)
+        setVisibleDesktop(data.visibleDesktop ?? true)
         setDureeSecondes(data.dureeSecondes || 5)
         setAnimation(data.animation || 'fade')
       } catch {
@@ -185,8 +235,15 @@ export default function AjouterBanniere() {
     const payload = {
       titre: titre.trim(),
       sousTitre: sousTitre.trim(),
+      alignement,
+      badgeTexte: badgeTexte.trim() || 'Nouvelle Collection',
+      badgeBgColor: badgeBgColor.trim() || 'rgba(255,255,255,0.15)',
+      badgeTextColor: badgeTextColor.trim() || '#ffffff',
       imageUrl: desktopImage || null,
+      mobileImageUrl: mobileImage || null,
+      videoUrl: videoUrl.trim() || null,
       ctaTexte: ctaTexte.trim(),
+      ctaType,
       ctaLien: ctaLien.trim(),
       position,
       audience,
@@ -195,6 +252,9 @@ export default function AjouterBanniere() {
       dateDebut: dateDebut || null,
       dateFin: dateFin || null,
       actif: statut === 'ACTIF',
+      visibleHomepage,
+      visibleMobile,
+      visibleDesktop,
       ordre: 10,
       dureeSecondes: Number(dureeSecondes),
       animation,
@@ -290,10 +350,16 @@ export default function AjouterBanniere() {
                 <div>
                   <Label>Image Mobile</Label>
                   {mobileImage ? (
-                    <div className="relative bg-slate-50 rounded-lg border border-slate-200 p-4 flex items-center gap-3">
-                      <span className="material-symbols-outlined text-brand">smartphone</span>
-                      <span className="text-sm text-slate-700 truncate flex-1">{mobileImage}</span>
-                      <button type="button" onClick={() => setMobileImage('')} className="text-red-400 hover:text-red-500">
+                    <div className="relative bg-slate-50 rounded-lg border border-slate-200 overflow-hidden">
+                      {mobileImage.startsWith('data:') || mobileImage.startsWith('http') ? (
+                        <img src={mobileImage} alt="preview mobile" className="w-full h-28 object-cover" />
+                      ) : (
+                        <div className="p-4 flex items-center gap-3">
+                          <span className="material-symbols-outlined text-brand">smartphone</span>
+                          <span className="text-sm text-slate-700 truncate flex-1">{mobileImageName || mobileImage}</span>
+                        </div>
+                      )}
+                      <button type="button" onClick={() => { setMobileImage(''); setMobileImageName('') }} className="absolute top-2 right-2 bg-white/80 backdrop-blur text-red-400 hover:text-red-500 p-1 rounded-full shadow">
                         <span className="material-symbols-outlined text-sm">close</span>
                       </button>
                     </div>
@@ -302,7 +368,14 @@ export default function AjouterBanniere() {
                       <span className="material-symbols-outlined text-3xl text-slate-300 mb-2 block">smartphone</span>
                       <p className="text-xs font-bold text-slate-500">Glissez ou cliquez</p>
                       <p className="text-[10px] text-slate-400 mt-1">Recommandé: 800×800px</p>
-                      <input type="file" className="hidden" accept="image/*" onChange={(e) => { if (e.target.files?.[0]) setMobileImage(e.target.files[0].name) }} />
+                      <input type="file" className="hidden" accept="image/*" onChange={async (e) => {
+                        const file = e.target.files?.[0]
+                        if (file) {
+                          setMobileImageName(file.name)
+                          const b64 = await fileToBase64(file)
+                          setMobileImage(b64)
+                        }
+                      }} />
                     </label>
                   )}
                 </div>
@@ -335,6 +408,36 @@ export default function AjouterBanniere() {
                   placeholder="Ex: Découvrez nos équipements haute performance..."
                   className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm focus:ring-2 focus:ring-brand focus:border-brand transition-all placeholder:text-slate-400 outline-none resize-none"
                 />
+              </div>
+              <div>
+                <Label>Badge (ex: Nouvelle Collection)</Label>
+                <Input value={badgeTexte} onChange={(e) => setBadgeTexte(e.target.value)} placeholder="Texte du badge" maxLength={40} />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Couleur du badge (fond)</Label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={toColorPickerValue(badgeBgColor, '#738579')}
+                      onChange={(e) => setBadgeBgColor(e.target.value)}
+                      className="h-10 w-12 rounded border border-slate-200 bg-white cursor-pointer"
+                    />
+                    <Input value={badgeBgColor} onChange={(e) => setBadgeBgColor(e.target.value)} placeholder="#738579 ou rgba(...)" />
+                  </div>
+                </div>
+                <div>
+                  <Label>Couleur du texte du badge</Label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={toColorPickerValue(badgeTextColor, '#ffffff')}
+                      onChange={(e) => setBadgeTextColor(e.target.value)}
+                      className="h-10 w-12 rounded border border-slate-200 bg-white cursor-pointer"
+                    />
+                    <Input value={badgeTextColor} onChange={(e) => setBadgeTextColor(e.target.value)} placeholder="#ffffff" />
+                  </div>
+                </div>
               </div>
               <div>
                 <Label>Alignement du texte</Label>
@@ -443,7 +546,17 @@ export default function AjouterBanniere() {
               <CustomSelect value={animation} onChange={setAnimation} options={animOptions} />
               {/* Preview animation */}
               <div className="mt-4 bg-slate-50 rounded-lg p-4 border border-slate-200 text-center">
-                <span className="material-symbols-outlined text-brand/40 text-3xl">{animation === 'fade' ? 'blur_on' : animation === 'slide' ? 'swipe_right' : 'zoom_in'}</span>
+                <span className="material-symbols-outlined text-brand/40 text-3xl">
+                  {animation === 'fade'
+                    ? 'blur_on'
+                    : animation === 'slide'
+                      ? 'swipe_right'
+                      : animation === 'zoom'
+                        ? 'zoom_in'
+                        : animation === 'ken-burns'
+                          ? 'movie'
+                          : 'blur_on'}
+                </span>
                 <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase">{animation}</p>
               </div>
             </div>
@@ -587,21 +700,57 @@ export default function AjouterBanniere() {
               </div>
             </div>
             <div className="p-4">
-              <div className={`mx-auto border-2 border-slate-100 rounded-lg overflow-hidden transition-all ${previewDevice === 'desktop' ? 'w-full aspect-[16/5]' : 'w-44 aspect-[9/16] mx-auto'}`}>
-                <div className="w-full h-full bg-gradient-to-br from-brand/10 to-brand/5 flex flex-col items-center justify-center p-4 text-center relative">
-                  {desktopImage && (desktopImage.startsWith('data:') || desktopImage.startsWith('http')) && (
-                    <img src={desktopImage} alt="preview" className="absolute inset-0 w-full h-full object-cover" />
-                  )}
-                  <div className="relative z-10 flex flex-col items-center text-center">
-                    <p className={`font-bold text-white drop-shadow-lg ${previewDevice === 'mobile' ? 'text-xs' : 'text-sm'} ${alignement === 'left' ? 'self-start text-left' : alignement === 'right' ? 'self-end text-right' : ''}`}>
-                      {titre || 'Titre de la bannière'}
-                    </p>
-                    <p className={`text-white/80 drop-shadow mt-0.5 ${previewDevice === 'mobile' ? 'text-[9px]' : 'text-[11px]'} ${alignement === 'left' ? 'self-start text-left' : alignement === 'right' ? 'self-end text-right' : ''}`}>
-                      {sousTitre || 'Sous-titre de la bannière'}
-                    </p>
-                    <button type="button" className={`mt-2 bg-white text-slate-900 font-bold rounded shadow-sm ${previewDevice === 'mobile' ? 'text-[8px] px-2 py-1' : 'text-[10px] px-3 py-1.5'}`}>
-                      {ctaTexte || 'Bouton CTA'}
-                    </button>
+              <div className={`mx-auto border-2 border-slate-100 rounded-lg overflow-hidden transition-all ${previewDevice === 'desktop' ? 'w-full aspect-[16/5]' : 'w-44 aspect-square'}`}>
+                <div className="w-full h-full relative bg-slate-100">
+                  {videoUrl ? (
+                    previewIsYouTubeVideo ? (
+                      <iframe
+                        src={`${videoUrl}${videoUrl.includes('?') ? '&' : '?'}autoplay=1&mute=1&loop=1&controls=0&playsinline=1`}
+                        className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                        title="Prévisualisation vidéo bannière"
+                        allow="autoplay; encrypted-media"
+                      />
+                    ) : (
+                      <video
+                        className="absolute inset-0 w-full h-full object-cover"
+                        src={videoUrl}
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                      />
+                    )
+                  ) : previewHasImage ? (
+                    <img
+                      src={previewImage}
+                      alt="preview"
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                  ) : null}
+
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/30 to-transparent" />
+
+                  <div className={`relative z-10 h-full flex items-center ${previewDeviceIsMobile ? 'px-3 py-2' : 'px-4 py-3'}`}>
+                    <div className={`max-w-[88%] text-white flex flex-col gap-1 ${previewAlignmentClass}`}>
+                      <span
+                        className={`inline-block rounded-full px-2.5 py-1 font-bold uppercase tracking-wider ${previewDeviceIsMobile ? 'text-[7px]' : 'text-[9px]'}`}
+                        style={{ backgroundColor: badgePreviewBg, color: badgePreviewText }}
+                      >
+                        {previewBadgeText}
+                      </span>
+                      <p className={`font-bold text-white drop-shadow ${previewDeviceIsMobile ? 'text-[11px] leading-[1.1]' : 'text-sm leading-tight'}`}>
+                        {previewTitle}
+                      </p>
+                      <p className={`text-white/85 drop-shadow ${previewDeviceIsMobile ? 'text-[8px] leading-tight' : 'text-[10px] leading-snug'}`}>
+                        {previewSubtitle}
+                      </p>
+                      <button
+                        type="button"
+                        className={`mt-1.5 bg-white text-slate-900 font-bold rounded shadow-sm whitespace-nowrap overflow-hidden text-ellipsis ${previewDeviceIsMobile ? 'text-[8px] px-2 py-1 max-w-[120px]' : 'text-[10px] px-3 py-1.5 max-w-[180px]'}`}
+                      >
+                        {previewCtaText}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

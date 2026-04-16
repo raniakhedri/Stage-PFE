@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -119,7 +120,8 @@ public class CouponService {
     @Transactional
     public CouponResponse toggleStatut(Long id) {
         Coupon coupon = findOrThrow(id);
-        switch (coupon.getStatut()) {
+        String statut = normalizeStatut(coupon.getStatut());
+        switch (statut) {
             case "actif" -> coupon.setStatut("brouillon");
             case "brouillon", "planifie" -> coupon.setStatut("actif");
             default -> throw new IllegalArgumentException("Impossible de changer le statut d'un coupon expiré");
@@ -134,7 +136,7 @@ public class CouponService {
         Coupon coupon = couponRepository.findByCode(code.trim().toUpperCase())
                 .orElseThrow(() -> new IllegalArgumentException("Code coupon introuvable: " + code));
 
-        if (!"actif".equals(coupon.getStatut())) {
+        if (!"actif".equals(normalizeStatut(coupon.getStatut()))) {
             throw new IllegalArgumentException("Ce coupon n'est pas actif");
         }
 
@@ -172,6 +174,16 @@ public class CouponService {
         }
 
         return mapToResponse(coupon);
+    }
+
+    // ── Frontoffice: latest active coupon for top announcement ─────
+    @Transactional(readOnly = true)
+    public Optional<CouponResponse> getLatestActiveCouponForAnnouncement() {
+        return couponRepository.findByStatutIgnoreCaseOrderByCreatedAtDesc("actif")
+                .stream()
+                .filter(this::isCouponCurrentlyValid)
+                .findFirst()
+                .map(this::mapToResponse);
     }
 
     // ── Use coupon (record usage) ──────────────────────────────────
@@ -256,7 +268,8 @@ public class CouponService {
     }
 
     private String computeStatut(String requested, LocalDate dateDebut, LocalDate dateFin) {
-        if ("brouillon".equals(requested))
+        String normalizedRequested = normalizeStatut(requested);
+        if ("brouillon".equals(normalizedRequested))
             return "brouillon";
         LocalDate today = LocalDate.now();
         if (dateFin != null && today.isAfter(dateFin))
@@ -264,6 +277,32 @@ public class CouponService {
         if (dateDebut != null && today.isBefore(dateDebut))
             return "planifie";
         return "actif";
+    }
+
+    private String normalizeStatut(String statut) {
+        if (statut == null) {
+            return "";
+        }
+        return statut.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private boolean isCouponCurrentlyValid(Coupon coupon) {
+        LocalDate today = LocalDate.now();
+        LocalTime now = LocalTime.now();
+
+        if (coupon.getDateDebut() != null && today.isBefore(coupon.getDateDebut())) {
+            return false;
+        }
+        if (coupon.getDateFin() != null && today.isAfter(coupon.getDateFin())) {
+            return false;
+        }
+        if (coupon.getHeureDebut() != null && now.isBefore(coupon.getHeureDebut())) {
+            return false;
+        }
+        if (coupon.getHeureFin() != null && now.isAfter(coupon.getHeureFin())) {
+            return false;
+        }
+        return true;
     }
 
     private String joinList(List<String> items) {

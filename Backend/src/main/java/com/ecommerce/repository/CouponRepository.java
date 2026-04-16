@@ -18,6 +18,10 @@ public interface CouponRepository extends JpaRepository<Coupon, Long> {
 
     List<Coupon> findByType(String type);
 
+    List<Coupon> findByStatutOrderByCreatedAtDesc(String statut);
+
+    List<Coupon> findByStatutIgnoreCaseOrderByCreatedAtDesc(String statut);
+
     List<Coupon> findByAutoTrue();
 
     @Query("SELECT c FROM Coupon c WHERE c.segment = :segment OR c.segment IS NULL")

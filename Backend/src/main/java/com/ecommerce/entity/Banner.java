@@ -30,11 +30,36 @@ public class Banner {
     @Column(name = "sous_titre")
     private String sousTitre;
 
+    @Builder.Default
+    private String alignement = "center";
+
     @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
 
+    @Column(name = "mobile_image_url", columnDefinition = "TEXT")
+    private String mobileImageUrl;
+
+    @Column(name = "video_url", columnDefinition = "TEXT")
+    private String videoUrl;
+
+    @Column(name = "badge_texte")
+    @Builder.Default
+    private String badgeTexte = "Nouvelle Collection";
+
+    @Column(name = "badge_bg_color")
+    @Builder.Default
+    private String badgeBgColor = "rgba(255,255,255,0.15)";
+
+    @Column(name = "badge_text_color")
+    @Builder.Default
+    private String badgeTextColor = "#ffffff";
+
     @Column(name = "cta_texte")
     private String ctaTexte;
+
+    @Column(name = "cta_type")
+    @Builder.Default
+    private String ctaType = "produit";
 
     @Column(name = "cta_lien", columnDefinition = "TEXT")
     private String ctaLien;
@@ -65,6 +90,18 @@ public class Banner {
 
     @Builder.Default
     private boolean actif = false;
+
+    @Column(name = "visible_homepage")
+    @Builder.Default
+    private Boolean visibleHomepage = true;
+
+    @Column(name = "visible_mobile")
+    @Builder.Default
+    private Boolean visibleMobile = true;
+
+    @Column(name = "visible_desktop")
+    @Builder.Default
+    private Boolean visibleDesktop = true;
 
     @Builder.Default
     private int ordre = 10;

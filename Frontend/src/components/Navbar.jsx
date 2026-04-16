@@ -1,13 +1,20 @@
 import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Search, User, Heart, ShoppingBag, Menu, X, ChevronDown, ChevronRight, Truck, Phone } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Search, User, Heart, ShoppingBag, Menu, X, ChevronDown, ChevronRight, Truck, Phone, LogOut } from 'lucide-react';
 import { categories } from '../data/categories';
+import { fetchTopAnnouncement } from '../api/apiClient';
 
 export default function Navbar() {
+  const DEFAULT_ANNOUNCEMENT = "LIVRAISON GRATUITE DÈS 49 TND D'ACHAT";
+
   const [mobileOpen, setMobileOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  const [announcementText, setAnnouncementText] = useState(DEFAULT_ANNOUNCEMENT);
   const location = useLocation();
+  const navigate = useNavigate();
   const isHome = location.pathname === '/';
 
   useEffect(() => {
@@ -15,6 +22,79 @@ export default function Navbar() {
     window.addEventListener('scroll', onScroll);
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  // Check if user is logged in
+  useEffect(() => {
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      try {
+        setUser(JSON.parse(userData));
+      } catch (err) {
+        console.error('Error parsing user data:', err);
+      }
+    }
+  }, [location]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest('[role="profile-dropdown"]')) {
+        setProfileOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Close dropdown on navigation
+  useEffect(() => {
+    setProfileOpen(false);
+  }, [location]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadAnnouncement = async () => {
+      try {
+        const promo = await fetchTopAnnouncement();
+        if (!mounted) return;
+        if (promo?.message && String(promo.message).trim()) {
+          setAnnouncementText(String(promo.message));
+        } else {
+          setAnnouncementText(DEFAULT_ANNOUNCEMENT);
+        }
+      } catch {
+        if (mounted) setAnnouncementText(DEFAULT_ANNOUNCEMENT);
+      }
+    };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadAnnouncement();
+      }
+    };
+
+    loadAnnouncement();
+    const intervalId = setInterval(loadAnnouncement, 15000);
+    window.addEventListener('focus', loadAnnouncement);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    return () => {
+      mounted = false;
+      clearInterval(intervalId);
+      window.removeEventListener('focus', loadAnnouncement);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
+    setUser(null);
+    setProfileOpen(false);
+    navigate('/');
+  };
 
   const navLinks = categories.map(c => ({
     label: c.name.split(' ')[0] === 'Huiles' ? (c.slug === 'essentielles' ? 'Essentielles' : 'Végétales') :
@@ -34,7 +114,7 @@ export default function Navbar() {
         isHome && !scrolled ? 'bg-white/10 backdrop-blur-sm text-white' : 'bg-primary-container text-white'
       }`}>
         <span className="flex items-center gap-2">
-          <Truck size={14} /> LIVRAISON GRATUITE DÈS 49 TND D'ACHAT
+          <Truck size={14} /> {announcementText}
         </span>
         <div className="hidden md:flex items-center gap-4">
           <span className="flex items-center gap-1"><Phone size={12} /> +33 (0)1 23 45 67 89</span>
@@ -109,15 +189,76 @@ export default function Navbar() {
 
         {/* Right Actions */}
         <div className="flex items-center gap-5">
-          <div className={`hidden md:flex items-center rounded-full px-3 py-1.5 transition-colors duration-300 ${isHome && !scrolled ? 'bg-white/15' : 'bg-surface-container-high'}`}>
-            <Search size={16} className={isHome && !scrolled ? 'text-white/70' : 'text-outline'} />
-            <input
-              type="text"
-              className={`bg-transparent border-none focus:ring-0 text-sm w-32 focus:w-48 transition-all ${isHome && !scrolled ? 'placeholder:text-white/60 text-white' : 'placeholder:text-outline'}`}
-              placeholder="Rechercher..."
-            />
+   
+
+          {/* Profile Dropdown */}
+          <div className="relative" role="profile-dropdown">
+            <button
+              onClick={() => setProfileOpen(!profileOpen)}
+              className={`hover:opacity-80 transition-opacity flex items-center gap-2 ${isHome && !scrolled ? 'text-white' : 'text-primary'}`}
+            >
+              <User size={22} />
+              {user && (
+                <span className={`text-sm font-body hidden sm:inline ${isHome && !scrolled ? 'text-white' : 'text-primary'}`}>
+                  {user.firstName}
+                </span>
+              )}
+            </button>
+
+            {/* Dropdown Menu - Logged In */}
+            {profileOpen && user && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-outline-variant/10 overflow-hidden z-50">
+                <div className="px-4 py-3 border-b border-outline-variant/10">
+                  <p className="text-sm font-body text-primary font-bold">
+                    {user.firstName} {user.lastName}
+                  </p>
+                  <p className="text-xs text-secondary">{user.email}</p>
+                </div>
+                <Link
+                  to="/profile"
+                  onClick={() => setProfileOpen(false)}
+                  className="block px-4 py-3 text-sm font-body text-primary hover:bg-surface-container-low transition-colors border-b border-outline-variant/10"
+                >
+                  Mon Profil
+                </Link>
+                <Link
+                  to="/commandes"
+                  onClick={() => setProfileOpen(false)}
+                  className="block px-4 py-3 text-sm font-body text-primary hover:bg-surface-container-low transition-colors border-b border-outline-variant/10"
+                >
+                  Mes Commandes
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="w-full text-left px-4 py-3 text-sm font-body text-red-600 hover:bg-surface-container-low transition-colors flex items-center gap-2"
+                >
+                  <LogOut size={16} />
+                  Déconnexion
+                </button>
+              </div>
+            )}
+
+            {/* Dropdown Menu - Not Logged In */}
+            {profileOpen && !user && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-outline-variant/10 overflow-hidden z-50">
+                <Link
+                  to="/login"
+                  onClick={() => setProfileOpen(false)}
+                  className="block px-4 py-3 text-sm font-body text-primary hover:bg-surface-container-low transition-colors border-b border-outline-variant/10"
+                >
+                  Se connecter
+                </Link>
+                <Link
+                  to="/inscription"
+                  onClick={() => setProfileOpen(false)}
+                  className="block px-4 py-3 text-sm font-body text-primary hover:bg-surface-container-low transition-colors"
+                >
+                  Créer un compte
+                </Link>
+              </div>
+            )}
           </div>
-          <button className={`hover:opacity-80 transition-opacity ${isHome && !scrolled ? 'text-white' : 'text-primary'}`}><User size={22} /></button>
+
           <button className={`relative hover:opacity-80 transition-opacity ${isHome && !scrolled ? 'text-white' : 'text-primary'}`}>
             <Heart size={22} />
             <span className="absolute -top-1 -right-1 bg-sage text-white text-[9px] w-4 h-4 flex items-center justify-center rounded-full font-bold">3</span>
@@ -158,8 +299,33 @@ export default function Navbar() {
               </nav>
               <div className="border-t border-outline-variant/10 mt-6 pt-6 space-y-3">
                 <Link to="/" onClick={() => setMobileOpen(false)} className="block py-2 px-2 text-sm text-secondary hover:text-primary">Accueil</Link>
-                <a href="#" className="block py-2 px-2 text-sm text-secondary hover:text-primary">Mon Compte</a>
-                <a href="#" className="block py-2 px-2 text-sm text-secondary hover:text-primary">Ma Liste de Souhaits</a>
+                
+                {user ? (
+                  <>
+                    <div className="py-2 px-2">
+                      <p className="text-sm font-bold text-primary">{user.firstName} {user.lastName}</p>
+                      <p className="text-xs text-secondary">{user.email}</p>
+                    </div>
+                    <Link to="/profile" onClick={() => setMobileOpen(false)} className="block py-2 px-2 text-sm text-secondary hover:text-primary">Mon Profil</Link>
+                    <Link to="/commandes" onClick={() => setMobileOpen(false)} className="block py-2 px-2 text-sm text-secondary hover:text-primary">Mes Commandes</Link>
+                    <a href="#" className="block py-2 px-2 text-sm text-secondary hover:text-primary">Ma Liste de Souhaits</a>
+                    <button 
+                      onClick={() => {
+                        handleLogout();
+                        setMobileOpen(false);
+                      }} 
+                      className="block w-full text-left py-2 px-2 text-sm text-red-600 hover:text-red-700 font-semibold"
+                    >
+                      Déconnexion
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/login" onClick={() => setMobileOpen(false)} className="block py-2 px-2 text-sm text-secondary hover:text-primary font-semibold">Se connecter</Link>
+                    <Link to="/inscription" onClick={() => setMobileOpen(false)} className="block py-2 px-2 text-sm text-secondary hover:text-primary font-semibold">Créer un compte</Link>
+                    <a href="#" className="block py-2 px-2 text-sm text-secondary hover:text-primary">Ma Liste de Souhaits</a>
+                  </>
+                )}
                 <a href="#" className="block py-2 px-2 text-sm text-secondary hover:text-primary">Nous Contacter</a>
               </div>
             </div>

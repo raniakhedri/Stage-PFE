@@ -1,54 +1,258 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Leaf, Truck, ShieldCheck, Users, ChevronLeft, ChevronRight, Clock, FlaskConical, Star, ArrowRight } from 'lucide-react';
-import { fetchCategories, fetchFeaturedProducts } from '../api/apiClient';
+import { fetchCategories, fetchFeaturedProducts, fetchHomepageBanners } from '../api/apiClient';
 import ProductCard from '../components/ProductCard';
 
 export default function HomePage() {
   const [categories, setCategories] = useState([]);
   const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [heroBanners, setHeroBanners] = useState([]);
+  const [heroIndex, setHeroIndex] = useState(0);
+
+  const getCurrentDevice = () => (window.matchMedia('(max-width: 768px)').matches ? 'mobile' : 'desktop');
+
+  const loadHeroBanners = async () => {
+    const rawUser = localStorage.getItem('user');
+    let segment = '';
+    if (rawUser) {
+      try {
+        const parsed = JSON.parse(rawUser);
+        segment = parsed?.segmentName || '';
+      } catch {
+        segment = '';
+      }
+    }
+
+    try {
+      const banners = await fetchHomepageBanners(segment, getCurrentDevice());
+      setHeroBanners(banners);
+      setHeroIndex((prev) => (banners.length ? Math.min(prev, banners.length - 1) : 0));
+    } catch {
+      setHeroBanners([]);
+      setHeroIndex(0);
+    }
+  };
+
+  const fallbackHero = {
+    id: 'fallback',
+    title: "L'Âme Pure des Plantes",
+    subtitle: "Découvrez nos extraits botaniques d'exception, sourcés de manière éthique pour sublimer vos rituels de soin quotidiens.",
+    badgeText: 'Nouvelle Collection',
+    badgeBgColor: 'rgba(255,255,255,0.15)',
+    badgeTextColor: '#ffffff',
+    alignement: 'left',
+    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAWVj8BZ8_Z5-wxdOSa_VKdUM7tzna6WHwcuUNavG640Vu2uF5ahJosCOKcencohIQ2Q9B9PQZUlOtvYnmJyLK9gH547ehL4CI4rMKvWvFCiWeBLCwvKbLAlLpNUgE9CbAnLUA4svNg_mmVXPLxsDSKk-qPCXaRclrE_WgBT4YZXObzOpIO1QojV5wpblFdtRMo7WBCzxK8-6xHCLKMf_D1Eb2harWRydo6AUswLJo-CCRReJE5NfsEekZ624Og1OCAxiKISuHZp8Tp',
+    mobileImageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAWVj8BZ8_Z5-wxdOSa_VKdUM7tzna6WHwcuUNavG640Vu2uF5ahJosCOKcencohIQ2Q9B9PQZUlOtvYnmJyLK9gH547ehL4CI4rMKvWvFCiWeBLCwvKbLAlLpNUgE9CbAnLUA4svNg_mmVXPLxsDSKk-qPCXaRclrE_WgBT4YZXObzOpIO1QojV5wpblFdtRMo7WBCzxK8-6xHCLKMf_D1Eb2harWRydo6AUswLJo-CCRReJE5NfsEekZ624Og1OCAxiKISuHZp8Tp',
+    videoUrl: '',
+    ctaText: 'Découvrir la collection',
+    ctaType: 'categorie',
+    ctaLink: '/categories/essentielles',
+    durationSeconds: 5,
+    animation: 'fade',
+  };
+
+  const currentHero = heroBanners[heroIndex] || fallbackHero;
+  const hasMultipleBanners = heroBanners.length > 1;
+  const linkValue = currentHero.ctaLink || '/';
+  const isExternalCta = currentHero.ctaType === 'lien-externe' || /^https?:\/\//i.test(linkValue);
+  const isInternalCta = !isExternalCta;
+  const isYouTubeVideo = /youtube\.com|youtu\.be/i.test(currentHero.videoUrl || '');
+
+  const heroAlignmentClass =
+    currentHero.alignement === 'center'
+      ? 'items-center text-center'
+      : currentHero.alignement === 'right'
+        ? 'items-end text-right ml-auto'
+        : 'items-start text-left';
+
+  const heroCtaAlignmentClass =
+    currentHero.alignement === 'center'
+      ? 'justify-center'
+      : currentHero.alignement === 'right'
+        ? 'justify-end'
+        : 'justify-start';
+
+  const heroAnimationClass =
+    currentHero.animation === 'slide'
+      ? 'hero-anim-slide'
+      : currentHero.animation === 'zoom'
+        ? 'hero-anim-zoom'
+        : currentHero.animation === 'ken-burns'
+          ? 'hero-anim-ken-burns'
+          : currentHero.animation === 'blur'
+            ? 'hero-anim-blur'
+            : 'hero-anim-fade';
+
+  const toSafeCssColor = (value, fallback) => {
+    if (typeof value !== 'string' || !value.trim()) return fallback;
+    const v = value.trim();
+    const isHex = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(v);
+    const isRgb = /^rgba?\([^\)]+\)$/i.test(v);
+    const isHsl = /^hsla?\([^\)]+\)$/i.test(v);
+    return isHex || isRgb || isHsl ? v : fallback;
+  };
+
+  const heroBadgeText = currentHero.badgeText || fallbackHero.badgeText;
+  const heroBadgeBgColor = toSafeCssColor(currentHero.badgeBgColor, fallbackHero.badgeBgColor);
+  const heroBadgeTextColor = toSafeCssColor(currentHero.badgeTextColor, fallbackHero.badgeTextColor);
+
+  const goToPrevBanner = () => {
+    if (!heroBanners.length) return;
+    setHeroIndex((prev) => (prev === 0 ? heroBanners.length - 1 : prev - 1));
+  };
+
+  const goToNextBanner = () => {
+    if (!heroBanners.length) return;
+    setHeroIndex((prev) => (prev + 1) % heroBanners.length);
+  };
 
   useEffect(() => {
     fetchCategories().then(setCategories).catch(() => {});
     fetchFeaturedProducts().then(setFeaturedProducts).catch(() => {});
+    loadHeroBanners();
   }, []);
+
+  useEffect(() => {
+    const refreshBanners = () => {
+      loadHeroBanners();
+    };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshBanners();
+      }
+    };
+
+    const intervalId = setInterval(refreshBanners, 30000);
+    window.addEventListener('focus', refreshBanners);
+    window.addEventListener('resize', refreshBanners);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('focus', refreshBanners);
+      window.removeEventListener('resize', refreshBanners);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!hasMultipleBanners) return;
+    const durationMs = Math.max(2, Number(currentHero.durationSeconds || 5)) * 1000;
+    const timer = setTimeout(() => {
+      setHeroIndex((prev) => (prev + 1) % heroBanners.length);
+    }, durationMs);
+
+    return () => clearTimeout(timer);
+  }, [hasMultipleBanners, currentHero.durationSeconds, heroBanners.length, heroIndex]);
+
   return (
     <>
       {/* Hero Section */}
       <section className="relative h-screen w-full overflow-hidden">
         <div className="w-full h-full relative group overflow-hidden">
-          <img
-            className="w-full h-full object-cover brightness-90"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAWVj8BZ8_Z5-wxdOSa_VKdUM7tzna6WHwcuUNavG640Vu2uF5ahJosCOKcencohIQ2Q9B9PQZUlOtvYnmJyLK9gH547ehL4CI4rMKvWvFCiWeBLCwvKbLAlLpNUgE9CbAnLUA4svNg_mmVXPLxsDSKk-qPCXaRclrE_WgBT4YZXObzOpIO1QojV5wpblFdtRMo7WBCzxK8-6xHCLKMf_D1Eb2harWRydo6AUswLJo-CCRReJE5NfsEekZ624Og1OCAxiKISuHZp8Tp"
-            alt="Herbes botaniques et huiles essentielles"
-          />
+          {currentHero.videoUrl ? (
+            isYouTubeVideo ? (
+              <iframe
+                key={`${currentHero.id}-${heroIndex}`}
+                src={`${currentHero.videoUrl}${currentHero.videoUrl.includes('?') ? '&' : '?'}autoplay=1&mute=1&loop=1&controls=0&playsinline=1`}
+                className={`w-full h-full object-cover brightness-90 pointer-events-none ${heroAnimationClass}`}
+                title={currentHero.title || 'Bannière vidéo NaturEssence'}
+                allow="autoplay; encrypted-media"
+              />
+            ) : (
+              <video
+                key={`${currentHero.id}-${heroIndex}`}
+                className={`w-full h-full object-cover brightness-90 ${heroAnimationClass}`}
+                src={currentHero.videoUrl}
+                autoPlay
+                muted
+                loop
+                playsInline
+              />
+            )
+          ) : (
+            <picture key={`${currentHero.id}-${heroIndex}`} className={`block w-full h-full ${heroAnimationClass}`}>
+              <source
+                media="(max-width: 768px)"
+                srcSet={currentHero.mobileImageUrl || currentHero.imageUrl || fallbackHero.mobileImageUrl}
+              />
+              <img
+                className="w-full h-full object-cover brightness-90"
+                src={currentHero.imageUrl || fallbackHero.imageUrl}
+                alt={currentHero.title || 'Bannière NaturEssence'}
+              />
+            </picture>
+          )}
           <div className="absolute inset-0 bg-gradient-to-r from-primary/70 to-transparent flex items-center px-8 md:px-20">
-            <div className="max-w-2xl text-white">
-              <span className="inline-block px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-xs font-body tracking-widest uppercase mb-6">
-                Nouvelle Collection
+            <div className={`max-w-2xl text-white flex flex-col ${heroAlignmentClass}`}>
+              <span
+                className="inline-block px-3 py-1 rounded-full backdrop-blur-md text-xs font-body tracking-widest uppercase mb-6"
+                style={{ backgroundColor: heroBadgeBgColor, color: heroBadgeTextColor }}
+              >
+                {heroBadgeText}
               </span>
               <h1 className="text-4xl md:text-7xl font-headline font-bold leading-tight mb-8">
-                L'Âme Pure des Plantes
+                {currentHero.title || fallbackHero.title}
               </h1>
               <p className="text-lg text-white/80 mb-10 max-w-lg font-light leading-relaxed">
-                Découvrez nos extraits botaniques d'exception, sourcés de manière éthique pour sublimer vos rituels de soin quotidiens.
+                {currentHero.subtitle || fallbackHero.subtitle}
               </p>
-              <div className="flex gap-4 flex-wrap">
-                <Link to="/categories/essentielles" className="btn-liquid bg-primary text-on-primary px-8 py-4 rounded-lg font-medium transition-all shadow-xl">
-                  Découvrir la collection
-                </Link>
-                <a href="#engagements" className="btn-liquid-outline bg-white/10 backdrop-blur-md text-white border border-white/20 px-8 py-4 rounded-lg font-medium transition-all">
-                  Nos Engagements
-                </a>
+              <div className={`flex gap-4 flex-wrap ${heroCtaAlignmentClass}`}>
+                {isInternalCta ? (
+                  <Link to={linkValue} className="btn-liquid bg-primary text-on-primary px-8 py-4 rounded-lg font-medium transition-all shadow-xl">
+                    {currentHero.ctaText || 'Découvrir la collection'}
+                  </Link>
+                ) : (
+                  <a
+                    href={linkValue}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-liquid bg-primary text-on-primary px-8 py-4 rounded-lg font-medium transition-all shadow-xl"
+                  >
+                    {currentHero.ctaText || 'Découvrir la collection'}
+                  </a>
+                )}
+              
               </div>
             </div>
           </div>
-          {/* Carousel dots */}
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-3">
-            <div className="w-12 h-1 bg-white rounded-full" />
-            <div className="w-3 h-1 bg-white/40 rounded-full" />
-            <div className="w-3 h-1 bg-white/40 rounded-full" />
-          </div>
+
+          {hasMultipleBanners && (
+            <>
+              {/* Carousel arrows */}
+              <button
+                type="button"
+                onClick={goToPrevBanner}
+                className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/30 hover:bg-black/50 text-white flex items-center justify-center transition-colors"
+                aria-label="Bannière précédente"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <button
+                type="button"
+                onClick={goToNextBanner}
+                className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/30 hover:bg-black/50 text-white flex items-center justify-center transition-colors"
+                aria-label="Bannière suivante"
+              >
+                <ChevronRight size={20} />
+              </button>
+
+              {/* Carousel dots */}
+              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-3">
+                {heroBanners.map((banner, index) => (
+                  <button
+                    key={banner.id}
+                    type="button"
+                    onClick={() => setHeroIndex(index)}
+                    className={index === heroIndex ? 'w-12 h-1 bg-white rounded-full' : 'w-3 h-1 bg-white/40 rounded-full'}
+                    aria-label={`Aller à la bannière ${index + 1}`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </section>
 

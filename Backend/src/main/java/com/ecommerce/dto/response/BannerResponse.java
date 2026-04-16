@@ -15,8 +15,15 @@ public class BannerResponse {
     private Long id;
     private String titre;
     private String sousTitre;
+    private String alignement;
     private String imageUrl;
+    private String mobileImageUrl;
+    private String videoUrl;
+    private String badgeTexte;
+    private String badgeBgColor;
+    private String badgeTextColor;
     private String ctaTexte;
+    private String ctaType;
     private String ctaLien;
     private BannerPosition position;
     private String positionLabel;
@@ -28,6 +35,9 @@ public class BannerResponse {
     private LocalDate dateDebut;
     private LocalDate dateFin;
     private boolean actif;
+    private boolean visibleHomepage;
+    private boolean visibleMobile;
+    private boolean visibleDesktop;
     private int ordre;
     private int dureeSecondes;
     private String animation;

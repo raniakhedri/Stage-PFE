@@ -94,3 +94,73 @@ body {
 .btn-liquid-dark:hover {
   color: var(--btn-wave-text, #163328);
 }
+
+/* Hero banner animations (driven by backoffice banner setting) */
+@keyframes heroFadeIn {
+  from { opacity: 0.15; }
+  to { opacity: 1; }
+}
+
+@keyframes heroSlideIn {
+  from {
+    opacity: 0.3;
+    transform: translateX(3%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes heroZoomIn {
+  from {
+    opacity: 0.35;
+    transform: scale(1.07);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes heroBlurIn {
+  from {
+    opacity: 0.25;
+    filter: blur(8px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+@keyframes heroKenBurns {
+  from {
+    opacity: 0.8;
+    transform: scale(1.06) translateY(1%);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.14) translateY(-1%);
+  }
+}
+
+.hero-anim-fade {
+  animation: heroFadeIn 0.7s ease both;
+}
+
+.hero-anim-slide {
+  animation: heroSlideIn 0.7s ease both;
+}
+
+.hero-anim-zoom {
+  animation: heroZoomIn 0.9s ease both;
+}
+
+.hero-anim-blur {
+  animation: heroBlurIn 0.7s ease both;
+}
+
+.hero-anim-ken-burns {
+  animation: heroKenBurns 8s ease-out both;
+}

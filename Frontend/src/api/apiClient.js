@@ -61,6 +61,31 @@ export async function fetchFeaturedProducts() {
   return products.slice(0, 8).map(mapProduct);
 }
 
+export async function fetchHomepageBanners(segment, device = 'desktop') {
+  const qs = new URLSearchParams({ position: 'HOMEPAGE_HERO' });
+  if (segment) qs.append('segment', String(segment).toUpperCase());
+
+  const res = await fetch(`${API_BASE}/banners?${qs.toString()}`);
+  if (!res.ok) throw new Error(`API error: ${res.status}`);
+
+  const payload = await res.json();
+  const list = Array.isArray(payload) ? payload : (payload?.data || []);
+  return list
+    .map(mapBanner)
+    .filter((b) => b.visibleHomepage)
+    .filter((b) => (device === 'mobile' ? b.visibleMobile : b.visibleDesktop));
+}
+
+export async function fetchTopAnnouncement() {
+  const res = await fetch(`${API_BASE}/promotions/announcement?t=${Date.now()}`, {
+    cache: 'no-store',
+  });
+  if (!res.ok) throw new Error(`API error: ${res.status}`);
+
+  const payload = await res.json();
+  return payload?.data || null;
+}
+
 function mapProduct(p) {
   const badge = p.badgeNouveau ? 'Nouveau'
     : p.badgeBestSeller ? 'Best-Seller'
@@ -90,5 +115,29 @@ function mapProduct(p) {
       price: v.price,
       stock: v.stock,
     })),
+  };
+}
+
+function mapBanner(b) {
+  return {
+    id: b.id,
+    title: b.titre || '',
+    subtitle: b.sousTitre || '',
+    badgeText: b.badgeTexte || 'Nouvelle Collection',
+    badgeBgColor: b.badgeBgColor || 'rgba(255,255,255,0.15)',
+    badgeTextColor: b.badgeTextColor || '#ffffff',
+    alignement: b.alignement || 'center',
+    imageUrl: b.imageUrl || '',
+    mobileImageUrl: b.mobileImageUrl || '',
+    videoUrl: b.videoUrl || '',
+    ctaText: b.ctaTexte || 'Découvrir',
+    ctaType: b.ctaType || 'produit',
+    ctaLink: b.ctaLien || '/',
+    visibleHomepage: b.visibleHomepage !== false,
+    visibleMobile: b.visibleMobile !== false,
+    visibleDesktop: b.visibleDesktop !== false,
+    order: b.ordre ?? 0,
+    durationSeconds: b.dureeSecondes ?? 5,
+    animation: b.animation || 'fade',
   };
 }
