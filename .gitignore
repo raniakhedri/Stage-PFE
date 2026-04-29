@@ -37,3 +37,6 @@ _old_backoffice/
 _old_frontoffice/
 Back Office/
 Front Office/
+
+
+Backend/src/main/resources/application.properties
