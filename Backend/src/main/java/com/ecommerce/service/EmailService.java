@@ -2,6 +2,7 @@ package com.ecommerce.service;
 
 import com.ecommerce.entity.Order;
 import com.ecommerce.entity.OrderItem;
+import com.ecommerce.entity.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Map;
 import java.util.List;
@@ -241,5 +243,47 @@ public class EmailService {
                 couponRow, tvaRow,
                 total
         );
+    }
+
+    // ── Newsletter bulk send ───────────────────────────────────────────────────
+
+    @Async
+    public void sendNewsletter(List<User> recipients, String subject, String htmlContent) {
+        if (recipients == null || recipients.isEmpty()) return;
+        // Brevo allows up to 50 recipients per request; batch accordingly
+        final int BATCH = 50;
+        RestTemplate rt = new RestTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("api-key", apiKey);
+
+        for (int i = 0; i < recipients.size(); i += BATCH) {
+            List<User> batch = recipients.subList(i, Math.min(i + BATCH, recipients.size()));
+            List<Map<String, String>> toList = new ArrayList<>();
+            for (User u : batch) {
+                toList.add(Map.of("email", u.getEmail(), "name",
+                        (u.getFirstName() != null ? u.getFirstName() : "") + " " +
+                        (u.getLastName()  != null ? u.getLastName()  : "")));
+            }
+            java.util.HashMap<String, Object> body = new java.util.HashMap<>();
+            body.put("sender",      Map.of("name", senderName, "email", senderEmail));
+            body.put("to",          toList);
+            body.put("replyTo",     Map.of("email", replyTo));
+            body.put("subject",     subject);
+            body.put("htmlContent", htmlContent);
+
+            try {
+                HttpEntity<java.util.HashMap<String, Object>> req = new HttpEntity<>(body, headers);
+                ResponseEntity<String> resp = rt.postForEntity(BREVO_URL, req, String.class);
+                if (resp.getStatusCode().is2xxSuccessful()) {
+                    log.info("[Brevo] Newsletter batch {}/{} sent ({} recipients)", i / BATCH + 1,
+                            (recipients.size() + BATCH - 1) / BATCH, batch.size());
+                } else {
+                    log.warn("[Brevo] Newsletter batch failed: {}", resp.getBody());
+                }
+            } catch (Exception e) {
+                log.error("[Brevo] Newsletter batch error: {}", e.getMessage());
+            }
+        }
     }
 }

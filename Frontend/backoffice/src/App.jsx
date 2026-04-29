@@ -33,6 +33,7 @@ import TvaLivraison from './pages/TvaLivraison'
 import Avis from './pages/Avis'
 import Promotions from './pages/Promotions'
 import Fidelite from './pages/Fidelite'
+import EmailMarketing from './pages/EmailMarketing'
 import NotFound from './pages/NotFound'
 
 // Les autres pages seront ajoutées ici au fur et à mesure
@@ -98,6 +99,7 @@ function App() {
             <Route path="/avis" element={<Avis />} />
             <Route path="/promotions" element={<Promotions />} />
             <Route path="/fidelite" element={<Fidelite />} />
+            <Route path="/email-marketing" element={<EmailMarketing />} />
           </Route>
         </Route>
 
