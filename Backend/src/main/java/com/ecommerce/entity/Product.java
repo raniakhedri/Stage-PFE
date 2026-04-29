@@ -103,6 +103,25 @@ public class Product {
     @Builder.Default
     private boolean bio = false;
 
+    /** Country/region of origin (e.g. "France / Méditerranée") */
+    private String origine;
+
+    /** Usage instructions text (Conseils d'utilisation tab) */
+    @Column(columnDefinition = "TEXT")
+    private String usageInstructions;
+
+    /** Safety precautions text */
+    @Column(columnDefinition = "TEXT")
+    private String precautions;
+
+    /** INCI composition string */
+    @Column(columnDefinition = "TEXT")
+    private String inciComposition;
+
+    /** Comma-separated certifications (e.g. "Bio certifié,Écocert,Cosmos Natural") */
+    @Column(columnDefinition = "TEXT")
+    private String certifications;
+
     /** Comma-separated available volumes (e.g. "10ml,30ml,50ml,100ml") */
     @Column(columnDefinition = "TEXT")
     private String volumes;

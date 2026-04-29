@@ -11,10 +11,6 @@ public interface DiscountRepository extends JpaRepository<Discount, Long> {
 
     List<Discount> findByStatut(String statut);
 
-    List<Discount> findByStatutOrderByCreatedAtDesc(String statut);
-
-    List<Discount> findByStatutIgnoreCaseOrderByCreatedAtDesc(String statut);
-
     List<Discount> findByCategoryId(Long categoryId);
 
     List<Discount> findByProductId(Long productId);

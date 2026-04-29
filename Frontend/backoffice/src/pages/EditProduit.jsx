@@ -12,94 +12,6 @@ const VOLUME_CATALOG = {
   solides:  { label: 'Solides (g)',   volumes: ['50g', '100g', '150g', '200g', '250g', '500g'] },
 }
 
-// ── Mock product data keyed by id ─────────────────────────────────────────────
-const mockProducts = {
-  1: {
-    name: 'Urban Tech Hoodie',
-    sku: 'UH-4429',
-    collections: ['Summer 2026', 'Winter Essentials'],
-    category: 'Vêtements',
-    subCategory: 'T-shirts & Polos',
-    description: 'Sweat à capuche technique en tissu respirant ripstop. Doublure polaire légère, manchettes thermorégulés, poche ventrale avec porte-documents discret.',
-    basePrice: '120.00',
-    salePrice: '89.00',
-    promoStart: '2026-03-01',
-    promoEnd: '2026-04-01',
-    badges: { nouveau: true, bestSeller: true, promo: true, exclusif: false },
-    visibility: { site: true, landing: true, category: true },
-    metaTitle: 'Urban Tech Hoodie | WorkwearPro',
-    colors: 'Noir, Orange',
-    sizes: 'S, M, L, XL',
-    variants: [
-      { id: 1, colorSwatch: '#2B2F2F', label: 'Noir - S',  sku: 'UH-4429-BLK-S', price: '89.00', stock: 60 },
-      { id: 2, colorSwatch: '#2B2F2F', label: 'Noir - M',  sku: 'UH-4429-BLK-M', price: '89.00', stock: 82 },
-      { id: 3, colorSwatch: '#EE4C26', label: 'Orange - M', sku: 'UH-4429-ORG-M', price: '89.00', stock: 42 },
-      { id: 4, colorSwatch: '#EE4C26', label: 'Orange - L', sku: 'UH-4429-ORG-L', price: '89.00', stock: 58 },
-    ],
-    weight: '0.7',
-    length: '35',
-    width: '25',
-    height: '8',
-    specificFees: false,
-    upsellTags: ['Pantalon Cargo HV', 'Casque Reflex'],
-    imgBg: 'bg-slate-200',
-  },
-  2: {
-    name: 'Nylon Cargo Pants',
-    sku: 'CP-1200',
-    collections: ['Summer 2026', 'Heavy Duty 2025'],
-    category: 'Vêtements',
-    subCategory: 'Pantalons',
-    description: 'Pantalon cargo nylon léger avec poches multiples renforcées. Taille élastique ajustable, genouillères amovibles, certifié EN ISO 471.',
-    basePrice: '65.00',
-    salePrice: '45.00',
-    promoStart: '2026-02-15',
-    promoEnd: '2026-03-31',
-    badges: { nouveau: false, bestSeller: false, promo: true, exclusif: false },
-    visibility: { site: true, landing: false, category: true },
-    metaTitle: '',
-    colors: 'Noir, Kaki',
-    sizes: 'S, M, L, XL, XXL',
-    variants: [
-      { id: 1, colorSwatch: '#2B2F2F', label: 'Noir - S', sku: 'CP-1200-BLK-S', price: '45.00', stock: 8 },
-      { id: 2, colorSwatch: '#8D593B', label: 'Kaki - M', sku: 'CP-1200-KAK-M', price: '45.00', stock: 0 },
-    ],
-    weight: '0.5',
-    length: '40',
-    width: '30',
-    height: '5',
-    specificFees: false,
-    upsellTags: ['Urban Tech Hoodie'],
-    imgBg: 'bg-stone-200',
-  },
-  3: {
-    name: 'Casque Sécurité Reflex',
-    sku: 'EP-993',
-    collections: [],
-    category: 'EPI',
-    subCategory: 'Casques',
-    description: 'Bracelet maille argent 925/1000, fermeture mousqueton de sécurité. Livré dans écrin cadeau. Largeur 4mm.',
-    basePrice: '120.00',
-    salePrice: '',
-    promoStart: '',
-    promoEnd: '',
-    badges: { nouveau: false, bestSeller: false, promo: false, exclusif: true },
-    visibility: { site: true, landing: false, category: false },
-    metaTitle: 'Silver Link Bracelet | Accessoires',
-    colors: 'Argent',
-    sizes: 'Unique',
-    variants: [
-      { id: 1, colorSwatch: '#BDBFC3', label: 'Argent - Unique', sku: 'AC-993-SLV', price: '120.00', stock: 0 },
-    ],
-    weight: '0.05',
-    length: '10',
-    width: '4',
-    height: '2',
-    specificFees: false,
-    upsellTags: [],
-    imgBg: 'bg-gray-300',
-  },
-}
 
 
 
@@ -208,6 +120,11 @@ function EditProduit() {
   // Cosmetics-specific
   const [latin, setLatin] = useState('')
   const [bio, setBio] = useState(false)
+  const [origine, setOrigine] = useState('')
+  const [usageInstructions, setUsageInstructions] = useState('')
+  const [precautions, setPrecautions] = useState('')
+  const [inciComposition, setInciComposition] = useState('')
+  const [certifications, setCertifications] = useState('')
 
   // Variants (volume-based)
   const [volumeType, setVolumeType] = useState('liquides')
@@ -255,6 +172,11 @@ function EditProduit() {
         setMetaTitle(p.metaTitle || '')
         setLatin(p.latin || '')
         setBio(Boolean(p.bio))
+        setOrigine(p.origine || '')
+        setUsageInstructions(p.usageInstructions || '')
+        setPrecautions(p.precautions || '')
+        setInciComposition(p.inciComposition || '')
+        setCertifications(p.certifications || '')
         const rawVolumes = (p.volumes || '').split(',').map((s) => s.trim()).filter(Boolean)
         setSelectedVolumes(rawVolumes)
         if (rawVolumes.length > 0) {
@@ -397,6 +319,11 @@ function EditProduit() {
         specificFees,
         imageUrl: productImages.filter(Boolean)[0] || null,
         images: productImages.filter(Boolean).join(',') || null,
+        origine: origine.trim() || null,
+        usageInstructions: usageInstructions.trim() || null,
+        precautions: precautions.trim() || null,
+        inciComposition: inciComposition.trim() || null,
+        certifications: certifications.trim() || null,
         variants: variants.map((v) => ({
           id: v.id,
           label: v.label,
@@ -530,6 +457,53 @@ function EditProduit() {
                     placeholder="Décrivez les caractéristiques techniques..."
                     className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm focus:ring-2 focus:ring-brand focus:border-brand transition-all placeholder:text-slate-400 outline-none resize-none"
                   />
+                </div>
+              </div>
+            </Section>
+
+            {/* Fiche Cosmétique */}
+            <Section title="Fiche Cosmétique">
+              <div className="space-y-6">
+                <div>
+                  <Label>Origine / Provenance</Label>
+                  <Input value={origine} onChange={(e) => setOrigine(e.target.value)} placeholder="Ex: France / Méditerranée" />
+                </div>
+                <div>
+                  <Label>Certifications</Label>
+                  <Input value={certifications} onChange={(e) => setCertifications(e.target.value)} placeholder="Ex: Écocert,Cosmos Natural,USDA Organic" />
+                  <p className="text-[10px] text-slate-400 mt-1">Séparez plusieurs certifications par des virgules.</p>
+                </div>
+                <div>
+                  <Label>Composition INCI</Label>
+                  <textarea
+                    rows={4}
+                    value={inciComposition}
+                    onChange={(e) => setInciComposition(e.target.value)}
+                    placeholder="Lavandula angustifolia (Oil), Limonene*, Linalool*..."
+                    className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm focus:ring-2 focus:ring-brand focus:border-brand transition-all placeholder:text-slate-400 outline-none resize-none"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">Ingrédients selon la nomenclature INCI. *Composants naturellement présents.</p>
+                </div>
+                <div>
+                  <Label>Précautions d'emploi</Label>
+                  <textarea
+                    rows={3}
+                    value={precautions}
+                    onChange={(e) => setPrecautions(e.target.value)}
+                    placeholder="⚠️ Ne pas utiliser pur. Déconseillé aux femmes enceintes..."
+                    className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm focus:ring-2 focus:ring-brand focus:border-brand transition-all placeholder:text-slate-400 outline-none resize-none"
+                  />
+                </div>
+                <div>
+                  <Label>Conseils d'utilisation</Label>
+                  <textarea
+                    rows={5}
+                    value={usageInstructions}
+                    onChange={(e) => setUsageInstructions(e.target.value)}
+                    placeholder="Diffusion: Verser 5-10 gouttes dans un diffuseur.\nMassage: Diluer 2 gouttes dans une huile végétale.\nBain: 5 gouttes mélangées à un dispersant."
+                    className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm focus:ring-2 focus:ring-brand focus:border-brand transition-all placeholder:text-slate-400 outline-none resize-none"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">Un conseil par ligne. Format recommandé : "Mode d'emploi: description"</p>
                 </div>
               </div>
             </Section>

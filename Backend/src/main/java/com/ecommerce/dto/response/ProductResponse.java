@@ -61,6 +61,11 @@ public class ProductResponse {
     // Cosmetics-specific
     private String latin;
     private boolean bio;
+    private String origine;
+    private String usageInstructions;
+    private String precautions;
+    private String inciComposition;
+    private String certifications;
     private String volumes;
 
     // Shipping

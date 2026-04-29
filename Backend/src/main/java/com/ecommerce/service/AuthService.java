@@ -38,6 +38,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final RefreshTokenService refreshTokenService;
+    private final LoyaltyService loyaltyService;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -65,6 +66,9 @@ public class AuthService {
                 .build();
 
         user = userRepository.save(user);
+
+        // Award welcome bonus points
+        loyaltyService.awardWelcomePoints(user);
 
         UserPrincipal principal = new UserPrincipal(user);
         String accessToken = jwtService.generateAccessToken(principal);
@@ -155,6 +159,7 @@ public class AuthService {
                 .roleName(user.getRole().getName())
                 .roleLabel(user.getRole().getLabel())
                 .note(user.getNote())
+                .loyaltyPoints(user.getLoyaltyPoints() != null ? user.getLoyaltyPoints() : 0)
                 .lastLogin(user.getLastLogin())
                 .createdAt(user.getCreatedAt())
                 .permissions(permissionsMap)

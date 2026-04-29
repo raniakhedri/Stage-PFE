@@ -21,6 +21,7 @@ public class OrderRequest {
     @NotBlank
     private String lastName;
 
+    @NotBlank
     private String phone;
 
     @NotBlank

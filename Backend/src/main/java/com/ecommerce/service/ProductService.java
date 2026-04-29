@@ -154,6 +154,11 @@ public class ProductService {
                 .specificFees(request.isSpecificFees())
                 .latin(request.getLatin())
                 .bio(request.isBio())
+                .origine(request.getOrigine())
+                .usageInstructions(request.getUsageInstructions())
+                .precautions(request.getPrecautions())
+                .inciComposition(request.getInciComposition())
+                .certifications(request.getCertifications())
                 .volumes(request.getVolumes())
                 .performance(request.getPerformance())
                 .imageUrl(request.getImageUrl())
@@ -220,6 +225,11 @@ public class ProductService {
         product.setSpecificFees(request.isSpecificFees());
         product.setLatin(request.getLatin());
         product.setBio(request.isBio());
+        product.setOrigine(request.getOrigine());
+        product.setUsageInstructions(request.getUsageInstructions());
+        product.setPrecautions(request.getPrecautions());
+        product.setInciComposition(request.getInciComposition());
+        product.setCertifications(request.getCertifications());
         product.setVolumes(request.getVolumes());
         product.setPerformance(request.getPerformance());
         product.setImageUrl(request.getImageUrl());
@@ -382,6 +392,11 @@ public class ProductService {
                 .specificFees(p.isSpecificFees())
                 .latin(p.getLatin())
                 .bio(p.isBio())
+                .origine(p.getOrigine())
+                .usageInstructions(p.getUsageInstructions())
+                .precautions(p.getPrecautions())
+                .inciComposition(p.getInciComposition())
+                .certifications(p.getCertifications())
                 .volumes(p.getVolumes())
                 .performance(p.getPerformance())
                 .imageUrl(p.getImageUrl())

@@ -22,6 +22,7 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
+    private final LoyaltyService loyaltyService;
 
     @Transactional
     public ReviewResponse createReview(Long userId, ReviewRequest req) {
@@ -70,6 +71,10 @@ public class ReviewService {
                 .build();
 
         Review saved = reviewRepository.save(review);
+
+        // Award points for submitting a review
+        loyaltyService.awardPointsForReview(user);
+
         return mapToResponse(saved);
     }
 
@@ -83,6 +88,14 @@ public class ReviewService {
     @Transactional(readOnly = true)
     public List<ReviewResponse> getAllReviews() {
         return reviewRepository.findAllByOrderByCreatedAtDesc().stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ReviewResponse> getApprovedReviewsByProduct(Long productId) {
+        return reviewRepository.findByProductIdAndStatutOrderByCreatedAtDesc(productId, "Approuvé")
+                .stream()
                 .map(this::mapToResponse)
                 .toList();
     }

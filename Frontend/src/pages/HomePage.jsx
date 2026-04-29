@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Leaf, Truck, ShieldCheck, Users, ChevronLeft, ChevronRight, Clock, FlaskConical, Star, ArrowRight } from 'lucide-react';
-import { fetchCategories, fetchFeaturedProducts, fetchHomepageBanners } from '../api/apiClient';
+import { fetchCategories, fetchFeaturedProducts, fetchHomepageBanners, fetchTvaConfig } from '../api/apiClient';
 import ProductCard from '../components/ProductCard';
 
 export default function HomePage() {
@@ -9,8 +9,17 @@ export default function HomePage() {
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [heroBanners, setHeroBanners] = useState([]);
   const [heroIndex, setHeroIndex] = useState(0);
+  const [freeShippingThreshold, setFreeShippingThreshold] = useState(null);
 
   const getCurrentDevice = () => (window.matchMedia('(max-width: 768px)').matches ? 'mobile' : 'desktop');
+
+  useEffect(() => {
+    fetchTvaConfig().then(cfg => {
+      if (cfg?.standardEnabled && cfg?.standardSeuil > 0) {
+        setFreeShippingThreshold(cfg.standardSeuil);
+      }
+    });
+  }, []);
 
   const loadHeroBanners = async () => {
     const rawUser = localStorage.getItem('user');
@@ -304,7 +313,7 @@ export default function HomePage() {
               <span className="text-xs font-body uppercase tracking-widest text-gold font-bold mb-4 block">Atelier Cosmétique</span>
               <h2 className="text-4xl md:text-5xl font-headline font-bold text-primary leading-tight">Nos Formulations DIY</h2>
             </div>
-            <a href="#" className="text-primary font-bold border-b-2 border-primary/20 hover:border-primary transition-all pb-1 mb-2 inline-block">
+            <a href="/recettes" className="text-primary font-bold border-b-2 border-primary/20 hover:border-primary transition-all pb-1 mb-2 inline-block">
               Voir toutes les recettes →
             </a>
           </div>
@@ -346,10 +355,10 @@ export default function HomePage() {
                     </div>
                   </div>
                   <h3 className="text-xl font-headline font-bold text-primary mb-6">{recipe.title}</h3>
-                  <button className="flex items-center gap-2 text-primary font-bold group/btn transition-all">
+                  <a href="/recettes" className="flex items-center gap-2 text-primary font-bold group/btn transition-all">
                     Découvrir la recette
                     <ArrowRight size={16} className="group-hover/btn:translate-x-1 transition-transform" />
-                  </button>
+                  </a>
                 </div>
               </div>
             ))}
@@ -362,7 +371,7 @@ export default function HomePage() {
         <div className="px-6 md:px-12 grid grid-cols-2 lg:grid-cols-4 gap-12">
           {[
             { icon: Leaf, title: "100% Naturel", desc: "Produits purs, sans additifs chimiques ni conservateurs synthétiques." },
-            { icon: Truck, title: "Livraison Rapide", desc: "Expédition sous 24h et livraison gratuite dès 49 TND d'achat." },
+            { icon: Truck, title: "Livraison Rapide", desc: `Expédition sous 24h et livraison gratuite dès ${freeShippingThreshold ?? 49} TND d'achat.` },
             { icon: ShieldCheck, title: "Qualité Certifiée", desc: "Nos huiles sont analysées en laboratoire pour garantir leur pureté." },
             { icon: Users, title: "Conseils d'Experts", desc: "Une équipe de naturopathes à votre écoute pour vous guider." },
           ].map(({ icon: Icon, title, desc }, i) => (

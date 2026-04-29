@@ -1,7 +1,22 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Heart, ShoppingBag, Star, Eye } from 'lucide-react';
+import { useShop } from '../context/ShopContext';
+import LoginPromptModal from './LoginPromptModal';
 
 export default function ProductCard({ product }) {
+  const { addToCart, toggleWishlist, isWishlisted } = useShop();
+  const wishlisted = isWishlisted(product.id);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const navigate = useNavigate();
+
+  const handleWishlist = (e) => {
+    e.preventDefault();
+    const result = toggleWishlist(product);
+    if (result?.requiresLogin) {
+      setShowLoginModal(true);
+    }
+  };
   const renderStars = (rating) => {
     const stars = [];
     for (let i = 1; i <= 5; i++) {
@@ -54,13 +69,14 @@ export default function ProductCard({ product }) {
           {/* Action buttons - slide in from right on hover */}
           <div className="absolute top-3 right-3 flex flex-col gap-2 translate-x-12 group-hover:translate-x-0 transition-transform duration-300">
             <button
-              onClick={(e) => e.preventDefault()}
-              className="w-9 h-9 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center text-primary shadow-lg hover:bg-white hover:text-rose-500 hover:scale-110 transition-all duration-200"
+              onClick={handleWishlist}
+              className={`w-9 h-9 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg hover:bg-white hover:scale-110 transition-all duration-200 ${wishlisted ? 'text-rose-500' : 'text-primary hover:text-rose-500'}`}
             >
-              <Heart size={15} />
+              <Heart size={15} fill={wishlisted ? 'currentColor' : 'none'} />
             </button>
             <button
-              onClick={(e) => e.preventDefault()}
+              type="button"
+              onClick={(e) => { e.preventDefault(); navigate(`/produits/${product.slug}`); }}
               className="w-9 h-9 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center text-primary shadow-lg hover:bg-white hover:scale-110 transition-all duration-200"
             >
               <Eye size={15} />
@@ -70,7 +86,7 @@ export default function ProductCard({ product }) {
           {/* Add to cart bar - slides up from bottom on hover */}
           <div className="absolute bottom-0 inset-x-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-400 ease-out">
             <button
-              onClick={(e) => e.preventDefault()}
+              onClick={(e) => { e.preventDefault(); addToCart(product); }}
               className="btn-liquid-dark w-full flex items-center justify-center gap-2 bg-primary/95 backdrop-blur text-white py-2.5 rounded-xl font-medium text-sm transition-colors shadow-xl"
             >
               <ShoppingBag size={15} />
@@ -83,11 +99,9 @@ export default function ProductCard({ product }) {
       {/* Content */}
       <div className="p-4 pt-3.5 space-y-1.5">
         <p className="text-[10px] font-semibold text-sage uppercase tracking-[0.15em]">{product.latin}</p>
-        <Link to={`/produits/${product.slug}`}>
-          <h3 className="font-headline font-bold text-[15px] text-primary leading-snug hover:text-secondary transition-colors line-clamp-2">
-            {product.name}
-          </h3>
-        </Link>
+        <h3 className="font-headline font-bold text-[15px] text-primary leading-snug hover:text-secondary transition-colors line-clamp-2">
+          {product.name}
+        </h3>
         <div className="flex items-center gap-1.5 pt-0.5">
           <div className="flex gap-0.5">{renderStars(product.rating)}</div>
           <span className="text-[10px] text-on-surface-variant/70 font-medium">({product.reviews})</span>
@@ -106,6 +120,12 @@ export default function ProductCard({ product }) {
           </div>
         </div>
       </div>
+
+      <LoginPromptModal
+        open={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        redirectTo={`/produits/${product.slug}`}
+      />
     </div>
   );
 }

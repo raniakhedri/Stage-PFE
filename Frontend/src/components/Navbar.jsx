@@ -2,11 +2,56 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, User, Heart, ShoppingBag, Menu, X, ChevronDown, ChevronRight, Truck, Phone, LogOut } from 'lucide-react';
 import { categories } from '../data/categories';
-import { fetchTopAnnouncement } from '../api/apiClient';
+import { fetchTopAnnouncementCoupon, fetchTvaConfig } from '../api/apiClient';
+import { useShop } from '../context/ShopContext';
+import CartDrawer from './CartDrawer';
+
+const DEFAULT_ANNOUNCEMENT = "Livraison gratuite dès 49 TND d'achat";
+
+function buildDefaultAnnouncement(tvaConfig) {
+  const seuil = tvaConfig?.standardEnabled && tvaConfig?.standardSeuil > 0
+    ? tvaConfig.standardSeuil
+    : 49;
+  const val = Number.isInteger(seuil) ? seuil : seuil.toFixed(2).replace(/\.00$/, '');
+  return `Livraison gratuite dès ${val} TND d'achat`;
+}
+
+function formatAmount(value) {
+  const n = Number(value || 0);
+  if (!Number.isFinite(n) || n <= 0) return '';
+  return Number.isInteger(n) ? `${n}` : n.toFixed(2).replace(/\.00$/, '');
+}
+
+function buildAnnouncementText(coupon) {
+  if (!coupon || !coupon.code) return DEFAULT_ANNOUNCEMENT;
+
+  const code = String(coupon.code).toUpperCase();
+  const minAmount = Number(coupon.montantMin || 0);
+  const minPart = minAmount > 0 ? ` dès ${formatAmount(minAmount)} TND d'achat` : '';
+  const type = String(coupon.type || '').toLowerCase();
+
+  if (type === 'pourcentage') {
+    const pct = Math.round(Number(coupon.valeur || 0));
+    return `${pct}% de réduction avec ${code}${minPart}`;
+  }
+  if (type === 'fixe') {
+    return `${formatAmount(coupon.valeur)} TND de réduction avec ${code}${minPart}`;
+  }
+  if (type === 'livraison') {
+    return `Livraison gratuite avec ${code}${minPart}`;
+  }
+  if (type === 'cadeau') {
+    return `Cadeau offert avec ${code}${minPart}`;
+  }
+  if (type === 'bogo') {
+    return `1 acheté = 1 offert avec ${code}${minPart}`;
+  }
+
+  return `Offre spéciale avec ${code}${minPart}`;
+}
 
 export default function Navbar() {
-  const DEFAULT_ANNOUNCEMENT = "LIVRAISON GRATUITE DÈS 49 TND D'ACHAT";
-
+  const { cartCount, wishlistCount } = useShop();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -21,6 +66,30 @@ export default function Navbar() {
     const onScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener('scroll', onScroll);
     return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+
+    const refreshAnnouncement = async () => {
+      const [coupon, tvaConfig] = await Promise.all([
+        fetchTopAnnouncementCoupon(),
+        fetchTvaConfig(),
+      ]);
+      if (!alive) return;
+      const text = coupon ? buildAnnouncementText(coupon) : buildDefaultAnnouncement(tvaConfig);
+      setAnnouncementText(text);
+    };
+
+    refreshAnnouncement();
+    const intervalId = setInterval(refreshAnnouncement, 60000);
+    window.addEventListener('focus', refreshAnnouncement);
+
+    return () => {
+      alive = false;
+      clearInterval(intervalId);
+      window.removeEventListener('focus', refreshAnnouncement);
+    };
   }, []);
 
   // Check if user is logged in
@@ -51,42 +120,6 @@ export default function Navbar() {
     setProfileOpen(false);
   }, [location]);
 
-  useEffect(() => {
-    let mounted = true;
-
-    const loadAnnouncement = async () => {
-      try {
-        const promo = await fetchTopAnnouncement();
-        if (!mounted) return;
-        if (promo?.message && String(promo.message).trim()) {
-          setAnnouncementText(String(promo.message));
-        } else {
-          setAnnouncementText(DEFAULT_ANNOUNCEMENT);
-        }
-      } catch {
-        if (mounted) setAnnouncementText(DEFAULT_ANNOUNCEMENT);
-      }
-    };
-
-    const onVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        loadAnnouncement();
-      }
-    };
-
-    loadAnnouncement();
-    const intervalId = setInterval(loadAnnouncement, 15000);
-    window.addEventListener('focus', loadAnnouncement);
-    document.addEventListener('visibilitychange', onVisibilityChange);
-
-    return () => {
-      mounted = false;
-      clearInterval(intervalId);
-      window.removeEventListener('focus', loadAnnouncement);
-      document.removeEventListener('visibilitychange', onVisibilityChange);
-    };
-  }, []);
-
   const handleLogout = () => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
@@ -116,13 +149,11 @@ export default function Navbar() {
         <span className="flex items-center gap-2">
           <Truck size={14} /> {announcementText}
         </span>
-        <div className="hidden md:flex items-center gap-4">
-          <span className="flex items-center gap-1"><Phone size={12} /> +33 (0)1 23 45 67 89</span>
-        </div>
+       
       </div>
 
       {/* Main Navbar */}
-      <header className={`w-full z-50 flex justify-between items-center px-6 md:px-12 h-16 transition-all duration-300 ${
+      <header className={`w-full sticky top-0 z-[100] flex justify-between items-center px-6 md:px-12 h-16 transition-all duration-300 ${
         isHome && !scrolled
           ? 'bg-transparent text-white'
           : 'bg-white/95 backdrop-blur-md shadow-sm text-primary'
@@ -156,7 +187,7 @@ export default function Navbar() {
                 </Link>
 
                 {/* Mega Menu */}
-                <div className="mega-menu absolute top-[48px] -left-12 w-[700px] bg-white shadow-2xl rounded-xl p-8 hidden grid-cols-3 gap-8 border border-outline-variant/10">
+                <div className="mega-menu absolute top-[48px] -left-12 w-[700px] bg-white shadow-2xl rounded-xl p-8 hidden grid-cols-3 gap-8 border border-outline-variant/10 z-[200]">
                   <div className="space-y-4">
                     <h4 className="font-headline font-bold text-primary text-xs uppercase tracking-widest">Par Type</h4>
                     <ul className="space-y-2 text-sm text-secondary">
@@ -259,13 +290,17 @@ export default function Navbar() {
             )}
           </div>
 
-          <button className={`relative hover:opacity-80 transition-opacity ${isHome && !scrolled ? 'text-white' : 'text-primary'}`}>
+          <Link to="/favoris" className={`relative hover:opacity-80 transition-opacity ${isHome && !scrolled ? 'text-white' : 'text-primary'}`}>
             <Heart size={22} />
-            <span className="absolute -top-1 -right-1 bg-sage text-white text-[9px] w-4 h-4 flex items-center justify-center rounded-full font-bold">3</span>
-          </button>
+            {wishlistCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-sage text-white text-[9px] w-4 h-4 flex items-center justify-center rounded-full font-bold">{wishlistCount}</span>
+            )}
+          </Link>
           <button onClick={() => setCartOpen(true)} className={`relative hover:opacity-80 transition-opacity ${isHome && !scrolled ? 'text-white' : 'text-primary'}`}>
             <ShoppingBag size={22} />
-            <span className="absolute -top-1 -right-1 bg-primary text-white text-[9px] w-4 h-4 flex items-center justify-center rounded-full font-bold">2</span>
+            {cartCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-primary text-white text-[9px] w-4 h-4 flex items-center justify-center rounded-full font-bold">{cartCount}</span>
+            )}
           </button>
         </div>
       </header>
@@ -334,68 +369,7 @@ export default function Navbar() {
       )}
 
       {/* Mini Cart Drawer */}
-      {cartOpen && (
-        <div className="fixed inset-0 z-[100] flex justify-end">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setCartOpen(false)} />
-          <div className="relative w-96 max-w-[90vw] bg-white h-full shadow-2xl flex flex-col">
-            <div className="p-6 flex justify-between items-center border-b border-outline-variant/10">
-              <h2 className="font-headline font-bold text-xl text-primary">Mon Panier (2)</h2>
-              <button onClick={() => setCartOpen(false)}><X size={24} className="text-primary" /></button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-6 space-y-6 hide-scrollbar">
-              {/* Cart item example */}
-              <div className="flex gap-4">
-                <div className="w-16 h-16 rounded-lg bg-surface-container-low flex-shrink-0 overflow-hidden">
-                  <div className="w-full h-full bg-beige flex items-center justify-center text-xs text-outline">HE</div>
-                </div>
-                <div className="flex-1">
-                  <div className="flex justify-between items-start">
-                    <h4 className="text-sm font-bold text-primary leading-tight">Huile Essentielle Lavande</h4>
-                    <span className="text-xs font-bold text-primary">8,50 TND</span>
-                  </div>
-                  <p className="text-xs text-secondary mt-1">10ml</p>
-                  <div className="flex items-center gap-3 mt-2">
-                    <div className="flex items-center bg-surface-container rounded px-2 py-0.5 gap-2">
-                      <button className="text-xs text-secondary">-</button>
-                      <span className="text-xs font-bold">1</span>
-                      <button className="text-xs text-secondary">+</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="flex gap-4">
-                <div className="w-16 h-16 rounded-lg bg-surface-container-low flex-shrink-0 overflow-hidden">
-                  <div className="w-full h-full bg-beige flex items-center justify-center text-xs text-outline">BK</div>
-                </div>
-                <div className="flex-1">
-                  <div className="flex justify-between items-start">
-                    <h4 className="text-sm font-bold text-primary leading-tight">Beurre de Karité Brut</h4>
-                    <span className="text-xs font-bold text-primary">12,50 TND</span>
-                  </div>
-                  <p className="text-xs text-secondary mt-1">200g</p>
-                  <div className="flex items-center gap-3 mt-2">
-                    <div className="flex items-center bg-surface-container rounded px-2 py-0.5 gap-2">
-                      <button className="text-xs text-secondary">-</button>
-                      <span className="text-xs font-bold">1</span>
-                      <button className="text-xs text-secondary">+</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="p-6 bg-surface-container-low border-t border-outline-variant/10 space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-secondary font-medium">Sous-total</span>
-                <span className="text-lg font-bold text-primary">21,00 TND</span>
-              </div>
-              <p className="text-[10px] text-secondary text-center italic">Frais de port offerts à partir de 49 TND</p>
-              <button className="w-full bg-primary text-white py-4 rounded-xl font-headline font-bold text-sm tracking-wide hover:opacity-90 transition-opacity">
-                Commander
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
     </>
   );
 }

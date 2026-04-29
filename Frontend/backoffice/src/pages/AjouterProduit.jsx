@@ -150,6 +150,11 @@ function AjouterProduit() {
   // Cosmetics-specific
   const [latin, setLatin] = useState('')
   const [bio, setBio] = useState(false)
+  const [origine, setOrigine] = useState('')
+  const [usageInstructions, setUsageInstructions] = useState('')
+  const [precautions, setPrecautions] = useState('')
+  const [inciComposition, setInciComposition] = useState('')
+  const [certifications, setCertifications] = useState('')
 
   // Variants (volume-based)
   const [volumeType, setVolumeType] = useState('liquides')
@@ -279,6 +284,11 @@ function AjouterProduit() {
         specificFees,
         imageUrl: productImages.filter(Boolean)[0] || null,
         images: productImages.filter(Boolean).join(',') || null,
+        origine: origine.trim() || null,
+        usageInstructions: usageInstructions.trim() || null,
+        precautions: precautions.trim() || null,
+        inciComposition: inciComposition.trim() || null,
+        certifications: certifications.trim() || null,
         variants: variants.map((v) => ({
           label: v.label,
           sku: v.sku,
@@ -412,6 +422,53 @@ function AjouterProduit() {
                     placeholder="Décrivez les caractéristiques techniques..."
                     className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm focus:ring-2 focus:ring-brand focus:border-brand transition-all placeholder:text-slate-400 outline-none resize-none"
                   />
+                </div>
+              </div>
+            </Section>
+
+            {/* Fiche Cosmétique */}
+            <Section title="Fiche Cosmétique">
+              <div className="space-y-6">
+                <div>
+                  <Label>Origine / Provenance</Label>
+                  <Input value={origine} onChange={(e) => setOrigine(e.target.value)} placeholder="Ex: France / Méditerranée" />
+                </div>
+                <div>
+                  <Label>Certifications</Label>
+                  <Input value={certifications} onChange={(e) => setCertifications(e.target.value)} placeholder="Ex: Écocert,Cosmos Natural,USDA Organic" />
+                  <p className="text-[10px] text-slate-400 mt-1">Séparez plusieurs certifications par des virgules.</p>
+                </div>
+                <div>
+                  <Label>Composition INCI</Label>
+                  <textarea
+                    rows={4}
+                    value={inciComposition}
+                    onChange={(e) => setInciComposition(e.target.value)}
+                    placeholder="Lavandula angustifolia (Oil), Limonene*, Linalool*..."
+                    className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm focus:ring-2 focus:ring-brand focus:border-brand transition-all placeholder:text-slate-400 outline-none resize-none"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">Ingrédients selon la nomenclature INCI. *Composants naturellement présents.</p>
+                </div>
+                <div>
+                  <Label>Précautions d'emploi</Label>
+                  <textarea
+                    rows={3}
+                    value={precautions}
+                    onChange={(e) => setPrecautions(e.target.value)}
+                    placeholder="⚠️ Ne pas utiliser pur. Déconseillé aux femmes enceintes..."
+                    className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm focus:ring-2 focus:ring-brand focus:border-brand transition-all placeholder:text-slate-400 outline-none resize-none"
+                  />
+                </div>
+                <div>
+                  <Label>Conseils d'utilisation</Label>
+                  <textarea
+                    rows={5}
+                    value={usageInstructions}
+                    onChange={(e) => setUsageInstructions(e.target.value)}
+                    placeholder="Diffusion: Verser 5-10 gouttes dans un diffuseur.\nMassage: Diluer 2 gouttes dans une huile végétale.\nBain: 5 gouttes mélangées à un dispersant."
+                    className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm focus:ring-2 focus:ring-brand focus:border-brand transition-all placeholder:text-slate-400 outline-none resize-none"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">Un conseil par ligne. Format recommandé : "Mode d'emploi: description"</p>
                 </div>
               </div>
             </Section>

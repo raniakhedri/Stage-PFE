@@ -120,8 +120,7 @@ public class CouponService {
     @Transactional
     public CouponResponse toggleStatut(Long id) {
         Coupon coupon = findOrThrow(id);
-        String statut = normalizeStatut(coupon.getStatut());
-        switch (statut) {
+        switch (coupon.getStatut()) {
             case "actif" -> coupon.setStatut("brouillon");
             case "brouillon", "planifie" -> coupon.setStatut("actif");
             default -> throw new IllegalArgumentException("Impossible de changer le statut d'un coupon expiré");
@@ -136,7 +135,7 @@ public class CouponService {
         Coupon coupon = couponRepository.findByCode(code.trim().toUpperCase())
                 .orElseThrow(() -> new IllegalArgumentException("Code coupon introuvable: " + code));
 
-        if (!"actif".equals(normalizeStatut(coupon.getStatut()))) {
+        if (!"actif".equals(coupon.getStatut())) {
             throw new IllegalArgumentException("Ce coupon n'est pas actif");
         }
 
@@ -176,12 +175,15 @@ public class CouponService {
         return mapToResponse(coupon);
     }
 
-    // ── Frontoffice: latest active coupon for top announcement ─────
+    // ── Public: top announcement coupon for frontoffice ─────────────────────
     @Transactional(readOnly = true)
-    public Optional<CouponResponse> getLatestActiveCouponForAnnouncement() {
-        return couponRepository.findByStatutIgnoreCaseOrderByCreatedAtDesc("actif")
+    public Optional<CouponResponse> getTopAnnouncementCoupon() {
+        LocalDate today = LocalDate.now();
+        LocalTime now = LocalTime.now();
+
+        return couponRepository.findActiveValidCouponsForDate(today)
                 .stream()
-                .filter(this::isCouponCurrentlyValid)
+                .filter(coupon -> isWithinTimeWindow(coupon, now))
                 .findFirst()
                 .map(this::mapToResponse);
     }
@@ -268,8 +270,7 @@ public class CouponService {
     }
 
     private String computeStatut(String requested, LocalDate dateDebut, LocalDate dateFin) {
-        String normalizedRequested = normalizeStatut(requested);
-        if ("brouillon".equals(normalizedRequested))
+        if ("brouillon".equals(requested))
             return "brouillon";
         LocalDate today = LocalDate.now();
         if (dateFin != null && today.isAfter(dateFin))
@@ -279,23 +280,13 @@ public class CouponService {
         return "actif";
     }
 
-    private String normalizeStatut(String statut) {
-        if (statut == null) {
-            return "";
-        }
-        return statut.trim().toLowerCase(Locale.ROOT);
+    private String joinList(List<String> items) {
+        if (items == null || items.isEmpty())
+            return null;
+        return String.join(",", items);
     }
 
-    private boolean isCouponCurrentlyValid(Coupon coupon) {
-        LocalDate today = LocalDate.now();
-        LocalTime now = LocalTime.now();
-
-        if (coupon.getDateDebut() != null && today.isBefore(coupon.getDateDebut())) {
-            return false;
-        }
-        if (coupon.getDateFin() != null && today.isAfter(coupon.getDateFin())) {
-            return false;
-        }
+    private boolean isWithinTimeWindow(Coupon coupon, LocalTime now) {
         if (coupon.getHeureDebut() != null && now.isBefore(coupon.getHeureDebut())) {
             return false;
         }
@@ -303,12 +294,6 @@ public class CouponService {
             return false;
         }
         return true;
-    }
-
-    private String joinList(List<String> items) {
-        if (items == null || items.isEmpty())
-            return null;
-        return String.join(",", items);
     }
 
     private List<String> splitList(String csv) {

@@ -52,6 +52,10 @@ export default function Commandes() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('actives')
 
+  // Inline status change
+  const [statusMenuId, setStatusMenuId] = useState(null)  // order id whose menu is open
+  const [updatingId, setUpdatingId] = useState(null)
+
   // Active orders filters
   const [search, setSearch] = useState('')
   const [filterStatut, setFilterStatut] = useState('Tous')
@@ -92,6 +96,14 @@ export default function Commandes() {
     fetchProducts()
   }, [])
 
+  // Close status dropdown when clicking outside
+  useEffect(() => {
+    if (!statusMenuId) return
+    const close = () => setStatusMenuId(null)
+    document.addEventListener('click', close)
+    return () => document.removeEventListener('click', close)
+  }, [statusMenuId])
+
   const fetchOrders = async () => {
     try {
       setLoading(true)
@@ -101,6 +113,20 @@ export default function Commandes() {
       toast.error('Erreur lors du chargement des commandes')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleChangeStatut = async (orderId, newStatus) => {
+    setStatusMenuId(null)
+    setUpdatingId(orderId)
+    try {
+      const { data } = await apiClient.patch(`/admin/orders/${orderId}/status`, { status: newStatus })
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: data.status } : o))
+      toast.success(`Statut mis à jour : ${STATUS_LABELS[newStatus]}`)
+    } catch {
+      toast.error('Erreur lors de la mise à jour du statut')
+    } finally {
+      setUpdatingId(null)
     }
   }
 
@@ -403,6 +429,48 @@ export default function Commandes() {
                                 >
                                   <span className="material-symbols-outlined text-lg">visibility</span>
                                 </button>
+                                {/* Inline status change */}
+                                <div className="relative">
+                                  <button
+                                    onClick={() => setStatusMenuId(prev => prev === o.id ? null : o.id)}
+                                    className="p-2 text-slate-500 hover:text-brand hover:bg-brand/10 rounded-lg transition-colors"
+                                    title="Changer statut"
+                                    disabled={updatingId === o.id}
+                                  >
+                                    {updatingId === o.id
+                                      ? <span className="material-symbols-outlined text-lg animate-spin">progress_activity</span>
+                                      : <span className="material-symbols-outlined text-lg">sync</span>
+                                    }
+                                  </button>
+                                  {statusMenuId === o.id && (
+                                    <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-xl border border-slate-200 z-30 py-2">
+                                      {['EN_ATTENTE', 'EN_PREPARATION', 'EXPEDIEE', 'LIVREE'].map((s) => (
+                                        <button
+                                          key={s}
+                                          onClick={() => handleChangeStatut(o.id, s)}
+                                          className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition-colors ${
+                                            o.status === s ? 'font-bold text-brand' : 'text-slate-600'
+                                          }`}
+                                        >
+                                          {o.status === s && <span className="material-symbols-outlined text-sm mr-1.5 align-middle">check</span>}
+                                          {STATUS_LABELS[s]}
+                                        </button>
+                                      ))}
+                                      {o.status !== 'ANNULEE' && o.status !== 'LIVREE' && (
+                                        <>
+                                          <div className="border-t border-slate-100 my-1" />
+                                          <button
+                                            onClick={() => handleChangeStatut(o.id, 'ANNULEE')}
+                                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors font-semibold"
+                                          >
+                                            <span className="material-symbols-outlined text-sm mr-1.5 align-middle">cancel</span>
+                                            Annuler
+                                          </button>
+                                        </>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
                                 {(o.status === 'LIVREE' || o.status === 'ANNULEE') && (
                                   <button
                                     onClick={() => archiveManually(o.id)}

@@ -3,11 +3,13 @@ package com.ecommerce.controller;
 import com.ecommerce.dto.request.ReturnRequestDTO;
 import com.ecommerce.dto.request.ReviewRequest;
 import com.ecommerce.dto.request.UpdateProfileRequest;
+import com.ecommerce.dto.response.LoyaltyInfoResponse;
 import com.ecommerce.dto.response.OrderResponse;
 import com.ecommerce.dto.response.ReturnResponse;
 import com.ecommerce.dto.response.ReviewResponse;
 import com.ecommerce.dto.response.UserResponse;
 import com.ecommerce.security.UserPrincipal;
+import com.ecommerce.service.LoyaltyService;
 import com.ecommerce.service.OrderService;
 import com.ecommerce.service.ReturnService;
 import com.ecommerce.service.ReviewService;
@@ -29,6 +31,7 @@ public class ProfileController {
     private final OrderService orderService;
     private final ReviewService reviewService;
     private final ReturnService returnService;
+    private final LoyaltyService loyaltyService;
 
     @GetMapping
     public ResponseEntity<UserResponse> getProfile(@AuthenticationPrincipal UserPrincipal principal) {
@@ -69,5 +72,10 @@ public class ProfileController {
     @GetMapping("/returns")
     public ResponseEntity<List<ReturnResponse>> getMyReturns(@AuthenticationPrincipal UserPrincipal principal) {
         return ResponseEntity.ok(returnService.getMyReturns(principal.getUsername()));
+    }
+
+    @GetMapping("/loyalty")
+    public ResponseEntity<LoyaltyInfoResponse> getMyLoyalty(@AuthenticationPrincipal UserPrincipal principal) {
+        return ResponseEntity.ok(loyaltyService.getLoyaltyInfo(principal.getId()));
     }
 }

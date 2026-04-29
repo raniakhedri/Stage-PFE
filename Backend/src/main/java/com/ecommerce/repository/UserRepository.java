@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
@@ -47,4 +48,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query("SELECT COUNT(u) FROM User u WHERE u.role.name = 'CLIENT' AND u.createdAt >= :since")
     long countNewClientsSince(@Param("since") LocalDateTime since);
+
+    @Query("SELECT u FROM User u WHERE u.role.name = 'CLIENT' AND u.loyaltyPoints > 0 ORDER BY u.loyaltyPoints DESC")
+    List<User> findTopClientsByLoyaltyPoints(Pageable pageable);
 }

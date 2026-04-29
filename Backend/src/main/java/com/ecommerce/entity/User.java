@@ -64,6 +64,10 @@ public class User {
 
     private String note;
 
+    /** Accumulated loyalty points */
+    @Builder.Default
+    private Integer loyaltyPoints = 0;
+
     private LocalDateTime lastLogin;
 
     @CreationTimestamp

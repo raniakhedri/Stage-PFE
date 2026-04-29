@@ -14,9 +14,10 @@ const navItems = [
 ]
 
 const marketingItems = [
-  { path: '/promotions',      label: 'Promotions',      icon: 'campaign', moduleKey: 'PROMOTIONS' },
-  { path: '/email-marketing', label: 'Email Marketing', icon: 'mail',     moduleKey: 'EMAIL_MARKETING' },
-  { path: '/avis',            label: 'Avis',            icon: 'reviews',  moduleKey: 'AVIS' },
+  { path: '/promotions',      label: 'Promotions',      icon: 'campaign',     moduleKey: 'PROMOTIONS' },
+  { path: '/fidelite',        label: 'Fidélité',        icon: 'stars',        moduleKey: 'PROMOTIONS' },
+  { path: '/email-marketing', label: 'Email Marketing', icon: 'mail',         moduleKey: 'EMAIL_MARKETING' },
+  { path: '/avis',            label: 'Avis',            icon: 'reviews',      moduleKey: 'AVIS' },
 ]
 
 const parametresItems = [
@@ -100,7 +101,7 @@ function Sidebar() {
               <span className="material-symbols-outlined text-white text-[18px]">shield</span>
             </div>
             <span className="ml-3 text-lg font-bold tracking-tight text-slate-800">
-              WORKWEAR<span className="text-sidebar">PRO</span>
+              Nature<span className="text-sidebar">Essence</span>
             </span>
           </>
         )}

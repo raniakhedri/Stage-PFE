@@ -38,6 +38,8 @@ public class OrderService {
     private final CouponService couponService;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
+    private final EmailService emailService;
+    private final LoyaltyService loyaltyService;
 
     @Transactional
     public OrderResponse createOrder(OrderRequest req) {
@@ -53,6 +55,10 @@ public class OrderService {
                 .orElse(TvaConfig.builder().build());
         double tvaRate = (tvaConfig.getTvaActive() != null && tvaConfig.getTvaActive()) ? tvaConfig.getTauxDefaut()
                 : 0.0;
+
+        // Free shipping threshold (standardSeuil from admin config)
+        Double standardSeuil = (tvaConfig.getStandardEnabled() != null && tvaConfig.getStandardEnabled())
+                ? tvaConfig.getStandardSeuil() : null;
 
         // 3. Parse payment method
         PaymentMethod paymentMethod;
@@ -131,9 +137,16 @@ public class OrderService {
             }
         }
 
+        // Apply free shipping if subtotal meets the threshold
+        double effectiveShippingCost = zone.getCout();
+        if (standardSeuil != null && standardSeuil > 0 && subtotalAfterCoupon >= standardSeuil) {
+            effectiveShippingCost = 0.0;
+        }
+        order.setShippingCost(effectiveShippingCost);
+
         // 7. Calculate totals (TVA is INCLUDED in selling price — prices are TTC)
         double tvaAmount = Math.round(subtotalAfterCoupon * tvaRate) / 100.0;
-        double total = subtotalAfterCoupon + zone.getCout(); // TVA already in subtotal
+        double total = subtotalAfterCoupon + effectiveShippingCost; // TVA already in subtotal
 
         order.setCouponCode(couponCode);
         order.setCouponDiscount(couponDiscount);
@@ -153,6 +166,9 @@ public class OrderService {
                 });
             }
         }
+
+        // 9. Send confirmation email with invoice (async — does not block response)
+        emailService.sendOrderConfirmation(saved);
 
         return mapToResponse(saved);
     }
@@ -196,8 +212,7 @@ public class OrderService {
         }
         order.setStatus(newStatus);
 
-        // Restore stock when an order is cancelled (only if it wasn't already
-        // cancelled)
+        // Restore stock when an order is cancelled (only if it wasn't already cancelled)
         if (newStatus == OrderStatus.ANNULEE && previousStatus != OrderStatus.ANNULEE) {
             for (OrderItem item : order.getItems()) {
                 if (item.getProductId() != null) {
@@ -207,6 +222,11 @@ public class OrderService {
                     });
                 }
             }
+        }
+
+        // Award loyalty points when order is delivered (only once)
+        if (newStatus == OrderStatus.LIVREE && previousStatus != OrderStatus.LIVREE && order.getUser() != null) {
+            loyaltyService.awardPointsForOrder(order.getUser(), order.getTotal(), order.getId());
         }
 
         return mapToResponse(orderRepository.save(order));

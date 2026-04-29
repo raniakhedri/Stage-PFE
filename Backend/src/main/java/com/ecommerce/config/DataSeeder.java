@@ -32,6 +32,7 @@ public class DataSeeder implements CommandLineRunner {
         private final CategoryRepository categoryRepository;
         private final ProductRepository productRepository;
         private final JdbcTemplate jdbcTemplate;
+        private final LoyaltyConfigRepository loyaltyConfigRepository;
 
         @Value("${app.seed.admin-email}")
         private String adminEmail;
@@ -47,6 +48,7 @@ public class DataSeeder implements CommandLineRunner {
                 seedSegments();
                 seedSuperAdmin();
                 seedTvaAndShipping();
+                seedLoyaltyConfig();
                 seedCategoriesAndProducts();
         }
 
@@ -57,6 +59,28 @@ public class DataSeeder implements CommandLineRunner {
                 // Drop deprecated column if it still exists
                 jdbcTemplate.execute(
                         "ALTER TABLE products DROP COLUMN IF EXISTS visible_landing");
+                // Fix NULL boolean columns in segments (new loyalty fields)
+                jdbcTemplate.execute("UPDATE segments SET seuil_points = 0 WHERE seuil_points IS NULL");
+                jdbcTemplate.execute("UPDATE segments SET multiplicateur_points = 1.0 WHERE multiplicateur_points IS NULL");
+                jdbcTemplate.execute("UPDATE segments SET remise_automatique = 0.0 WHERE remise_automatique IS NULL");
+                jdbcTemplate.execute("UPDATE segments SET remise_anniversaire = 0.0 WHERE remise_anniversaire IS NULL");
+                jdbcTemplate.execute("UPDATE segments SET cashback_pourcentage = 0.0 WHERE cashback_pourcentage IS NULL");
+                jdbcTemplate.execute("UPDATE segments SET livraison_gratuite_standard = false WHERE livraison_gratuite_standard IS NULL");
+                jdbcTemplate.execute("UPDATE segments SET livraison_gratuite_express = false WHERE livraison_gratuite_express IS NULL");
+                jdbcTemplate.execute("UPDATE segments SET livraison_prioritaire = false WHERE livraison_prioritaire IS NULL");
+                jdbcTemplate.execute("UPDATE segments SET cadeau_anniversaire = false WHERE cadeau_anniversaire IS NULL");
+                jdbcTemplate.execute("UPDATE segments SET emballage_offert = false WHERE emballage_offert IS NULL");
+                jdbcTemplate.execute("UPDATE segments SET echantillons_gratuits = false WHERE echantillons_gratuits IS NULL");
+                jdbcTemplate.execute("UPDATE segments SET acces_anticipe = false WHERE acces_anticipe IS NULL");
+                jdbcTemplate.execute("UPDATE segments SET produit_exclusif = false WHERE produit_exclusif IS NULL");
+                jdbcTemplate.execute("UPDATE segments SET invitations_evenements = false WHERE invitations_evenements IS NULL");
+                jdbcTemplate.execute("UPDATE segments SET acces_ventes_privees = false WHERE acces_ventes_privees IS NULL");
+                jdbcTemplate.execute("UPDATE segments SET priorite_support = false WHERE priorite_support IS NULL");
+                jdbcTemplate.execute("UPDATE segments SET retour_etendu = false WHERE retour_etendu IS NULL");
+                jdbcTemplate.execute("UPDATE segments SET conseiller_personnel = false WHERE conseiller_personnel IS NULL");
+                jdbcTemplate.execute("UPDATE segments SET badge_visible = true WHERE badge_visible IS NULL");
+                // Fix NULL loyalty_points on users
+                jdbcTemplate.execute("UPDATE users SET loyalty_points = 0 WHERE loyalty_points IS NULL");
         }
 
         private void seedRoles() {
@@ -270,6 +294,22 @@ public class DataSeeder implements CommandLineRunner {
                                         .statut("Ouverte").build());
                         log.info("4 zones de livraison tunisiennes créées.");
                 }
+        }
+
+        // ── Loyalty Config ──────────────────────────────────────────────────────
+        private void seedLoyaltyConfig() {
+                if (loyaltyConfigRepository.count() > 0) {
+                        log.info("LoyaltyConfig déjà initialisé, skip seed.");
+                        return;
+                }
+                loyaltyConfigRepository.save(LoyaltyConfig.builder()
+                                .pointsParTnd(1.0)
+                                .pointsBienvenue(50)
+                                .pointsAvis(20)
+                                .pointsAnniversaire(100)
+                                .autoSegmentPromotion(true)
+                                .build());
+                log.info("LoyaltyConfig créé avec les valeurs par défaut.");
         }
 
         // ── Cosmetics Categories & Sample Products ──────────────────────

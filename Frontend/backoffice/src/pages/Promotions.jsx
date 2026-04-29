@@ -114,6 +114,7 @@ export default function Promotions() {
 
   /* ── Modal create coupon ── */
   const [showCreate, setShowCreate] = useState(false)
+  const [editCouponId, setEditCouponId] = useState(null) // null = create mode
   const [newCode, setNewCode] = useState('')
   const [newType, setNewType] = useState('pourcentage')
   const [newValeur, setNewValeur] = useState('')
@@ -240,6 +241,7 @@ export default function Promotions() {
   }
 
   const openCreate = () => {
+    setEditCouponId(null)
     setNewCode('')
     setNewType('pourcentage')
     setNewValeur('')
@@ -256,6 +258,61 @@ export default function Promotions() {
     setShowPlanification(false)
     setLimiteMode('unique')
     setShowCreate(true)
+  }
+
+  const openEdit = (c) => {
+    setEditCouponId(c.id)
+    setNewCode(c.code || '')
+    setNewType(c.type || 'pourcentage')
+    setNewValeur(c.valeur != null ? String(c.valeur) : '')
+    setNewMontantMin(c.montantMin > 0 ? String(c.montantMin) : '')
+    setNewDateDebut(c.dateDebut || '')
+    setNewDateFin(c.dateFin || '')
+    setNewHeureDebut(c.heureDebut || '00:00')
+    setNewHeureFin(c.heureFin || '23:59')
+    const hasSchedule = !!(c.dateDebut || c.dateFin)
+    setShowPlanification(hasSchedule)
+    const isMultiple = c.limiteGlobale > 1 || c.limiteClient > 1
+    setLimiteMode(isMultiple ? 'multiple' : 'unique')
+    setNewLimiteGlobale(c.limiteGlobale > 0 ? String(c.limiteGlobale) : '')
+    setNewLimiteClient(c.limiteClient > 0 ? String(c.limiteClient) : '1')
+    setNewSegment(c.segment || '')
+    setNewCategories(c.categories || [])
+    setNewAuto(c.auto || false)
+    setShowCreate(true)
+  }
+
+  const submitEdit = async () => {
+    if (!newCode.trim()) return toast.error('Le code est obligatoire.')
+    if ((newType === 'pourcentage' || newType === 'fixe') && !newValeur) return toast.error('La valeur est obligatoire.')
+    setSubmitting(true)
+    try {
+      const payload = {
+        code: newCode.trim().toUpperCase(),
+        type: newType,
+        valeur: parseFloat(newValeur) || 0,
+        montantMin: parseFloat(newMontantMin) || 0,
+        dateDebut: showPlanification ? (newDateDebut || null) : null,
+        dateFin: showPlanification ? (newDateFin || null) : null,
+        heureDebut: showPlanification ? (newHeureDebut || null) : null,
+        heureFin: showPlanification ? (newHeureFin || null) : null,
+        limiteGlobale: limiteMode === 'unique' ? 0 : (parseInt(newLimiteGlobale) || 0),
+        limiteClient: limiteMode === 'unique' ? 1 : (parseInt(newLimiteClient) || 0),
+        segment: newSegment || null,
+        categories: newCategories,
+        produits: [],
+        auto: newAuto,
+      }
+      const updated = await promotionApi.updateCoupon(editCouponId, payload)
+      setCoupons(prev => prev.map(c => c.id === editCouponId ? updated : c))
+      setShowCreate(false)
+      toast.success(`Coupon "${updated.code}" modifié avec succès !`)
+      refreshStats()
+    } catch (err) {
+      toast.error(err?.response?.data?.message || err?.response?.data?.error || 'Erreur lors de la modification.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const submitCreate = async () => {
@@ -467,18 +524,18 @@ export default function Promotions() {
           {/* Table */}
           <div className="bg-white rounded-custom border border-slate-200 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead className="bg-slate-50 text-slate-500 text-[11px] uppercase tracking-wider font-bold">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-wider font-bold">
                   <tr>
-                    <th className="px-6 py-3">Code</th>
-                    <th className="px-6 py-3">Type</th>
-                    <th className="px-6 py-3">Remise</th>
-                    <th className="px-6 py-3">Segment</th>
-                    <th className="px-6 py-3">Utilisation</th>
-                    <th className="px-6 py-3">Expiration</th>
-                    <th className="px-6 py-3 text-center">Statut</th>
-                    <th className="px-6 py-3 text-center">Perf.</th>
-                    <th className="px-6 py-3 text-right">Actions</th>
+                    <th className="px-3 py-2">Code</th>
+                    <th className="px-3 py-2">Type</th>
+                    <th className="px-3 py-2">Remise</th>
+                    <th className="px-3 py-2">Segment</th>
+                    <th className="px-3 py-2">Utilisation</th>
+                    <th className="px-3 py-2">Expiration</th>
+                    <th className="px-3 py-2 text-center">Statut</th>
+                    <th className="px-3 py-2 text-center">Conversion</th>
+                    <th className="px-3 py-2 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -489,64 +546,64 @@ export default function Promotions() {
                     return (
                       <tr key={c.id} className="hover:bg-slate-50/50 transition-colors group">
                         {/* Code */}
-                        <td className="px-6 py-3.5">
-                          <div className="flex items-center gap-2">
-                            <span className={`px-3 py-1 rounded-lg text-sm font-bold border ${isInactive ? 'bg-slate-100 text-slate-400 border-slate-200' : 'bg-brand/5 text-brand border-brand/10'}`}>
+                        <td className="px-3 py-2">
+                          <div className="flex items-center gap-1.5">
+                            <span className={`px-2 py-0.5 rounded-md text-xs font-bold border ${isInactive ? 'bg-slate-100 text-slate-400 border-slate-200' : 'bg-brand/5 text-brand border-brand/10'}`}>
                               {c.code}
                             </span>
                             {c.auto && (
-                              <span className="px-1.5 py-0.5 bg-violet-50 text-violet-600 text-[9px] font-bold rounded border border-violet-100 uppercase">Auto</span>
+                              <span className="material-symbols-outlined text-[13px] text-violet-500" title="Automatique">smart_toy</span>
                             )}
                             {c.conversion >= 30 && c.statut === 'actif' && (
-                              <span className="material-symbols-outlined text-[14px] text-orange-500" title="Performant">local_fire_department</span>
+                              <span className="material-symbols-outlined text-[13px] text-orange-500" title="Performant">local_fire_department</span>
                             )}
                           </div>
                         </td>
 
                         {/* Type */}
-                        <td className="px-6 py-3.5">
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold font-badge uppercase tracking-wide border ${tc.badge}`}>
-                            <span className="material-symbols-outlined text-[12px]">{tc.icon}</span>
+                        <td className="px-3 py-2">
+                          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold font-badge uppercase tracking-wide border ${tc.badge}`}>
+                            <span className="material-symbols-outlined text-[11px]">{tc.icon}</span>
                             {tc.label}
                           </span>
                         </td>
 
                         {/* Remise */}
-                        <td className="px-6 py-3.5">
-                          <span className={`text-sm font-bold ${isInactive ? 'text-slate-400' : 'text-slate-800'}`}>
+                        <td className="px-3 py-2">
+                          <span className={`text-xs font-bold ${isInactive ? 'text-slate-400' : 'text-slate-800'}`}>
                             {c.type === 'pourcentage' ? `${c.valeur}%` : c.type === 'fixe' ? `${c.valeur} DT` : c.type === 'livraison' ? 'Gratuite' : c.type === 'bogo' ? '1+1' : `${c.valeur} DT`}
                           </span>
                           {c.montantMin > 0 && <p className="text-[10px] text-slate-400">Min. {c.montantMin} DT</p>}
                         </td>
 
                         {/* Segment */}
-                        <td className="px-6 py-3.5">
-                          <span className="text-xs text-slate-600 font-medium">{segmentOptions.find(s => s.value === (c.segment || ''))?.label || c.segment || 'Tous les clients'}</span>
-                          {c.categories?.length > 0 && <p className="text-[10px] text-slate-400">{c.categories.join(', ')}</p>}
+                        <td className="px-3 py-2 max-w-[140px]">
+                          <span className="text-xs text-slate-600 font-medium block truncate">{segmentOptions.find(s => s.value === (c.segment || ''))?.label || c.segment || 'Tous les clients'}</span>
+                          {c.categories?.length > 0 && <p className="text-[10px] text-slate-400 truncate">{c.categories.join(', ')}</p>}
                         </td>
 
                         {/* Utilisation */}
-                        <td className="px-6 py-3.5 min-w-[140px]">
+                        <td className="px-3 py-2 min-w-[100px]">
                           <ProgressBar value={c.utilisations} max={c.limiteGlobale} color={c.statut === 'actif' ? 'bg-brand' : 'bg-slate-300'} />
                         </td>
 
                         {/* Expiration */}
-                        <td className="px-6 py-3.5 text-sm text-slate-500">
+                        <td className="px-3 py-2 text-xs text-slate-500 whitespace-nowrap">
                           {c.dateFin ? c.dateFin : <span className="text-slate-300">—</span>}
                         </td>
 
                         {/* Statut */}
-                        <td className="px-6 py-3.5 text-center">
+                        <td className="px-3 py-2 text-center">
                           <button onClick={() => toggleStatut(c.id)} title="Cliquer pour changer">
-                            <span className={`px-3 py-1 rounded-full text-[10px] font-bold font-badge uppercase tracking-wider ${sc.bg}`}>{sc.label}</span>
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold font-badge uppercase tracking-wider ${sc.bg}`}>{sc.label}</span>
                           </button>
                         </td>
 
                         {/* Performance */}
-                        <td className="px-6 py-3.5 text-center">
+                        <td className="px-3 py-2 text-center">
                           {c.conversion > 0 ? (
                             <div className="text-center">
-                              <span className={`text-sm font-bold ${c.conversion >= 30 ? 'text-brand' : c.conversion >= 15 ? 'text-amber-600' : 'text-red-500'}`}>{c.conversion}%</span>
+                              <span className={`text-xs font-bold ${c.conversion >= 30 ? 'text-brand' : c.conversion >= 15 ? 'text-amber-600' : 'text-red-500'}`}>{c.conversion}%</span>
                               <p className="text-[10px] text-slate-400">{c.revenus.toLocaleString()} DT</p>
                             </div>
                           ) : (
@@ -555,19 +612,22 @@ export default function Promotions() {
                         </td>
 
                         {/* Actions */}
-                        <td className="px-6 py-3.5 text-right">
-                          <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => copierCode(c.code)} className="p-1.5 text-slate-400 hover:text-brand hover:bg-brand/5 rounded-md transition-all" title="Copier code">
-                              <span className="material-symbols-outlined text-[18px]">content_copy</span>
+                        <td className="px-3 py-2 text-right">
+                          <div className="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => copierCode(c.code)} className="p-1 text-slate-400 hover:text-brand hover:bg-brand/5 rounded-md transition-all" title="Copier code">
+                              <span className="material-symbols-outlined text-[16px]">content_copy</span>
                             </button>
-                            <button onClick={() => setDetailCoupon(c)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all" title="Détails & perf.">
-                              <span className="material-symbols-outlined text-[18px]">bar_chart</span>
+                            <button onClick={() => openEdit(c)} className="p-1 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-all" title="Modifier">
+                              <span className="material-symbols-outlined text-[16px]">edit</span>
                             </button>
-                            <button onClick={() => toast.info(`Partage du code ${c.code} par email...`)} className="p-1.5 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-all" title="Envoyer par email">
-                              <span className="material-symbols-outlined text-[18px]">mail</span>
+                            <button onClick={() => setDetailCoupon(c)} className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all" title="Détails & perf.">
+                              <span className="material-symbols-outlined text-[16px]">bar_chart</span>
                             </button>
-                            <button onClick={() => supprimerCoupon(c.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all" title="Supprimer">
-                              <span className="material-symbols-outlined text-[18px]">delete</span>
+                            <button onClick={() => toast.info(`Partage du code ${c.code} par email...`)} className="p-1 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-all" title="Envoyer par email">
+                              <span className="material-symbols-outlined text-[16px]">mail</span>
+                            </button>
+                            <button onClick={() => supprimerCoupon(c.id)} className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all" title="Supprimer">
+                              <span className="material-symbols-outlined text-[16px]">delete</span>
                             </button>
                           </div>
                         </td>
@@ -957,8 +1017,8 @@ export default function Promotions() {
                   <span className="material-symbols-outlined text-brand" style={{ fontSize: '20px' }}>confirmation_number</span>
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-800 leading-tight">Créer un coupon</h3>
-                  <p className="text-[11px] text-slate-400">Configurez les détails de votre nouveau coupon</p>
+                  <h3 className="text-base font-bold text-slate-800 leading-tight">{editCouponId ? 'Modifier le coupon' : 'Créer un coupon'}</h3>
+                  <p className="text-[11px] text-slate-400">{editCouponId ? `Modifiez les paramètres du coupon ${newCode}` : 'Configurez les détails de votre nouveau coupon'}</p>
                 </div>
               </div>
               <button onClick={() => setShowCreate(false)} className="w-8 h-8 flex items-center justify-center hover:bg-slate-100 rounded-lg transition-colors">
@@ -978,11 +1038,14 @@ export default function Promotions() {
                   <div className="space-y-1.5">
                     <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Code du coupon <InfoTip text="Code unique que le client saisit lors du paiement pour bénéficier de la réduction." /></label>
                     <div className="flex gap-2">
-                      <input type="text" value={newCode} onChange={e => setNewCode(e.target.value.toUpperCase())} placeholder="Ex: PROMO20"
-                        className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand/30 focus:border-brand outline-none font-bold uppercase transition-all" />
-                      <button onClick={() => setNewCode(genCode())} className="px-3 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-50 hover:border-slate-300 transition-all whitespace-nowrap" title="Générer un code automatique">
-                        <span className="material-symbols-outlined text-sm align-middle mr-1">casino</span>Auto
-                      </button>
+                      <input type="text" value={newCode} onChange={e => !editCouponId && setNewCode(e.target.value.toUpperCase())} placeholder="Ex: PROMO20"
+                        readOnly={!!editCouponId}
+                        className={`flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand/30 focus:border-brand outline-none font-bold uppercase transition-all ${editCouponId ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : ''}`} />
+                      {!editCouponId && (
+                        <button onClick={() => setNewCode(genCode())} className="px-3 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-50 hover:border-slate-300 transition-all whitespace-nowrap" title="Générer un code automatique">
+                          <span className="material-symbols-outlined text-sm align-middle mr-1">casino</span>Auto
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -1134,16 +1197,16 @@ export default function Promotions() {
               <button onClick={() => setShowCreate(false)} className="px-5 py-2.5 text-sm font-semibold text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors">
                 Annuler
               </button>
-              <button onClick={submitCreate} disabled={submitting} className="px-6 py-2.5 text-sm font-semibold text-white bg-btn rounded-lg hover:bg-btn-dark transition-colors shadow-md disabled:opacity-50 flex items-center gap-2">
+              <button onClick={editCouponId ? submitEdit : submitCreate} disabled={submitting} className="px-6 py-2.5 text-sm font-semibold text-white bg-btn rounded-lg hover:bg-btn-dark transition-colors shadow-md disabled:opacity-50 flex items-center gap-2">
                 {submitting ? (
                   <>
                     <span className="material-symbols-outlined animate-spin" style={{ fontSize: '16px' }}>progress_activity</span>
-                    Création...
+                    {editCouponId ? 'Modification...' : 'Création...'}
                   </>
                 ) : (
                   <>
-                    <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>add_circle</span>
-                    Créer le coupon
+                    <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>{editCouponId ? 'save' : 'add_circle'}</span>
+                    {editCouponId ? 'Enregistrer les modifications' : 'Créer le coupon'}
                   </>
                 )}
               </button>

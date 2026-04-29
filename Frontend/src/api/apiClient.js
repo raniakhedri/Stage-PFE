@@ -1,8 +1,24 @@
 const API_BASE = 'http://localhost:8080/api/v1/public';
+const API_PROFILE = 'http://localhost:8080/api/v1/profile';
 
 async function request(path) {
   const res = await fetch(`${API_BASE}${path}`);
   if (!res.ok) throw new Error(`API error: ${res.status}`);
+  if (res.status === 204) return null;
+  return res.json();
+}
+
+async function authRequest(path, options = {}) {
+  const token = localStorage.getItem('accessToken');
+  const res = await fetch(`http://localhost:8080/api/v1${path}`, {
+    ...options,
+    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(options.headers || {}) },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw err;
+  }
+  if (res.status === 204) return null;
   return res.json();
 }
 
@@ -76,14 +92,21 @@ export async function fetchHomepageBanners(segment, device = 'desktop') {
     .filter((b) => (device === 'mobile' ? b.visibleMobile : b.visibleDesktop));
 }
 
-export async function fetchTopAnnouncement() {
-  const res = await fetch(`${API_BASE}/promotions/announcement?t=${Date.now()}`, {
-    cache: 'no-store',
-  });
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
+export async function fetchTopAnnouncementCoupon() {
+  try {
+    const data = await request('/coupons/announcement');
+    return data || null;
+  } catch {
+    return null;
+  }
+}
 
-  const payload = await res.json();
-  return payload?.data || null;
+export async function fetchTvaConfig() {
+  try {
+    return await request('/checkout/tva-config');
+  } catch {
+    return null;
+  }
 }
 
 function mapProduct(p) {
@@ -99,6 +122,7 @@ function mapProduct(p) {
     name: p.nom,
     latin: p.latin || '',
     category: p.subCategory || p.categoryNom || '',
+    parentCategory: p.parentCategoryNom || '',
     categorySlug: p.parentCategoryId ? slugifyCategory(p.parentCategoryNom) : '',
     price: p.promoActive && p.promoPrice ? p.promoPrice : p.salePrice,
     oldPrice: p.promoActive && p.promoPrice ? p.salePrice : null,
@@ -109,6 +133,12 @@ function mapProduct(p) {
     bio: Boolean(p.bio),
     image: p.imageUrl || '',
     description: p.description || '',
+    // Cosmetic detail fields
+    origine: p.origine || '',
+    usageInstructions: p.usageInstructions || '',
+    precautions: p.precautions || '',
+    inciComposition: p.inciComposition || '',
+    certifications: (p.certifications || '').split(',').map(s => s.trim()).filter(Boolean),
     variants: (p.variants || []).map((v) => ({
       id: v.id,
       label: v.label,
@@ -116,6 +146,42 @@ function mapProduct(p) {
       stock: v.stock,
     })),
   };
+}
+
+// ── Reviews ─────────────────────────────────────────────────────────────────
+
+export async function fetchReviewsByProduct(productId) {
+  return request(`/reviews/product/${productId}`);
+}
+
+export async function submitReview({ orderId, productId, note, commentaire }) {
+  return authRequest('/profile/reviews', {
+    method: 'POST',
+    body: JSON.stringify({ orderId, productId, note, commentaire }),
+  });
+}
+
+export async function fetchMyOrders() {
+  return authRequest('/profile/orders');
+}
+
+export async function fetchMyLoyalty() {
+  return authRequest('/profile/loyalty');
+}
+
+export async function fetchMyProfile() {
+  return authRequest('/profile');
+}
+
+export async function updateMyProfile(data) {
+  return authRequest('/profile', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function fetchMyReviews() {
+  return authRequest('/profile/reviews');
 }
 
 function mapBanner(b) {

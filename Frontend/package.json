@@ -16,5 +16,9 @@
     "build:frontoffice": "npm run build --workspace=frontoffice",
     "build": "npm run build:backoffice && npm run build:frontoffice",
     "lint": "npm run lint --workspace=backoffice"
+  },
+  "dependencies": {
+    "@stripe/react-stripe-js": "^6.2.0",
+    "@stripe/stripe-js": "^9.3.0"
   }
 }

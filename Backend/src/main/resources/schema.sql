@@ -23,3 +23,10 @@ UPDATE banners SET badge_text_color = '#ffffff' WHERE badge_text_color IS NULL O
 ALTER TABLE banners ALTER COLUMN badge_texte SET DEFAULT 'Nouvelle Collection';
 ALTER TABLE banners ALTER COLUMN badge_bg_color SET DEFAULT 'rgba(255,255,255,0.15)';
 ALTER TABLE banners ALTER COLUMN badge_text_color SET DEFAULT '#ffffff';
+
+-- New cosmetic product fields (2026-04-28)
+ALTER TABLE IF EXISTS products ADD COLUMN IF NOT EXISTS origine VARCHAR(255);
+ALTER TABLE IF EXISTS products ADD COLUMN IF NOT EXISTS usage_instructions TEXT;
+ALTER TABLE IF EXISTS products ADD COLUMN IF NOT EXISTS precautions TEXT;
+ALTER TABLE IF EXISTS products ADD COLUMN IF NOT EXISTS inci_composition TEXT;
+ALTER TABLE IF EXISTS products ADD COLUMN IF NOT EXISTS certifications TEXT;

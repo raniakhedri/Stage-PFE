@@ -45,6 +45,7 @@ public class SegmentService {
                 .icon(request.getIcon())
                 .build();
 
+        applyBenefits(segment, request);
         segment = segmentRepository.save(segment);
         return mapToResponse(segment);
     }
@@ -64,8 +65,31 @@ public class SegmentService {
         segment.setColor(request.getColor());
         segment.setIcon(request.getIcon());
 
+        applyBenefits(segment, request);
         segment = segmentRepository.save(segment);
         return mapToResponse(segment);
+    }
+
+    private void applyBenefits(Segment s, SegmentRequest r) {
+        if (r.getSeuilPoints() != null) s.setSeuilPoints(r.getSeuilPoints());
+        if (r.getMultiplicateurPoints() != null) s.setMultiplicateurPoints(r.getMultiplicateurPoints());
+        if (r.getRemiseAutomatique() != null) s.setRemiseAutomatique(r.getRemiseAutomatique());
+        if (r.getRemiseAnniversaire() != null) s.setRemiseAnniversaire(r.getRemiseAnniversaire());
+        if (r.getCashbackPourcentage() != null) s.setCashbackPourcentage(r.getCashbackPourcentage());
+        if (r.getLivraisonGratuiteStandard() != null) s.setLivraisonGratuiteStandard(r.getLivraisonGratuiteStandard());
+        if (r.getLivraisonGratuiteExpress() != null) s.setLivraisonGratuiteExpress(r.getLivraisonGratuiteExpress());
+        if (r.getLivraisonPrioritaire() != null) s.setLivraisonPrioritaire(r.getLivraisonPrioritaire());
+        if (r.getCadeauAnniversaire() != null) s.setCadeauAnniversaire(r.getCadeauAnniversaire());
+        if (r.getEmballageOffert() != null) s.setEmballageOffert(r.getEmballageOffert());
+        if (r.getEchantillonsGratuits() != null) s.setEchantillonsGratuits(r.getEchantillonsGratuits());
+        if (r.getAccesAnticipe() != null) s.setAccesAnticipe(r.getAccesAnticipe());
+        if (r.getProduitExclusif() != null) s.setProduitExclusif(r.getProduitExclusif());
+        if (r.getInvitationsEvenements() != null) s.setInvitationsEvenements(r.getInvitationsEvenements());
+        if (r.getAccesVentesPrivees() != null) s.setAccesVentesPrivees(r.getAccesVentesPrivees());
+        if (r.getPrioriteSupport() != null) s.setPrioriteSupport(r.getPrioriteSupport());
+        if (r.getRetourEtendu() != null) s.setRetourEtendu(r.getRetourEtendu());
+        if (r.getConseillerPersonnel() != null) s.setConseillerPersonnel(r.getConseillerPersonnel());
+        if (r.getBadgeVisible() != null) s.setBadgeVisible(r.getBadgeVisible());
     }
 
     @Transactional
@@ -85,14 +109,6 @@ public class SegmentService {
     }
 
     private SegmentResponse mapToResponse(Segment segment) {
-        return SegmentResponse.builder()
-                .id(segment.getId())
-                .name(segment.getName())
-                .label(segment.getLabel())
-                .description(segment.getDescription())
-                .color(segment.getColor())
-                .icon(segment.getIcon())
-                .userCount(userRepository.countBySegmentId(segment.getId()))
-                .build();
+        return LoyaltyService.mapSegment(segment, userRepository);
     }
 }

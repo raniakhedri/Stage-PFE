@@ -32,6 +32,7 @@ public class UserResponse {
     private String roleName;
     private String roleLabel;
     private String note;
+    private Integer loyaltyPoints;
     private LocalDateTime lastLogin;
     private LocalDateTime createdAt;
     private Map<String, Boolean> permissions;
