@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, User, Heart, ShoppingBag, Menu, X, ChevronDown, ChevronRight, Truck, Phone, LogOut } from 'lucide-react';
 import { categories } from '../data/categories';
 import { fetchTopAnnouncementCoupon, fetchTvaConfig } from '../api/apiClient';
+import { getUser, clearTokens, cancelAutoLogout } from '../api/tokenStorage';
 import { useShop } from '../context/ShopContext';
 import CartDrawer from './CartDrawer';
 
@@ -94,13 +95,9 @@ export default function Navbar() {
 
   // Check if user is logged in
   useEffect(() => {
-    const userData = localStorage.getItem('user');
+    const userData = getUser();
     if (userData) {
-      try {
-        setUser(JSON.parse(userData));
-      } catch (err) {
-        console.error('Error parsing user data:', err);
-      }
+      setUser(userData);
     }
   }, [location]);
 
@@ -121,9 +118,8 @@ export default function Navbar() {
   }, [location]);
 
   const handleLogout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('user');
+    cancelAutoLogout();
+    clearTokens();
     setUser(null);
     setProfileOpen(false);
     navigate('/');
@@ -245,6 +241,15 @@ export default function Navbar() {
                   </p>
                   <p className="text-xs text-secondary">{user.email}</p>
                 </div>
+                {(user.roleName === 'SUPER_ADMIN' || user.roleName === 'ADMIN') && (
+                  <a
+                    href="http://localhost:3000"
+                    onClick={() => setProfileOpen(false)}
+                    className="block px-4 py-3 text-sm font-body text-gold font-bold hover:bg-surface-container-low transition-colors border-b border-outline-variant/10"
+                  >
+                    ← Backoffice
+                  </a>
+                )}
                 <Link
                   to="/profile"
                   onClick={() => setProfileOpen(false)}
@@ -258,6 +263,13 @@ export default function Navbar() {
                   className="block px-4 py-3 text-sm font-body text-primary hover:bg-surface-container-low transition-colors border-b border-outline-variant/10"
                 >
                   Mes Commandes
+                </Link>
+                <Link
+                  to="/retours"
+                  onClick={() => setProfileOpen(false)}
+                  className="block px-4 py-3 text-sm font-body text-primary hover:bg-surface-container-low transition-colors border-b border-outline-variant/10"
+                >
+                  Mes Retours
                 </Link>
                 <button
                   onClick={handleLogout}
@@ -343,6 +355,7 @@ export default function Navbar() {
                     </div>
                     <Link to="/profile" onClick={() => setMobileOpen(false)} className="block py-2 px-2 text-sm text-secondary hover:text-primary">Mon Profil</Link>
                     <Link to="/commandes" onClick={() => setMobileOpen(false)} className="block py-2 px-2 text-sm text-secondary hover:text-primary">Mes Commandes</Link>
+                    <Link to="/retours" onClick={() => setMobileOpen(false)} className="block py-2 px-2 text-sm text-secondary hover:text-primary">Mes Retours</Link>
                     <a href="#" className="block py-2 px-2 text-sm text-secondary hover:text-primary">Ma Liste de Souhaits</a>
                     <button 
                       onClick={() => {

@@ -64,6 +64,12 @@ public class ReturnRequest {
     @Column(columnDefinition = "TEXT")
     private String photo2;
 
+    @Column(columnDefinition = "TEXT")
+    private String ibanClient;
+
+    @Column(columnDefinition = "TEXT")
+    private String motifRefus;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default

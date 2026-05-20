@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { getUser } from '../api/tokenStorage';
 
 const ShopContext = createContext(null);
 
@@ -37,7 +38,7 @@ export function ShopProvider({ children }) {
    * Returns { requiresLogin: true } if not logged in, so caller can redirect.
    */
   const toggleWishlist = useCallback((product) => {
-    const user = (() => { try { return JSON.parse(localStorage.getItem('user') || 'null'); } catch { return null; } })();
+    const user = getUser();
     if (!user) {
       return { requiresLogin: true };
     }

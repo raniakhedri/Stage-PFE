@@ -7,7 +7,6 @@ const navItems = [
   { path: '/commandes',      label: 'Commandes',         icon: 'shopping_cart',    moduleKey: 'COMMANDES' },
   { path: '/retours',        label: 'Retours',           icon: 'assignment_return',moduleKey: 'RETOURS' },
   { path: '/clients',        label: 'Clients',           icon: 'group',            moduleKey: 'CLIENTS' },
-  { path: '/collections',    label: 'Collections',       icon: 'category',         moduleKey: 'COLLECTIONS' },
   { path: '/categories',     label: 'Catégories',        icon: 'folder',           moduleKey: 'CATEGORIES' },
   { path: '/bannieres',      label: 'Bannières',         icon: 'view_carousel',    moduleKey: 'BANNIERES' },
   { path: '/tva-livraison',  label: 'TVA & Livraison',   icon: 'local_shipping',   moduleKey: 'TVA_LIVRAISON' },
@@ -87,7 +86,7 @@ function Sidebar() {
     <aside className="w-64 bg-white border-r border-slate-200 hidden lg:flex flex-col sticky top-0 h-screen font-sidebar">
       {/* Logo */}
       {showLogo && (
-      <div className={`px-[10px] py-[5px] flex items-center ${logoAlign === 'center' ? 'justify-center' : ''}`}>
+      <div className={`px-4 py-4 flex-shrink-0 flex items-center border-b border-slate-200 ${logoAlign === 'center' ? 'justify-center' : ''}`}>
         {logoSrc ? (
           <img
             src={logoSrc}

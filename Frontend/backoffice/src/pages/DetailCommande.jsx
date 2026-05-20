@@ -329,13 +329,27 @@ export default function DetailCommande() {
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
             <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-4">Paiement</h4>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center">
-                <span className="material-symbols-outlined text-amber-600">payments</span>
-              </div>
-              <div>
-                <p className="text-sm font-bold text-slate-800">Espèces à la livraison</p>
-                <p className="text-[10px] text-slate-400">Paiement à la réception</p>
-              </div>
+              {order.paymentMethod === 'CARTE' ? (
+                <>
+                  <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-blue-600">credit_card</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-800">Carte bancaire</p>
+                    <p className="text-[10px] text-slate-400">Paiement en ligne sécurisé</p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-amber-600">payments</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-800">Espèces à la livraison</p>
+                    <p className="text-[10px] text-slate-400">Paiement à la réception</p>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 

@@ -6,7 +6,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/public/products")
@@ -33,6 +35,16 @@ public class PublicProductController {
     @GetMapping("/collection/{collectionSlug}")
     public ResponseEntity<List<ProductResponse>> getProductsByCollection(@PathVariable String collectionSlug) {
         return ResponseEntity.ok(productService.getPublicProductsByCollectionSlug(collectionSlug));
+    }
+
+    @GetMapping("/by-ids")
+    public ResponseEntity<List<ProductResponse>> getProductsByIds(@RequestParam String ids) {
+        List<Long> idList = Arrays.stream(ids.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .map(Long::parseLong)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(productService.getPublicProductsByIds(idList));
     }
 
     @GetMapping("/{slug}")

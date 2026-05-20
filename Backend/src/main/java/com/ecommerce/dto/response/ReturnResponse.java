@@ -23,7 +23,9 @@ public class ReturnResponse {
     private String commentaire;
     private String photo1;
     private String photo2;
+    private String ibanClient;
     private String status;
+    private String motifRefus;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

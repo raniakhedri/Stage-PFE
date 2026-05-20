@@ -4,9 +4,11 @@ import com.ecommerce.dto.request.ReturnRequestDTO;
 import com.ecommerce.dto.response.ReturnResponse;
 import com.ecommerce.entity.Order;
 import com.ecommerce.entity.OrderItem;
+import com.ecommerce.entity.ReturnPolicy;
 import com.ecommerce.entity.ReturnRequest;
 import com.ecommerce.enums.ReturnStatus;
 import com.ecommerce.repository.OrderRepository;
+import com.ecommerce.repository.ReturnPolicyRepository;
 import com.ecommerce.repository.ReturnRequestRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -23,6 +25,7 @@ public class ReturnService {
 
     private final ReturnRequestRepository returnRequestRepository;
     private final OrderRepository orderRepository;
+    private final ReturnPolicyRepository returnPolicyRepository;
 
     @Transactional
     public ReturnResponse createReturn(String userEmail, ReturnRequestDTO dto) {
@@ -38,6 +41,14 @@ public class ReturnService {
 
         if (returnRequestRepository.existsByOrderIdAndOrderItemId(dto.getOrderId(), dto.getOrderItemId())) {
             throw new RuntimeException("Une demande de retour existe déjà pour cet article");
+        }
+
+        // Check return deadline against the policy set in the backoffice
+        ReturnPolicy policy = returnPolicyRepository.findById(1L).orElse(null);
+        int dureeJours = (policy != null && policy.getDureeJours() != null) ? policy.getDureeJours() : 30;
+        LocalDateTime deliveredAt = order.getDeliveredAt();
+        if (deliveredAt != null && deliveredAt.plusDays(dureeJours).isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Le délai de retour de " + dureeJours + " jours est dépassé");
         }
 
         OrderItem item = order.getItems().stream()
@@ -62,6 +73,7 @@ public class ReturnService {
                 .commentaire(dto.getCommentaire())
                 .photo1(dto.getPhoto1())
                 .photo2(dto.getPhoto2())
+                .ibanClient(dto.getIbanClient())
                 .status(ReturnStatus.EN_ATTENTE)
                 .build();
 
@@ -69,20 +81,31 @@ public class ReturnService {
         return mapToResponse(saved);
     }
 
+    @Transactional(readOnly = true)
     public List<ReturnResponse> getAllReturns() {
         return returnRequestRepository.findAllByOrderByCreatedAtDesc()
                 .stream().map(this::mapToResponse).toList();
     }
 
-    public List<ReturnResponse> getMyReturns(String email) {
-        return returnRequestRepository.findByCustomerEmailOrderByCreatedAtDesc(email)
+    @Transactional(readOnly = true)
+    public List<ReturnResponse> getMyReturns(Long userId) {
+        return returnRequestRepository.findByOrderUserIdOrderByCreatedAtDesc(userId)
                 .stream().map(this::mapToResponse).toList();
     }
 
-    public ReturnResponse updateStatus(Long id, String newStatus) {
+    public ReturnResponse getReturnById(Long id) {
+        ReturnRequest rr = returnRequestRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Demande de retour introuvable"));
+        return mapToResponse(rr);
+    }
+
+    public ReturnResponse updateStatus(Long id, String newStatus, String motifRefus) {
         ReturnRequest rr = returnRequestRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Demande de retour introuvable"));
         rr.setStatus(ReturnStatus.valueOf(newStatus));
+        if (motifRefus != null && !motifRefus.isBlank()) {
+            rr.setMotifRefus(motifRefus);
+        }
         return mapToResponse(returnRequestRepository.save(rr));
     }
 
@@ -103,7 +126,9 @@ public class ReturnService {
                 .commentaire(rr.getCommentaire())
                 .photo1(rr.getPhoto1())
                 .photo2(rr.getPhoto2())
+                .ibanClient(rr.getIbanClient())
                 .status(rr.getStatus().name())
+                .motifRefus(rr.getMotifRefus())
                 .createdAt(rr.getCreatedAt())
                 .updatedAt(rr.getUpdatedAt())
                 .build();

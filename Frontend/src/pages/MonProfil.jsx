@@ -6,6 +6,7 @@ import {
   Phone, Mail, Calendar, Users, Award, Clock, ShoppingBag, Leaf
 } from 'lucide-react';
 import { fetchMyProfile, updateMyProfile, fetchMyReviews, fetchMyOrders, fetchMyLoyalty } from '../api/apiClient';
+import { getUser } from '../api/tokenStorage';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 function formatDate(iso) {
@@ -603,12 +604,13 @@ function SecuritySection({ profile }) {
 export default function MonProfil() {
   const [profile, setProfile] = useState(null);
   const [orders, setOrders] = useState([]);
+  const [loyalty, setLoyalty] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('info');
   const navigate = useNavigate();
 
-  const localUser = (() => { try { return JSON.parse(localStorage.getItem('user')); } catch { return null; } })();
+  const localUser = getUser();
 
   useEffect(() => {
     if (!localUser) { navigate('/login'); return; }
@@ -619,10 +621,11 @@ export default function MonProfil() {
     setLoading(true);
     setError('');
     try {
-      const [prof, ords] = await Promise.allSettled([fetchMyProfile(), fetchMyOrders()]);
+      const [prof, ords, loy] = await Promise.allSettled([fetchMyProfile(), fetchMyOrders(), fetchMyLoyalty()]);
       if (prof.status === 'fulfilled') setProfile(prof.value);
       else throw new Error('Impossible de charger votre profil.');
       if (ords.status === 'fulfilled') setOrders(Array.isArray(ords.value) ? ords.value : []);
+      if (loy.status === 'fulfilled') setLoyalty(loy.value);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -671,9 +674,18 @@ export default function MonProfil() {
                   {profile.firstName} {profile.lastName}
                 </h1>
                 <p className="text-white/70 text-sm mt-1">{profile.email}</p>
-                {profile.segment && (
-                  <span className="inline-flex items-center gap-1 mt-2 text-xs font-bold text-amber-900 bg-gold/90 px-3 py-1 rounded-full">
-                    <Award size={11} /> {profile.segment.name || profile.segment}
+                {loyalty?.currentSegment && (
+                  <span
+                    className="inline-flex items-center gap-1.5 mt-2 text-xs font-bold px-3 py-1 rounded-full"
+                    style={{
+                      backgroundColor: loyalty.currentSegment.color || '#b45309',
+                      color: '#fff',
+                    }}
+                  >
+                    <Award size={12} /> {loyalty.currentSegment.label}
+                    {loyalty.currentSegment.remiseAutomatique > 0 && (
+                      <span className="opacity-80">· −{loyalty.currentSegment.remiseAutomatique}%</span>
+                    )}
                   </span>
                 )}
               </div>

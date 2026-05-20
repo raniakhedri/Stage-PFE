@@ -201,16 +201,6 @@ export default function CategoryPage() {
           </div>
         </div>
       </section>
-      <div className="bg-surface sticky top-16 z-40 border-b border-outline-variant/10 py-4 overflow-x-auto hide-scrollbar">
-        <div className="px-6 md:px-12 flex gap-3 min-w-max">
-          {['Tout voir', ...(category.subcategories || [])].map((sub) => (
-            <button key={sub} onClick={() => setActiveSub(sub)}
-              className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${activeSub === sub ? 'bg-primary text-on-primary' : 'bg-surface-container-high text-on-surface-variant hover:bg-secondary-container hover:text-on-secondary-container'}`}>
-              {sub}
-            </button>
-          ))}
-        </div>
-      </div>
       <div className="lg:hidden px-6 py-3 border-b border-outline-variant/10 flex items-center justify-between">
         <button onClick={() => setMobileSidebarOpen(true)}
           className="flex items-center gap-2 text-sm font-bold text-primary border border-primary/20 px-4 py-2 rounded-full hover:bg-primary/5 transition-colors">
@@ -230,6 +220,16 @@ export default function CategoryPage() {
       <div className="px-6 md:px-12 py-8 grid lg:grid-cols-[260px_1fr] gap-10">
         <aside className="hidden lg:block"><SidebarContent /></aside>
         <section>
+          {(category.subcategories || []).length > 0 && (
+            <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2 mb-6">
+              {['Tout voir', ...(category.subcategories || [])].map((sub) => (
+                <button key={sub} onClick={() => setActiveSub(sub)}
+                  className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${activeSub === sub ? 'bg-primary text-on-primary' : 'bg-surface-container-high text-on-surface-variant hover:bg-secondary-container hover:text-on-secondary-container'}`}>
+                  {sub}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 bg-surface-container-low p-4 rounded-xl">
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium text-on-surface-variant">Trier par :</span>

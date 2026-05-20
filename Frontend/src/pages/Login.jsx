@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Leaf, Eye, EyeOff } from 'lucide-react';
+import { setTokens, scheduleAutoLogout } from '../api/tokenStorage';
 
 export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -24,11 +26,13 @@ export default function Login() {
       if (!res.ok) {
         throw new Error(data?.message || 'E-mail ou mot de passe incorrect.');
       }
-      localStorage.setItem('accessToken', data.accessToken);
-      localStorage.setItem('refreshToken', data.refreshToken);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      // Admins always use localStorage (persistent) so the backoffice auth-callback works;
+      // regular users respect the "Se souvenir de moi" choice.
       const role = data.user?.roleName;
-      if (role === 'SUPER_ADMIN' || role === 'ADMIN') {
+      const isAdmin = role === 'SUPER_ADMIN' || role === 'ADMIN';
+      setTokens(data.accessToken, data.refreshToken, data.user, isAdmin ? true : rememberMe);
+      if (!isAdmin) scheduleAutoLogout();
+      if (isAdmin) {
         // Redirect to backoffice — it has its own login, pass token via URL
         window.location.replace('http://localhost:3000/auth-callback?accessToken=' + encodeURIComponent(data.accessToken) + '&refreshToken=' + encodeURIComponent(data.refreshToken) + '&user=' + encodeURIComponent(JSON.stringify(data.user)));
         return;
@@ -43,7 +47,7 @@ export default function Login() {
   return (
     <div className="min-h-screen flex font-body" style={{ backgroundColor: '#fef8f3' }}>
       {/* Left — Decorative panel */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-center justify-center"
+      <div className="hidden sm:flex sm:w-2/5 relative overflow-hidden items-center justify-center"
            style={{ background: 'linear-gradient(135deg, #163328 0%, #2D4A3E 50%, #546349 100%)' }}>
         {/* Organic shapes */}
         <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full opacity-10"
@@ -77,7 +81,7 @@ export default function Login() {
       <div className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm">
           {/* Mobile logo */}
-          <div className="lg:hidden flex items-center justify-center gap-2 mb-10">
+          <div className="sm:hidden flex items-center justify-center gap-2 mb-10">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center"
                  style={{ backgroundColor: '#163328' }}>
               <Leaf size={20} className="text-white" />
@@ -174,7 +178,12 @@ export default function Login() {
 
               <div className="flex items-center justify-between text-xs">
                 <label className="flex items-center gap-2 cursor-pointer" style={{ color: '#424844' }}>
-                  <input type="checkbox" className="rounded accent-[#2D4A3E]" />
+                  <input
+                    type="checkbox"
+                    className="rounded accent-[#2D4A3E]"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                  />
                   Se souvenir de moi
                 </label>
                 <a href="#" className="font-medium hover:underline" style={{ color: '#2D4A3E' }}>

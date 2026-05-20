@@ -15,6 +15,8 @@ public class OrderResponse {
     private Long id;
     private String reference;
 
+    private Long userId;
+
     private String email;
     private String firstName;
     private String lastName;
@@ -42,4 +44,5 @@ public class OrderResponse {
     private List<OrderItemResponse> items;
 
     private LocalDateTime createdAt;
+    private LocalDateTime deliveredAt;
 }

@@ -47,7 +47,7 @@ public class ProfileController {
 
     @GetMapping("/orders")
     public ResponseEntity<List<OrderResponse>> getMyOrders(@AuthenticationPrincipal UserPrincipal principal) {
-        return ResponseEntity.ok(orderService.getOrdersByEmail(principal.getUsername()));
+        return ResponseEntity.ok(orderService.getOrdersByUserId(principal.getId()));
     }
 
     @PostMapping("/reviews")
@@ -71,7 +71,7 @@ public class ProfileController {
 
     @GetMapping("/returns")
     public ResponseEntity<List<ReturnResponse>> getMyReturns(@AuthenticationPrincipal UserPrincipal principal) {
-        return ResponseEntity.ok(returnService.getMyReturns(principal.getUsername()));
+        return ResponseEntity.ok(returnService.getMyReturns(principal.getId()));
     }
 
     @GetMapping("/loyalty")

@@ -11,6 +11,7 @@ import FavorisPage from './pages/FavorisPage';
 import RecettesPage from './pages/RecettesPage';
 import MesCommandes from './pages/MesCommandes';
 import MonProfil from './pages/MonProfil';
+import MesRetours from './pages/MesRetours';
 
 export default function App() {
   return (
@@ -26,6 +27,7 @@ export default function App() {
         <Route path="/favoris" element={<FavorisPage />} />
         <Route path="/recettes" element={<RecettesPage />} />
         <Route path="/commandes" element={<MesCommandes />} />
+        <Route path="/retours" element={<MesRetours />} />
         <Route path="/profile" element={<MonProfil />} />
       </Route>
     </Routes>

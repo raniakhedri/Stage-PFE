@@ -5,7 +5,8 @@ import {
   ChevronDown, ChevronUp, Star, ArrowRight, RefreshCw, Eye,
   MapPin, CreditCard, Tag, Calendar, Receipt, AlertCircle
 } from 'lucide-react';
-import { fetchMyOrders, submitReview } from '../api/apiClient';
+import { fetchMyOrders, submitReview, submitReturn, fetchMyReturns, fetchReturnPolicy } from '../api/apiClient';
+import { getUser } from '../api/tokenStorage';
 import { createPortal } from 'react-dom';
 
 // ── Status config ───────────────────────────────────────────────────────────
@@ -50,6 +51,225 @@ function StarInput({ value, onChange }) {
         </button>
       ))}
     </div>
+  );
+}
+
+// ── Return Modal ────────────────────────────────────────────────────────────
+const RETURN_REASONS = [
+  'Produit défectueux',
+  'Non conforme à la description',
+  'Produit endommagé à la réception',
+  'Réaction allergique',
+  'Produit expiré',
+  'Erreur de commande',
+  'Autre',
+];
+
+function ReturnModal({ order, item, existingReturnIds, onClose, onSuccess }) {
+  const [raison, setRaison] = useState(RETURN_REASONS[0]);
+  const [commentaire, setCommentaire] = useState('');
+  const [duplicate, setDuplicate] = useState(false);
+  const [photos, setPhotos] = useState([]);
+  const [iban, setIban] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [policy, setPolicy] = useState(null);
+
+  const alreadyReturned = existingReturnIds.includes(item.id);
+  const needsIban = policy?.modeRemboursement === 'Virement bancaire';
+  const duree = policy?.dureeJours ?? 30;
+  const windowStart = order.deliveredAt || null;
+  const deadline = windowStart
+    ? new Date(new Date(windowStart).getTime() + duree * 24 * 60 * 60 * 1000)
+    : null;
+  const isExpired = deadline ? Date.now() > deadline.getTime() : false;
+
+  useEffect(() => {
+    fetchReturnPolicy().then(setPolicy).catch(() => {});
+  }, []);
+
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files).slice(0, 2 - photos.length);
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (ev) => setPhotos(prev => [...prev, ev.target.result].slice(0, 2));
+      reader.readAsDataURL(file);
+    });
+    e.target.value = '';
+  };
+
+  const removePhoto = (idx) => setPhotos(prev => prev.filter((_, i) => i !== idx));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (needsIban && !iban.trim()) { setError('Veuillez saisir votre IBAN pour le remboursement par virement.'); return; }
+    setLoading(true);
+    setError('');
+    try {
+      await submitReturn({
+        orderId: order.id, orderItemId: item.id, raison, commentaire,
+        photo1: photos[0] || null, photo2: photos[1] || null,
+        ibanClient: needsIban ? iban.trim() : null,
+      });
+      onSuccess();
+      onClose();
+    } catch (err) {
+      const msg = err?.message || err?.error || 'Erreur lors de la soumission.';
+      if (msg.includes('existe déjà')) {
+        setDuplicate(true);
+      } else {
+        setError(msg);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const modeLabel = policy?.modeRemboursement ?? 'Mode original';
+
+  return createPortal(
+    <div className="fixed inset-0 z-[999] flex items-start justify-center p-4 pt-6 bg-black/50 backdrop-blur-sm overflow-y-auto" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg my-auto" onClick={e => e.stopPropagation()}>
+        {/* Sticky header */}
+        <div className="sticky top-0 bg-white rounded-t-2xl z-10 flex items-start gap-4 px-6 pt-6 pb-4 border-b border-outline-variant/15">
+          <div className="w-14 h-14 rounded-xl overflow-hidden bg-beige flex-shrink-0">
+            {item.image
+              ? <img src={item.image} alt={item.productName} className="w-full h-full object-cover" />
+              : <div className="w-full h-full flex items-center justify-center"><Package size={24} className="text-sage" /></div>
+            }
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-headline font-bold text-primary text-base leading-tight">{item.productName}</h3>
+            <p className="text-xs text-secondary mt-0.5">Commande {order.reference}</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-full hover:bg-surface-container-low flex-shrink-0">
+            <XCircle size={20} className="text-secondary" />
+          </button>
+        </div>
+
+        {/* Scrollable body */}
+        <div className="px-6 py-5 overflow-y-auto max-h-[calc(100vh-200px)]">
+          {alreadyReturned || duplicate ? (
+            <div className="text-center py-8">
+              <RefreshCw size={32} className="mx-auto text-emerald-500 mb-3" />
+              <p className="font-semibold text-primary">Retour déjà soumis</p>
+              <p className="text-sm text-secondary mt-1">Une demande de retour existe déjà pour cet article.</p>
+            </div>
+          ) : isExpired ? (
+            <div className="text-center py-10 px-4">
+              <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
+                <XCircle size={28} className="text-red-400" />
+              </div>
+              <p className="font-semibold text-primary text-base">Délai de retour dépassé</p>
+              <p className="text-sm text-secondary mt-2">
+                La période de retour de <strong>{duree} jours</strong> est expirée
+                {deadline ? <> (date limite : <strong>{deadline.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>)</> : ''}.
+              </p>
+              <p className="text-xs text-secondary mt-1">Aucun retour ne peut être soumis pour cet article.</p>
+              <button onClick={onClose} className="mt-6 px-6 py-2.5 rounded-xl border border-outline-variant/30 text-secondary text-sm font-semibold hover:bg-surface-container-low transition">
+                Fermer
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Reasons */}
+              <div>
+                <label className="block text-sm font-semibold text-primary mb-2">Raison du retour *</label>
+                <div className="grid grid-cols-1 gap-2">
+                  {RETURN_REASONS.map(r => (
+                    <label key={r} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                      raison === r ? 'border-primary bg-primary/5 text-primary' : 'border-outline-variant/20 hover:bg-surface-container-low text-secondary'
+                    }`}>
+                      <input type="radio" name="raison" value={r} checked={raison === r} onChange={() => setRaison(r)} className="accent-primary" />
+                      <span className="text-sm font-medium">{r}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Comment */}
+              <div>
+                <label className="block text-sm font-semibold text-primary mb-2">
+                  Commentaire <span className="font-normal text-secondary">(optionnel)</span>
+                </label>
+                <textarea
+                  value={commentaire} onChange={e => setCommentaire(e.target.value)}
+                  rows={3} maxLength={500}
+                  placeholder="Décrivez le problème en détail..."
+                  className="w-full border border-outline-variant/30 rounded-xl px-4 py-3 text-sm text-primary resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all"
+                />
+              </div>
+
+              {/* Photos */}
+              <div>
+                <label className="block text-sm font-semibold text-primary mb-2">
+                  Photos / Preuves <span className="font-normal text-secondary">(optionnel, max 2)</span>
+                </label>
+                <div className="flex flex-wrap gap-3">
+                  {photos.map((src, idx) => (
+                    <div key={idx} className="relative w-20 h-20 rounded-xl overflow-hidden border border-outline-variant/20 group">
+                      <img src={src} alt={`Photo ${idx + 1}`} className="w-full h-full object-cover" />
+                      <button type="button" onClick={() => removePhoto(idx)}
+                        className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                        <XCircle size={20} className="text-white" />
+                      </button>
+                    </div>
+                  ))}
+                  {photos.length < 2 && (
+                    <label className="w-20 h-20 rounded-xl border-2 border-dashed border-outline-variant/30 flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition">
+                      <span className="text-2xl text-secondary/50 mb-1">+</span>
+                      <span className="text-[10px] text-secondary">Ajouter</span>
+                      <input type="file" accept="image/*" multiple className="hidden" onChange={handleFileChange} />
+                    </label>
+                  )}
+                </div>
+              </div>
+
+              {/* IBAN — shown only when mode = Virement bancaire */}
+              {needsIban && (
+                <div>
+                  <label className="block text-sm font-semibold text-primary mb-1">
+                    IBAN pour le remboursement <span className="text-red-500">*</span>
+                  </label>
+                  <p className="text-xs text-secondary mb-2">Le remboursement sera effectué par virement bancaire.</p>
+                  <input
+                    type="text"
+                    value={iban}
+                    onChange={e => setIban(e.target.value.toUpperCase())}
+                    placeholder="TN59 0000 0000 0000 0000 0000"
+                    maxLength={34}
+                    className="w-full border border-outline-variant/30 rounded-xl px-4 py-3 text-sm font-mono text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all"
+                  />
+                </div>
+              )}
+
+              {error && <p className="text-sm text-red-600 bg-red-50 px-4 py-2 rounded-lg">{error}</p>}
+
+              {/* Policy banner — dynamic */}
+              <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-700 space-y-1">
+                <p><strong>Politique de retour :</strong> Retour accepté dans les <strong>{duree} jours</strong> suivant la réception
+                  {policy?.eligibilite ? `, pour produit ${policy.eligibilite.toLowerCase()}.` : '.'}</p>
+                <p><strong>Remboursement :</strong> {modeLabel}
+                  {policy?.fraisRetour ? <> · <strong>Frais :</strong> {policy.fraisRetour}</> : null}</p>
+                {policy?.conditionsSpeciales && <p><strong>Conditions :</strong> {policy.conditionsSpeciales}</p>}
+              </div>
+
+              <div className="flex gap-3 pb-1">
+                <button type="button" onClick={onClose} className="flex-1 border border-outline-variant/30 text-secondary py-3 rounded-xl font-semibold hover:bg-surface-container-low transition-colors">
+                  Annuler
+                </button>
+                <button type="submit" disabled={loading}
+                  className="flex-1 bg-primary text-white py-3 rounded-xl font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                  {loading ? <RefreshCw size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+                  Soumettre le retour
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>,
+    document.body
   );
 }
 
@@ -130,13 +350,17 @@ function ReviewModal({ order, item, onClose, onSuccess }) {
 }
 
 // ── Order Card ──────────────────────────────────────────────────────────────
-function OrderCard({ order, onReviewSuccess }) {
+function OrderCard({ order, onReviewSuccess, myReturnItemIds, myReturns, onReturnSuccess }) {
   const [expanded, setExpanded] = useState(false);
   const [reviewItem, setReviewItem] = useState(null);
+  const [returnItem, setReturnItem] = useState(null);
   const cfg = STATUS_CONFIG[order.status] || STATUS_CONFIG.EN_ATTENTE;
   const StatusIcon = cfg.icon;
   const stepIdx = STEP_ORDER[order.status] ?? 0;
   const isCancelled = order.status === 'ANNULEE' || order.status === 'REMBOURSEE';
+
+  const orderReturns = (myReturns || []).filter(r => r.orderId === order.id);
+  const hasPendingReturn = orderReturns.some(r => r.status === 'EN_ATTENTE');
 
   const discount = order.couponDiscount || 0;
   const tvaAmount = order.tvaAmount || 0;
@@ -158,6 +382,18 @@ function OrderCard({ order, onReviewSuccess }) {
               <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
               {cfg.label}
             </span>
+            {hasPendingReturn && (
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-orange-50 text-orange-700 border border-orange-200">
+                <RefreshCw size={10} className="animate-spin" />
+                Retour en cours
+              </span>
+            )}
+            {orderReturns.length > 0 && !hasPendingReturn && (
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-50 text-slate-600 border border-slate-200">
+                <RefreshCw size={10} />
+                Retour traité
+              </span>
+            )}
           </div>
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-secondary">
             <span className="flex items-center gap-1"><Calendar size={11} />{formatDate(order.createdAt)}</span>
@@ -257,13 +493,22 @@ function OrderCard({ order, onReviewSuccess }) {
                   </div>
                 </div>
                 {order.status === 'LIVREE' && (
-                  <button
-                    onClick={() => setReviewItem(item)}
-                    className="flex-shrink-0 flex items-center gap-1.5 text-xs font-semibold text-amber-600 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-3 py-1.5 rounded-lg transition-colors"
-                  >
-                    <Star size={12} className="fill-amber-500 text-amber-500" />
-                    Avis
-                  </button>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <button
+                      onClick={() => setReturnItem(item)}
+                      className="flex items-center gap-1.5 text-xs font-semibold text-secondary bg-surface-container-low hover:bg-primary/10 border border-outline-variant/20 hover:border-primary/30 hover:text-primary px-3 py-1.5 rounded-lg transition-colors"
+                    >
+                      <RefreshCw size={12} />
+                      Retour
+                    </button>
+                    <button
+                      onClick={() => setReviewItem(item)}
+                      className="flex items-center gap-1.5 text-xs font-semibold text-amber-600 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-3 py-1.5 rounded-lg transition-colors"
+                    >
+                      <Star size={12} className="fill-amber-500 text-amber-500" />
+                      Avis
+                    </button>
+                  </div>
                 )}
               </div>
             ))}
@@ -331,6 +576,17 @@ function OrderCard({ order, onReviewSuccess }) {
           onSuccess={() => { setReviewItem(null); onReviewSuccess?.(); }}
         />
       )}
+
+      {/* Return Modal */}
+      {returnItem && (
+        <ReturnModal
+          order={order}
+          item={returnItem}
+          existingReturnIds={myReturnItemIds || []}
+          onClose={() => setReturnItem(null)}
+          onSuccess={() => { setReturnItem(null); onReturnSuccess?.(); }}
+        />
+      )}
     </div>
   );
 }
@@ -338,13 +594,16 @@ function OrderCard({ order, onReviewSuccess }) {
 // ── Main Page ───────────────────────────────────────────────────────────────
 export default function MesCommandes() {
   const [orders, setOrders] = useState([]);
+  const [myReturnItemIds, setMyReturnItemIds] = useState([]);
+  const [myReturns, setMyReturns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filter, setFilter] = useState('tous');
   const [reviewSuccess, setReviewSuccess] = useState(false);
+  const [returnSuccess, setReturnSuccess] = useState(false);
   const navigate = useNavigate();
 
-  const user = (() => { try { return JSON.parse(localStorage.getItem('user')); } catch { return null; } })();
+  const user = getUser();
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
@@ -355,8 +614,12 @@ export default function MesCommandes() {
     setLoading(true);
     setError('');
     try {
-      const data = await fetchMyOrders();
+      const [data, returns] = await Promise.all([fetchMyOrders(), fetchMyReturns().catch(() => [])]);
       setOrders(Array.isArray(data) ? data : []);
+      const returnList = Array.isArray(returns) ? returns : [];
+      setMyReturns(returnList);
+      const ids = returnList.map(r => r.orderItemId);
+      setMyReturnItemIds(ids);
     } catch {
       setError('Impossible de charger vos commandes.');
     } finally {
@@ -431,6 +694,20 @@ export default function MesCommandes() {
           </div>
         )}
 
+        {/* Return success toast */}
+        {returnSuccess && (
+          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-xl px-5 py-4 flex items-center gap-3">
+            <RefreshCw size={20} className="text-blue-600 flex-shrink-0" />
+            <div>
+              <p className="font-semibold text-blue-800">Demande de retour soumise !</p>
+              <p className="text-sm text-blue-700">Notre équipe traitera votre demande sous 2-3 jours ouvrés.</p>
+            </div>
+            <button onClick={() => setReturnSuccess(false)} className="ml-auto text-blue-600 hover:text-blue-800">
+              <XCircle size={16} />
+            </button>
+          </div>
+        )}
+
         {/* Filters */}
         {orders.length > 0 && (
           <div className="flex gap-2 overflow-x-auto pb-2 mb-6 scrollbar-hide">
@@ -491,7 +768,10 @@ export default function MesCommandes() {
               <OrderCard
                 key={order.id}
                 order={order}
+                myReturnItemIds={myReturnItemIds}
+                myReturns={myReturns}
                 onReviewSuccess={() => { setReviewSuccess(true); setTimeout(() => setReviewSuccess(false), 5000); }}
+                onReturnSuccess={() => { setReturnSuccess(true); load(); setTimeout(() => setReturnSuccess(false), 6000); }}
               />
             ))}
           </div>

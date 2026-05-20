@@ -180,6 +180,12 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
+    public List<OrderResponse> getOrdersByUserId(Long userId) {
+        return orderRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
+                .map(this::mapToResponse).toList();
+    }
+
+    @Transactional(readOnly = true)
     public List<OrderResponse> getOrdersByEmail(String email) {
         return orderRepository.findByEmailOrderByCreatedAtDesc(email).stream()
                 .map(this::mapToResponse).toList();
@@ -229,6 +235,11 @@ public class OrderService {
             loyaltyService.awardPointsForOrder(order.getUser(), order.getTotal(), order.getId());
         }
 
+        // Record delivery timestamp
+        if (newStatus == OrderStatus.LIVREE && previousStatus != OrderStatus.LIVREE) {
+            order.setDeliveredAt(java.time.LocalDateTime.now());
+        }
+
         return mapToResponse(orderRepository.save(order));
     }
 
@@ -257,6 +268,7 @@ public class OrderService {
         return OrderResponse.builder()
                 .id(o.getId())
                 .reference(o.getReference())
+                .userId(o.getUser() != null ? o.getUser().getId() : null)
                 .email(o.getEmail())
                 .firstName(o.getFirstName())
                 .lastName(o.getLastName())
@@ -277,6 +289,7 @@ public class OrderService {
                 .status(o.getStatus().name())
                 .items(items)
                 .createdAt(o.getCreatedAt())
+                .deliveredAt(o.getDeliveredAt())
                 .build();
     }
 }

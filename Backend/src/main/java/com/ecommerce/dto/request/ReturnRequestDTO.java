@@ -21,4 +21,6 @@ public class ReturnRequestDTO {
     private String photo1;
 
     private String photo2;
+
+    private String ibanClient;
 }

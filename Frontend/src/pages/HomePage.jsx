@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Leaf, Truck, ShieldCheck, Users, ChevronLeft, ChevronRight, Clock, FlaskConical, Star, ArrowRight } from 'lucide-react';
 import { fetchCategories, fetchFeaturedProducts, fetchHomepageBanners, fetchTvaConfig } from '../api/apiClient';
 import ProductCard from '../components/ProductCard';
+import { getUser } from '../api/tokenStorage';
 
 export default function HomePage() {
   const [categories, setCategories] = useState([]);
@@ -22,15 +23,10 @@ export default function HomePage() {
   }, []);
 
   const loadHeroBanners = async () => {
-    const rawUser = localStorage.getItem('user');
+    const rawUser = getUser();
     let segment = '';
     if (rawUser) {
-      try {
-        const parsed = JSON.parse(rawUser);
-        segment = parsed?.segmentName || '';
-      } catch {
-        segment = '';
-      }
+      segment = rawUser?.segmentName || '';
     }
 
     try {

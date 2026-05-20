@@ -12,14 +12,12 @@ import Produits from './pages/Produits'
 import AjouterProduit from './pages/AjouterProduit'
 import EditProduit from './pages/EditProduit'
 import Apparence from './pages/Apparence'
-import Collections from './pages/Collections'
-import AjouterCollection from './pages/AjouterCollection'
-import GererCollection from './pages/GererCollection'
 import Clients from './pages/Clients'
 import DetailClient from './pages/DetailClient'
 import AjouterCompte from './pages/AjouterCompte'
 import RolesPermissions from './pages/RolesPermissions'
 import Retours from './pages/Retours'
+import DetailRetour from './pages/DetailRetour'
 import HistoriqueRemboursements from './pages/HistoriqueRemboursements'
 import CompteHebergement from './pages/CompteHebergement'
 import Categories from './pages/Categories'
@@ -36,7 +34,12 @@ import Fidelite from './pages/Fidelite'
 import EmailMarketing from './pages/EmailMarketing'
 import NotFound from './pages/NotFound'
 
-// Les autres pages seront ajoutées ici au fur et à mesure
+function ExternalLoginRedirect() {
+  useEffect(() => {
+    window.location.replace('http://localhost:3001/login')
+  }, [])
+  return null
+}
 
 function App() {
   useEffect(() => {
@@ -66,6 +69,9 @@ function App() {
         {/* Auth callback pour recevoir les tokens depuis le Front Office */}
         <Route path="/auth-callback" element={<AuthCallback />} />
 
+        {/* Redirige vers la page de connexion unique du front office */}
+        <Route path="/login" element={<ExternalLoginRedirect />} />
+
         {/* Redirection de la racine vers le dashboard */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
@@ -77,14 +83,12 @@ function App() {
             <Route path="/produits/nouveau" element={<AjouterProduit />} />
             <Route path="/produits/edit/:id" element={<EditProduit />} />
             <Route path="/apparence" element={<Apparence />} />
-            <Route path="/collections" element={<Collections />} />
-            <Route path="/collections/nouveau" element={<AjouterCollection />} />
-            <Route path="/collections/:id" element={<GererCollection />} />
             <Route path="/clients" element={<Clients />} />
             <Route path="/clients/nouveau" element={<AjouterCompte />} />
             <Route path="/clients/:id" element={<DetailClient />} />
             <Route path="/roles" element={<RolesPermissions />} />
             <Route path="/retours" element={<Retours />} />
+            <Route path="/retours/:id" element={<DetailRetour />} />
             <Route path="/retours/historique" element={<HistoriqueRemboursements />} />
             <Route path="/compte" element={<CompteHebergement />} />
             <Route path="/categories" element={<Categories />} />

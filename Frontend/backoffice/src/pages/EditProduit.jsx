@@ -1,20 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, forwardRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import CustomSelect from '../components/ui/CustomSelect'
 import PageHeader from '../components/ui/PageHeader'
 import { productApi } from '../api/productApi'
 import { categoryApi } from '../api/categoryApi'
-import { collectionApi } from '../api/collectionApi'
-// ── Catalogue de contenances (cosmétiques) ───────────────────────────────────
-const VOLUME_CATALOG = {
-  liquides: { label: 'Liquides (ml)', volumes: ['5ml', '10ml', '15ml', '30ml', '50ml', '100ml', '200ml', '250ml'] },
-  solides:  { label: 'Solides (g)',   volumes: ['50g', '100g', '150g', '200g', '250g', '500g'] },
-}
-
-
-
-
 // ── Toggle ─────────────────────────────────────────────────────────────────────
 function Toggle({ checked, onChange }) {
   return (
@@ -42,14 +32,15 @@ function Label({ children, required }) {
   )
 }
 
-function Input({ className = '', ...props }) {
+const Input = forwardRef(function Input({ className = '', ...props }, ref) {
   return (
     <input
+      ref={ref}
       className={`w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm focus:ring-2 focus:ring-brand focus:border-brand transition-all placeholder:text-slate-400 outline-none ${className}`}
       {...props}
     />
   )
-}
+})
 
 // Adapter: converts <option> children API → CustomSelect options API
 function Select({ value, onChange, children }) {
@@ -98,14 +89,12 @@ function EditProduit() {
 
   const [name, setName] = useState('')
   const [sku, setSku] = useState('')
-  const [collections, setCollections] = useState([])
   const [category, setCategory] = useState('')      // parent category id
   const [subCategory, setSubCategory] = useState('')  // subcategory id
   const [description, setDescription] = useState('')
 
   // Dynamic data from API
   const [parentCategories, setParentCategories] = useState([])  // [{id, nom, children:[]}]
-  const [allCollections, setAllCollections] = useState([])       // [{id, nom}]
 
   const [salePrice, setSalePrice] = useState('')
   const [promoActive, setPromoActive] = useState(false)
@@ -126,30 +115,25 @@ function EditProduit() {
   const [inciComposition, setInciComposition] = useState('')
   const [certifications, setCertifications] = useState('')
 
-  // Variants (volume-based)
-  const [volumeType, setVolumeType] = useState('liquides')
-  const [selectedVolumes, setSelectedVolumes] = useState([])
+  // Variants / volumes
   const [variants, setVariants] = useState([])
+  const [selectedVolumes, setSelectedVolumes] = useState([])
+  const [volumeType, setVolumeType] = useState('liquides')
   const [productImages, setProductImages] = useState([null, null, null, null, null])
   const [uploadingIdx, setUploadingIdx] = useState(null)
 
-  const [weight, setWeight] = useState('')
-  const [length, setLength] = useState('')
-  const [width, setWidth] = useState('')
-  const [height, setHeight] = useState('')
-  const [specificFees, setSpecificFees] = useState(false)
-  const [upsellTags, setUpsellTags] = useState([])
+  // Upsell / similar products
+  const [upsellProducts, setUpsellProducts] = useState([]) // [{id, name}]
+  const [upsellSearch, setUpsellSearch] = useState('')
+  const [upsellSearchResults, setUpsellSearchResults] = useState([])
+  const [allProducts, setAllProducts] = useState([])
+  const upsellSearchRef = useRef(null)
 
   useEffect(() => {
     productApi.getById(id)
       .then((p) => {
         setName(p.nom || '')
         setSku(p.sku || '')
-        setCollections(
-          p.collectionIds ? p.collectionIds.map(String)
-          : p.collections ? p.collections.split(',').map((c) => c.trim()).filter(Boolean)
-          : []
-        )
         setCategory(p.parentCategoryId ? String(p.parentCategoryId) : (p.categoryId ? String(p.categoryId) : ''))
         setSubCategory(p.parentCategoryId ? String(p.categoryId) : '')
         setDescription(p.description || '')
@@ -192,15 +176,20 @@ function EditProduit() {
             stock: v.stock || 0,
           }))
         )
-        setWeight(String(p.weight || ''))
-        setLength(String(p.dimensionLength || ''))
-        setWidth(String(p.dimensionWidth || ''))
-        setHeight(String(p.dimensionHeight || ''))
-        setSpecificFees(Boolean(p.specificFees))
         // Load gallery: parse images field, fallback to imageUrl
         const imgList = p.images ? p.images.split(',').filter(Boolean) : (p.imageUrl ? [p.imageUrl] : [])
         const padded = [...imgList, null, null, null, null, null].slice(0, 5)
         setProductImages(padded)
+        // Load upsell products
+        if (p.upsellTags) {
+          const ids = p.upsellTags.split(',').map(s => s.trim()).filter(Boolean)
+          if (ids.length > 0) {
+            productApi.getAll().then(all => {
+              const selected = ids.map(sid => all.find(x => String(x.id) === sid)).filter(Boolean).map(x => ({ id: x.id, name: x.nom }))
+              setUpsellProducts(selected)
+            }).catch(() => {})
+          }
+        }
       })
       .catch(() => toast.error('Impossible de charger le produit.'))
       .finally(() => setLoading(false))
@@ -214,75 +203,58 @@ function EditProduit() {
       }))
       setParentCategories(parents)
     }).catch(() => {})
-    collectionApi.getAll().then((cols) => {
-      setAllCollections(cols)
-    }).catch(() => {})
+    productApi.getAll().then(setAllProducts).catch(() => {})
   }, [])
 
   const updateVariant = (vid, field, value) =>
     setVariants((prev) => prev.map((v) => (v.id === vid ? { ...v, [field]: value } : v)))
 
   const removeVariant = (vid) => {
-    const v = variants.find((x) => x.id === vid)
-    if (v) setSelectedVolumes((prev) => prev.filter((x) => x !== v.label))
     setVariants((prev) => prev.filter((x) => x.id !== vid))
   }
 
-  // Keep variants in sync with selected volumes
-  const toggleVolume = (vol) => {
-    const isSelected = selectedVolumes.includes(vol)
-    if (isSelected) {
-      setSelectedVolumes((prev) => prev.filter((x) => x !== vol))
-      setVariants((prev) => prev.filter((v) => v.label !== vol))
-    } else {
-      setSelectedVolumes((prev) => [...prev, vol])
-      setVariants((prev) => [
-        ...prev,
-        { id: Date.now() + Math.random(), label: vol, sku: '', price: '', stock: 0 },
-      ])
-    }
+  const addVariant = () => {
+    setVariants((prev) => [
+      ...prev,
+      { id: Date.now() + Math.random(), label: '', sku: '', price: '', stock: 0 },
+    ])
   }
+
+  // Upsell search
+  const handleUpsellSearch = (q) => {
+    setUpsellSearch(q)
+    if (q.trim().length < 2) { setUpsellSearchResults([]); return }
+    const lower = q.toLowerCase()
+    const results = allProducts
+      .filter(p => String(p.id) !== String(id) && !upsellProducts.some(u => u.id === p.id))
+      .filter(p => (p.nom || '').toLowerCase().includes(lower) || (p.sku || '').toLowerCase().includes(lower))
+      .slice(0, 6)
+    setUpsellSearchResults(results)
+  }
+
+  const addUpsellProduct = (p) => {
+    setUpsellProducts(prev => [...prev, { id: p.id, name: p.nom }])
+    setUpsellSearch('')
+    setUpsellSearchResults([])
+  }
+
+  const removeUpsellProduct = (pid) => setUpsellProducts(prev => prev.filter(p => p.id !== pid))
 
   const toggleBadge = (key) => setBadges((prev) => ({ ...prev, [key]: !prev[key] }))
   const toggleVisibility = (key) => setVisibility((prev) => ({ ...prev, [key]: !prev[key] }))
-
-  const toggleCollection = (colId) =>
-    setCollections((prev) =>
-      prev.includes(colId) ? prev.filter((c) => c !== colId) : [...prev, colId]
-    )
-
-  const generateVariants = () => {
-    if (selectedVolumes.length === 0) return
-    const generated = selectedVolumes.map((vol) => ({
-      id: Date.now() + Math.random(),
-      label: vol,
-      sku: '',
-      price: '',
-      stock: 0,
-    }))
-    setVariants(generated)
-  }
 
   const handleCategoryChange = (newCatId) => {
     setCategory(newCatId)
     const parent = parentCategories.find((p) => String(p.id) === newCatId)
     const subs = parent?.children || []
     setSubCategory(subs.length > 0 ? String(subs[0].id) : '')
-    setCollections([])  // reset collections when category changes
   }
 
   const subCategories = parentCategories.find((p) => String(p.id) === category)?.children || []
-  const selectedCategoryNom = parentCategories.find((p) => String(p.id) === category)?.nom || ''
-  const filteredCollections = allCollections.filter((col) =>
-    col.menuParentCategory === selectedCategoryNom ||
-    (Array.isArray(col.linkedCategories) && col.linkedCategories.includes(selectedCategoryNom))
-  )
 
   const hasPromo = promoActive && parseFloat(promoPrice) > 0 && parseFloat(promoPrice) < parseFloat(salePrice)
 
-  const activeBadge = badges.nouveau ? 'NEW' : badges.bestSeller ? 'BEST' : badges.promo ? 'PROMO' : badges.exclusif ? 'EXCLU' : null
-
-  const removeUpsellTag = (tag) => setUpsellTags((prev) => prev.filter((t) => t !== tag))
+  const activeBadge = badges.nouveau ? 'Nouveau' : badges.bestSeller ? 'Best-Seller' : badges.promo ? 'Promo' : badges.exclusif ? 'Exclusif' : null
 
   const handleSave = async () => {
     if (!name.trim()) return toast.error('Le nom du produit est requis.')
@@ -294,9 +266,8 @@ function EditProduit() {
         description,
         latin: latin.trim() || null,
         bio,
-        volumes: selectedVolumes.join(','),
+        volumes: variants.map(v => v.label).filter(Boolean).join(','),
         categoryId: subCategory ? parseInt(subCategory) : (category ? parseInt(category) : null),
-        collectionIds: collections.map((id) => parseInt(id)),
         salePrice: parseFloat(salePrice) || 0,
         promoActive,
         promoPrice: promoActive ? (parseFloat(promoPrice) || 0) : 0,
@@ -312,11 +283,6 @@ function EditProduit() {
         visibleCategory: visibility.category,
         pinnedInSubCategory: visibility.pinnedSub,
         metaTitle: metaTitle || null,
-        weight: parseFloat(weight) || 0,
-        dimensionLength: parseFloat(length) || 0,
-        dimensionWidth: parseFloat(width) || 0,
-        dimensionHeight: parseFloat(height) || 0,
-        specificFees,
         imageUrl: productImages.filter(Boolean)[0] || null,
         images: productImages.filter(Boolean).join(',') || null,
         origine: origine.trim() || null,
@@ -324,6 +290,7 @@ function EditProduit() {
         precautions: precautions.trim() || null,
         inciComposition: inciComposition.trim() || null,
         certifications: certifications.trim() || null,
+        upsellTags: upsellProducts.map(p => String(p.id)).join(',') || null,
         variants: variants.map((v) => ({
           id: v.id,
           label: v.label,
@@ -420,34 +387,6 @@ function EditProduit() {
                   </div>
                 </div>
 
-                {/* Collections (multi-select) */}
-                <div>
-                  <Label>Collections</Label>
-                  <p className="text-[10px] text-slate-400 mb-3">Un produit peut appartenir à plusieurs collections.</p>
-                  <div className="flex flex-wrap gap-2">
-                    {filteredCollections.length === 0 && selectedCategoryNom && (
-                      <p className="text-xs text-slate-400 italic">Aucune collection pour cette catégorie.</p>
-                    )}
-                    {filteredCollections.map((col) => (
-                      <button
-                        key={col.id}
-                        type="button"
-                        onClick={() => toggleCollection(String(col.id))}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
-                          collections.includes(String(col.id))
-                            ? 'border-badge bg-badge/10 text-badge'
-                            : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'
-                        }`}
-                      >
-                        {collections.includes(String(col.id)) && (
-                          <span className="material-symbols-outlined text-xs align-middle mr-1">check</span>
-                        )}
-                        {col.nom}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
                 <div>
                   <Label>Description complète</Label>
                   <textarea
@@ -509,72 +448,13 @@ function EditProduit() {
             </Section>
 
             {/* Variantes */}
-            <Section
-              title="Variantes du produit"
-              rightSlot={
-                <button
-                  type="button"
-                  onClick={generateVariants}
-                  className="text-xs font-bold text-brand bg-brand/10 px-3 py-1.5 rounded-full hover:bg-brand/20 transition-all flex items-center gap-1"
-                >
-                  <span className="material-symbols-outlined text-sm">refresh</span>
-                  Régénérer les variantes
-                </button>
-              }
-            >
-              <div className="space-y-8">
-                <div className="space-y-6 pb-8 border-b border-slate-100">
-                  <div>
-                    <Label>Contenances</Label>
-                    <p className="text-[10px] text-slate-400 mb-3">Choisissez d'abord le type, puis les contenances disponibles.</p>
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {Object.entries(VOLUME_CATALOG).map(([key, { label }]) => (
-                        <button
-                          key={key}
-                          type="button"
-                          onClick={() => { setVolumeType(key); setSelectedVolumes([]); setVariants([]) }}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
-                            volumeType === key
-                              ? 'border-brand bg-brand/10 text-brand'
-                              : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'
-                          }`}
-                        >
-                          {volumeType === key && (
-                            <span className="material-symbols-outlined text-xs align-middle mr-1">check</span>
-                          )}
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                    {volumeType && (
-                      <div className="flex flex-wrap gap-2 pt-3 border-t border-slate-100">
-                        {VOLUME_CATALOG[volumeType].volumes.map((vol) => {
-                          const active = selectedVolumes.includes(vol)
-                          return (
-                            <button
-                              key={vol}
-                              type="button"
-                              onClick={() => toggleVolume(vol)}
-                              className={`min-w-[2.75rem] px-2 py-1.5 rounded-lg text-xs font-bold border transition-all text-center ${
-                                active
-                                  ? 'border-brand bg-brand text-white'
-                                  : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'
-                              }`}
-                            >
-                              {vol}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
+            <Section title="Variantes du produit">
+              <div className="space-y-4">
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
                       <tr className="text-left border-b border-slate-100">
-                        {['Contenance', 'SKU', 'Stock', 'Action'].map((h, i) => (
+                        {['Contenance / Label', 'SKU', 'Stock', 'Action'].map((h, i) => (
                           <th
                             key={h}
                             className={`pb-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 ${i === 3 ? 'text-right' : ''}`}
@@ -587,10 +467,16 @@ function EditProduit() {
                     <tbody className="divide-y divide-slate-50">
                       {variants.map((v) => (
                         <tr key={v.id} className="group hover:bg-slate-50/50">
-                          <td className="py-4 px-2">
-                            <span className="text-sm font-medium text-slate-700">{v.label}</span>
+                          <td className="py-3 px-2">
+                            <input
+                              type="text"
+                              value={v.label}
+                              onChange={(e) => updateVariant(v.id, 'label', e.target.value)}
+                              placeholder="Ex: 50g, 100ml…"
+                              className="w-full bg-white border border-slate-200 rounded text-xs py-1.5 px-2 focus:ring-1 focus:ring-brand outline-none"
+                            />
                           </td>
-                          <td className="py-4 px-2">
+                          <td className="py-3 px-2">
                             <input
                               type="text"
                               value={v.sku}
@@ -598,7 +484,7 @@ function EditProduit() {
                               className="w-full bg-white border border-slate-200 rounded text-xs py-1.5 px-2 focus:ring-1 focus:ring-brand outline-none"
                             />
                           </td>
-                          <td className="py-4 px-2">
+                          <td className="py-3 px-2">
                             <input
                               type="number"
                               value={v.stock}
@@ -606,8 +492,9 @@ function EditProduit() {
                               className="w-20 bg-white border border-slate-200 rounded text-xs py-1.5 px-2 focus:ring-1 focus:ring-brand outline-none"
                             />
                           </td>
-                          <td className="py-4 px-2 text-right">
+                          <td className="py-3 px-2 text-right">
                             <button
+                              type="button"
                               onClick={() => removeVariant(v.id)}
                               className="text-slate-300 hover:text-red-500 transition-colors"
                             >
@@ -620,9 +507,18 @@ function EditProduit() {
                   </table>
                 </div>
 
-                {selectedVolumes.length === 0 && (
-                  <p className="text-xs text-slate-400 italic">Sélectionnez des contenances ci-dessus pour créer les variantes.</p>
+                {variants.length === 0 && (
+                  <p className="text-xs text-slate-400 italic">Aucune variante. Cliquez sur le bouton ci-dessous pour en ajouter.</p>
                 )}
+
+                <button
+                  type="button"
+                  onClick={addVariant}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-brand/40 text-brand text-sm font-bold hover:bg-brand/5 transition-all"
+                >
+                  <span className="material-symbols-outlined text-lg">add</span>
+                  Ajouter une variante
+                </button>
               </div>
             </Section>
 
@@ -709,65 +605,49 @@ function EditProduit() {
               </div>
             </Section>
 
-            {/* Livraison & Dimensions */}
-            <Section title="Livraison & Dimensions">
-              <div className="space-y-6">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                  {[
-                    { label: 'Poids (kg)',    value: weight, set: setWeight, placeholder: '0.5', step: '0.1' },
-                    { label: 'Longueur (cm)', value: length, set: setLength, placeholder: '30' },
-                    { label: 'Largeur (cm)',  value: width,  set: setWidth,  placeholder: '20' },
-                    { label: 'Hauteur (cm)',  value: height, set: setHeight, placeholder: '10' },
-                  ].map((f) => (
-                    <div key={f.label}>
-                      <Label>{f.label}</Label>
-                      <Input
-                        type="number"
-                        value={f.value}
-                        onChange={(e) => f.set(e.target.value)}
-                        placeholder={f.placeholder}
-                        step={f.step}
-                      />
-                    </div>
-                  ))}
-                </div>
-                <div
-                  className="flex items-center gap-3 p-4 bg-slate-50 rounded-lg border border-slate-100 cursor-pointer"
-                  onClick={() => setSpecificFees(!specificFees)}
-                >
-                  <input
-                    type="checkbox"
-                    checked={specificFees}
-                    onChange={() => setSpecificFees(!specificFees)}
-                    onClick={(e) => e.stopPropagation()}
-                    className="w-4 h-4 text-brand rounded focus:ring-brand cursor-pointer accent-brand"
-                  />
-                  <label className="text-sm font-medium text-slate-700 cursor-pointer">
-                    Appliquer des frais de port spécifiques pour ce produit
-                  </label>
-                </div>
-              </div>
-            </Section>
-
             {/* Produits Associés */}
-            <Section title="Produits Associés & Ventes Croisées">
+            <Section title="Produits Associés &amp; Ventes Croisées">
               <div>
                 <Label>Produits Similaires (Upsell)</Label>
+                <p className="text-[10px] text-slate-400 mb-3">Ces produits apparaîtront dans la section "Vous aimerez aussi" sur la fiche produit.</p>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-lg">
                     search
                   </span>
-                  <Input className="pl-10" placeholder="Rechercher par nom ou SKU..." />
+                  <Input
+                    ref={upsellSearchRef}
+                    className="pl-10"
+                    placeholder="Rechercher par nom ou SKU…"
+                    value={upsellSearch}
+                    onChange={(e) => handleUpsellSearch(e.target.value)}
+                  />
+                  {upsellSearchResults.length > 0 && (
+                    <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                      {upsellSearchResults.map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => addUpsellProduct(p)}
+                          className="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 transition-colors flex items-center gap-2"
+                        >
+                          <span className="material-symbols-outlined text-sm text-slate-400">add_circle</span>
+                          <span className="font-medium text-slate-700">{p.nom}</span>
+                          {p.sku && <span className="text-xs text-slate-400 ml-auto">{p.sku}</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div className="mt-4 flex flex-wrap gap-2">
-                  {upsellTags.map((tag) => (
+                  {upsellProducts.map((p) => (
                     <span
-                      key={tag}
-                      className="inline-flex items-center gap-2 bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-xs font-medium border border-slate-200"
+                      key={p.id}
+                      className="inline-flex items-center gap-2 bg-brand/10 text-brand px-3 py-1 rounded-full text-xs font-medium border border-brand/20"
                     >
-                      {tag}
+                      {p.name}
                       <button
-                        onClick={() => removeUpsellTag(tag)}
+                        type="button"
+                        onClick={() => removeUpsellProduct(p.id)}
                         className="hover:text-red-500 transition-colors"
                       >
                         <span className="material-symbols-outlined text-xs">close</span>
@@ -924,16 +804,7 @@ function EditProduit() {
                     <Toggle checked={visibility[v.key]} onChange={() => toggleVisibility(v.key)} />
                   </div>
                 ))}
-                <div className="pt-4 border-t border-slate-100">
-                  <Label>Meta-Titre (SEO)</Label>
-                  <input
-                    type="text"
-                    value={metaTitle}
-                    onChange={(e) => setMetaTitle(e.target.value)}
-                    placeholder="Auto-généré à partir du nom..."
-                    className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs focus:ring-2 focus:ring-brand outline-none"
-                  />
-                </div>
+               
               </div>
             </div>
 
@@ -954,6 +825,7 @@ function EditProduit() {
               </div>
               <div className="p-4">
                 <div className="rounded-lg border border-slate-200 overflow-hidden">
+                  {/* Browser chrome */}
                   <div className="flex items-center gap-2 px-3 py-2 bg-slate-100 border-b border-slate-200">
                     <div className="flex gap-1">
                       <div className="w-2 h-2 rounded-full bg-red-400" />
@@ -961,54 +833,84 @@ function EditProduit() {
                       <div className="w-2 h-2 rounded-full bg-green-400" />
                     </div>
                     <div className="flex-1 bg-white rounded px-2 py-0.5">
-                      <span className="text-[9px] text-slate-400">localhost:3001/produits</span>
+                      <span className="text-[9px] text-slate-400">localhost:3001/produits/{name ? name.toLowerCase().replace(/\s+/g, '-').slice(0, 20) : '…'}</span>
                     </div>
                   </div>
-                  <div className="grid grid-cols-3 gap-2 p-3">
-                    {[0,1,2,3,4,5].map((i) => i === 1 ? (
-                      <div key={i} className="ring-2 ring-brand rounded-sm">
-                        <div className="relative aspect-[3/4] bg-slate-100 overflow-hidden">
-                          {activeBadge && (
-                            <div className="absolute top-1 left-1 bg-black text-white text-[5px] font-bold uppercase tracking-widest px-1 py-0.5 leading-none">
-                              {activeBadge}
-                            </div>
-                          )}
-                          {hasPromo && salePrice && promoPrice && (
-                            <div className="absolute top-1 right-1 bg-badge text-white text-[5px] font-bold uppercase px-1 py-0.5 rounded leading-none">
-                              -{Math.round(((parseFloat(salePrice) - parseFloat(promoPrice)) / parseFloat(salePrice)) * 100)}%
-                            </div>
-                          )}
+                  {/* Product card preview */}
+                  <div className="p-3 bg-gradient-to-b from-slate-50 to-white">
+                    <div className="rounded-2xl bg-white border border-slate-100 overflow-hidden shadow-sm max-w-[180px] mx-auto">
+                      {/* Image area */}
+                      <div className="relative aspect-[4/5] bg-gradient-to-b from-slate-100 to-stone-100 overflow-hidden">
+                        {productImages[0] ? (
+                          <img src={resolveImgUrl(productImages[0])} alt="" className="w-full h-full object-cover" />
+                        ) : (
                           <div className="absolute inset-0 flex items-center justify-center">
-                            <span className="material-symbols-outlined text-slate-300 text-xl">image</span>
+                            <span className="material-symbols-outlined text-slate-300 text-3xl">image</span>
                           </div>
+                        )}
+                        {/* Badges */}
+                        <div className="absolute top-2 left-2 flex flex-col gap-1">
+                          {activeBadge && (
+                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-wide shadow-sm ${
+                              activeBadge === 'Nouveau' ? 'bg-emerald-500 text-white' :
+                              activeBadge === 'Best-Seller' ? 'bg-amber-500 text-white' :
+                              activeBadge === 'Promo' ? 'bg-rose-500 text-white' :
+                              'bg-slate-700 text-white'
+                            }`}>
+                              {activeBadge}
+                            </span>
+                          )}
+                          {bio && (
+                            <span className="bg-emerald-500 text-white text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-wide shadow-sm">Bio</span>
+                          )}
                         </div>
-                        <div className="p-1">
-                          <p className="text-[7px] font-bold uppercase tracking-tight leading-tight line-clamp-1">
-                            {name || <span className="text-slate-300 font-normal">Nom…</span>}
-                          </p>
-                          <p className="text-[7px] text-slate-600 mt-0.5">
-                            {hasPromo && promoPrice
-                              ? `${parseFloat(promoPrice).toFixed(2)} DT`
-                              : salePrice
-                              ? `${parseFloat(salePrice).toFixed(2)} DT`
-                              : '—'}
-                          </p>
-                          <div className="flex gap-0.5 mt-0.5">
-                            {variants.slice(0, 3).map((v) => (
-                              <span key={v.id} className="text-[5px] font-bold text-slate-400 bg-slate-100 px-0.5 rounded">{v.label}</span>
+                        {/* Promo % */}
+                        {hasPromo && salePrice && promoPrice && (
+                          <div className="absolute top-2 right-2 bg-rose-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm">
+                            -{Math.round(((parseFloat(salePrice) - parseFloat(promoPrice)) / parseFloat(salePrice)) * 100)}%
+                          </div>
+                        )}
+                      </div>
+                      {/* Card content */}
+                      <div className="p-3 space-y-1">
+                        {latin && (
+                          <p className="text-[9px] font-semibold text-emerald-700 uppercase tracking-wider truncate">{latin}</p>
+                        )}
+                        <h3 className="font-bold text-[11px] text-slate-800 leading-tight line-clamp-2">
+                          {name || <span className="text-slate-300 font-normal">Nom du produit…</span>}
+                        </h3>
+                        {/* Stars */}
+                        <div className="flex gap-0.5 py-0.5">
+                          {[1,2,3,4,5].map(i => (
+                            <span key={i} className="text-[10px] text-amber-400">★</span>
+                          ))}
+                        </div>
+                        {/* Volume tags */}
+                        {variants.length > 0 && (
+                          <div className="flex gap-1 flex-wrap">
+                            {variants.slice(0, 3).map((v) => v.label && (
+                              <span key={v.id} className="text-[8px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">{v.label}</span>
                             ))}
                           </div>
+                        )}
+                        {/* Price */}
+                        <div className="flex items-baseline gap-1.5 pt-1 border-t border-slate-100">
+                          {hasPromo && promoPrice && (
+                            <span className="text-[9px] text-slate-400 line-through">{parseFloat(salePrice).toFixed(2)} TND</span>
+                          )}
+                          <span className={`font-bold text-[13px] ${hasPromo ? 'text-rose-600' : 'text-slate-800'}`}>
+                            {hasPromo && promoPrice
+                              ? `${parseFloat(promoPrice).toFixed(2)} TND`
+                              : salePrice
+                              ? `${parseFloat(salePrice).toFixed(2)} TND`
+                              : '—'}
+                          </span>
                         </div>
                       </div>
-                    ) : (
-                      <div key={i} className="opacity-40">
-                        <div className="aspect-[3/4] bg-slate-200 rounded-sm" />
-                        <div className="h-1 bg-slate-300 rounded mt-1 w-3/4" />
-                        <div className="h-1 bg-slate-200 rounded mt-0.5 w-1/2" />
-                      </div>
-                    ))}
+                    </div>
                   </div>
                 </div>
+                {/* Badge pills */}
                 <div className="flex flex-wrap gap-1.5 mt-3">
                   {badges.nouveau && (
                     <span className="text-[9px] bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded-full">Nouveauté</span>

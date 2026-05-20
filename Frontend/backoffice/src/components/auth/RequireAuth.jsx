@@ -3,7 +3,7 @@ import { Outlet } from 'react-router-dom'
 export default function RequireAuth() {
   const token = localStorage.getItem('accessToken')
   if (!token) {
-    window.location.href = 'http://localhost:3001/login?redirect=backoffice'
+    window.location.replace('http://localhost:3001/login')
     return null
   }
   try {

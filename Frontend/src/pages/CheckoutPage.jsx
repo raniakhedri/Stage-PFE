@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ChevronRight, Minus, Plus, Trash2, ShoppingBag, Truck, CreditCard, Banknote, Tag, X, CheckCircle, MapPin, Plus as PlusIcon } from 'lucide-react';
 import { useShop } from '../context/ShopContext';
 import { loadStripe } from '@stripe/stripe-js';
+import { getUser } from '../api/tokenStorage';
 import { Elements } from '@stripe/react-stripe-js';
 import StripePaymentForm from '../components/StripePaymentForm';
 import { fetchMyProfile } from '../api/apiClient';
@@ -96,7 +97,7 @@ export default function CheckoutPage() {
   // Pre-fill from logged-in user + fetch saved address
   useEffect(() => {
     try {
-      const u = JSON.parse(localStorage.getItem('user') || 'null');
+      const u = getUser();
       if (u) {
         setForm((f) => ({
           ...f,
@@ -166,7 +167,7 @@ export default function CheckoutPage() {
     setCouponError('');
     setCouponLoading(true);
     try {
-      const user = (() => { try { return JSON.parse(localStorage.getItem('user') || 'null'); } catch { return null; } })();
+      const user = (() => { return getUser(); })();
       const data = await validateCouponCode(couponInput, user?.id || null);
 
       // Check minimum order amount
@@ -254,7 +255,7 @@ export default function CheckoutPage() {
     } else {
       // Cash on delivery — place order immediately
       try {
-        const user = JSON.parse(localStorage.getItem('user') || 'null');
+        const user = getUser();
         await placeOrder({
           ...form,
           paymentMethod: 'ESPECES_LIVRAISON',
@@ -282,7 +283,7 @@ export default function CheckoutPage() {
 
   const handleStripeSuccess = async () => {
     try {
-      const user = JSON.parse(localStorage.getItem('user') || 'null');
+      const user = getUser();
       await placeOrder({
         ...form,
         paymentMethod: 'CARTE',

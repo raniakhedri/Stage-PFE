@@ -1,3 +1,5 @@
+import { getAccessToken } from './tokenStorage';
+
 const API_BASE = 'http://localhost:8080/api/v1/public';
 const API_PROFILE = 'http://localhost:8080/api/v1/profile';
 
@@ -9,7 +11,7 @@ async function request(path) {
 }
 
 async function authRequest(path, options = {}) {
-  const token = localStorage.getItem('accessToken');
+  const token = getAccessToken();
   const res = await fetch(`http://localhost:8080/api/v1${path}`, {
     ...options,
     headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(options.headers || {}) },
@@ -70,6 +72,12 @@ export async function fetchProductsByCategory(categorySlug) {
 export async function fetchProductBySlug(slug) {
   const p = await request(`/products/${slug}`);
   return mapProduct(p);
+}
+
+export async function fetchSimilarProducts(ids) {
+  if (!ids || ids.length === 0) return [];
+  const p = await request(`/products/by-ids?ids=${ids.join(',')}`);
+  return Array.isArray(p) ? p.map(mapProduct) : [];
 }
 
 export async function fetchFeaturedProducts() {
@@ -145,6 +153,7 @@ function mapProduct(p) {
       price: v.price,
       stock: v.stock,
     })),
+    upsellTags: p.upsellTags || '',
   };
 }
 
@@ -163,6 +172,21 @@ export async function submitReview({ orderId, productId, note, commentaire }) {
 
 export async function fetchMyOrders() {
   return authRequest('/profile/orders');
+}
+
+export async function fetchReturnPolicy() {
+  return request('/return-policy');
+}
+
+export async function submitReturn({ orderId, orderItemId, raison, commentaire, photo1, photo2, ibanClient }) {
+  return authRequest('/profile/returns', {
+    method: 'POST',
+    body: JSON.stringify({ orderId, orderItemId, raison, commentaire, photo1, photo2, ibanClient }),
+  });
+}
+
+export async function fetchMyReturns() {
+  return authRequest('/profile/returns');
 }
 
 export async function fetchMyLoyalty() {

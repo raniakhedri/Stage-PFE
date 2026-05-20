@@ -41,6 +41,8 @@ export default function DetailClient() {
   const [client, setClient]     = useState(null)
   const [roles, setRoles]       = useState([])
   const [segments, setSegments] = useState([])
+  const [orders, setOrders]     = useState([])
+  const [ordersLoading, setOrdersLoading] = useState(false)
 
   /* ── Form state ── */
   const [firstName, setFirstName] = useState('')
@@ -70,6 +72,7 @@ export default function DetailClient() {
   /* ── Load data ── */
   const fetchData = useCallback(async () => {
     setLoading(true)
+    setOrdersLoading(true)
     try {
       const [userRes, rolesRes, segmentsRes] = await Promise.all([
         apiClient.get(`/admin/users/${id}`),
@@ -105,8 +108,19 @@ export default function DetailClient() {
       setRoles(Array.isArray(rolesData) ? rolesData : [])
       const segmentsData = segmentsRes.data.data || segmentsRes.data
       setSegments(Array.isArray(segmentsData) ? segmentsData : [])
+
+      // Load orders for this account
+      try {
+        const ordersRes = await apiClient.get(`/admin/orders/user/${id}`)
+        setOrders(Array.isArray(ordersRes.data) ? ordersRes.data : [])
+      } catch {
+        setOrders([])
+      } finally {
+        setOrdersLoading(false)
+      }
     } catch {
       toast.error('Impossible de charger les données du client')
+      setOrdersLoading(false)
     } finally {
       setLoading(false)
     }
@@ -224,12 +238,19 @@ export default function DetailClient() {
       </PageHeader>
 
       {/* ── KPIs ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <KpiCard label="Total dépensé"   value="—" sub="Module commandes à venir"  subColor="text-slate-400" icon="payments"      iconBg="bg-badge/10 text-badge" />
-        <KpiCard label="Commandes"        value="—" sub="Module commandes à venir"  subColor="text-slate-400" icon="shopping_bag"   iconBg="bg-slate-50 text-slate-400" />
-        <KpiCard label="Statut"           value={stBadge.label} sub={`Depuis ${memberSince}`} subColor="text-slate-400" icon="verified_user"  iconBg="bg-blue-50 text-blue-500" />
-        <KpiCard label="Client depuis"    value={memberSince} sub={`Dernière connexion: ${lastLogin}`} subColor="text-brand" icon="calendar_today" iconBg="bg-slate-50 text-slate-400" />
-      </div>
+      {(() => {
+        const activeOrders = orders.filter(o => !['ANNULEE','REMBOURSEE'].includes(o.status))
+        const totalSpent   = activeOrders.reduce((s, o) => s + (o.total || 0), 0)
+        const deliveredCount = orders.filter(o => o.status === 'LIVREE').length
+        return (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <KpiCard label="Total dépensé"   value={ordersLoading ? '…' : `${totalSpent.toFixed(2)} DT`}   sub={`${deliveredCount} commande(s) livrée(s)`} subColor="text-slate-400" icon="payments"      iconBg="bg-badge/10 text-badge" />
+            <KpiCard label="Commandes"        value={ordersLoading ? '…' : orders.length}  sub="Toutes méthodes de paiement" subColor="text-slate-400" icon="shopping_bag"   iconBg="bg-slate-50 text-slate-400" />
+            <KpiCard label="Statut"           value={stBadge.label} sub={`Depuis ${memberSince}`} subColor="text-slate-400" icon="verified_user"  iconBg="bg-blue-50 text-blue-500" />
+            <KpiCard label="Client depuis"    value={memberSince} sub={`Dernière connexion: ${lastLogin}`} subColor="text-brand" icon="calendar_today" iconBg="bg-slate-50 text-slate-400" />
+          </div>
+        )
+      })()}
 
       {/* ── Main grid ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
@@ -293,7 +314,7 @@ export default function DetailClient() {
             </div>
           </div>
 
-          {/* Historique des commandes — placeholder */}
+          {/* Historique des commandes */}
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
               <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center">
@@ -301,13 +322,65 @@ export default function DetailClient() {
               </div>
               <div>
                 <h3 className="text-sm font-bold text-slate-800">Historique des commandes</h3>
-                <p className="text-[11px] text-slate-400 mt-0.5">Module commandes pas encore disponible</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">Toutes les commandes liées à ce compte</p>
               </div>
+              <span className="ml-auto text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-full">{orders.length}</span>
             </div>
-            <div className="py-12 text-center text-slate-400 text-sm">
-              <span className="material-symbols-outlined text-3xl text-slate-200 block mb-2">shopping_bag</span>
-              Le module de commandes sera disponible prochainement.
-            </div>
+            {ordersLoading ? (
+              <div className="py-10 flex justify-center"><Spinner /></div>
+            ) : orders.length === 0 ? (
+              <div className="py-12 text-center text-slate-400 text-sm">
+                <span className="material-symbols-outlined text-3xl text-slate-200 block mb-2">shopping_bag</span>
+                Aucune commande pour ce compte.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-100 bg-slate-50">
+                      <th className="px-5 py-3 text-left text-[10px] font-bold text-slate-500 uppercase tracking-wider">Référence</th>
+                      <th className="px-5 py-3 text-left text-[10px] font-bold text-slate-500 uppercase tracking-wider">Email utilisé</th>
+                      <th className="px-5 py-3 text-left text-[10px] font-bold text-slate-500 uppercase tracking-wider">Paiement</th>
+                      <th className="px-5 py-3 text-left text-[10px] font-bold text-slate-500 uppercase tracking-wider">Statut</th>
+                      <th className="px-5 py-3 text-right text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total</th>
+                      <th className="px-5 py-3 text-left text-[10px] font-bold text-slate-500 uppercase tracking-wider">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {orders.map(o => {
+                      const STATUS_BG = {
+                        EN_ATTENTE:'bg-amber-100 text-amber-700', CONFIRMEE:'bg-blue-100 text-blue-700',
+                        EN_PREPARATION:'bg-indigo-100 text-indigo-700', EXPEDIEE:'bg-indigo-100 text-indigo-700',
+                        LIVREE:'bg-green-100 text-green-700', ANNULEE:'bg-red-100 text-red-700', REMBOURSEE:'bg-purple-100 text-purple-700',
+                      }
+                      const STATUS_LABELS = {
+                        EN_ATTENTE:'En attente', CONFIRMEE:'Confirmée', EN_PREPARATION:'En préparation',
+                        EXPEDIEE:'Expédiée', LIVREE:'Livrée', ANNULEE:'Annulée', REMBOURSEE:'Remboursée',
+                      }
+                      const PAYMENT_LABELS = { CARTE: 'Carte', ESPECES_LIVRAISON: 'Espèces' }
+                      return (
+                        <tr key={o.id} className="hover:bg-slate-50 cursor-pointer transition-colors" onClick={() => navigate(`/commandes/${o.id}`)}>
+                          <td className="px-5 py-3 font-bold text-brand text-xs">{o.reference}</td>
+                          <td className="px-5 py-3 text-slate-500 text-xs">{o.email}</td>
+                          <td className="px-5 py-3">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              o.paymentMethod === 'CARTE' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
+                            }`}>{PAYMENT_LABELS[o.paymentMethod] || o.paymentMethod}</span>
+                          </td>
+                          <td className="px-5 py-3">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${STATUS_BG[o.status] || 'bg-slate-100 text-slate-600'}`}>
+                              {STATUS_LABELS[o.status] || o.status}
+                            </span>
+                          </td>
+                          <td className="px-5 py-3 text-right font-bold text-slate-800 text-xs">{(o.total || 0).toFixed(2)} DT</td>
+                          <td className="px-5 py-3 text-slate-400 text-xs">{o.createdAt ? new Date(o.createdAt).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', year:'numeric' }) : '—'}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
           {/* Notes internes */}

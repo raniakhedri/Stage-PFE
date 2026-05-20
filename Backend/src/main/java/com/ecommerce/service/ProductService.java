@@ -103,6 +103,15 @@ public class ProductService {
         return getPublicProductsByCollectionName(collection.getNom());
     }
 
+    // ── Get public products by IDs (for upsell/similar) ──────────
+    @Transactional(readOnly = true)
+    public List<ProductResponse> getPublicProductsByIds(List<Long> ids) {
+        return productRepository.findAllById(ids).stream()
+                .filter(p -> "actif".equals(p.getStatut()) && p.isVisibleSite())
+                .map(this::mapToResponse)
+                .toList();
+    }
+
     // ── Stats ──────────────────────────────────────────────────────
     @Transactional(readOnly = true)
     public ProductStatsResponse getStats() {

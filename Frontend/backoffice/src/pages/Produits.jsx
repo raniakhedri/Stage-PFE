@@ -287,7 +287,7 @@ function Produits() {
                     </td>
                     <td className="px-6 py-6">
                       <div className="flex items-center justify-end gap-1">
-                        <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity">
+                        <div className="flex items-center gap-1">
                           {viewMode === 'archives' ? (
                             <>
                               <button onClick={() => archiveProduct(p.id)} className="p-1.5 rounded-lg text-slate-400 hover:bg-brand/10 hover:text-brand transition-all" title="Restaurer"><span className="material-symbols-outlined text-lg">unarchive</span></button>

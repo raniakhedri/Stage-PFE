@@ -26,6 +26,11 @@ const STATUS_BG = {
   REMBOURSEE: 'bg-purple-100 text-purple-700',
 }
 
+const PAYMENT_CFG = {
+  CARTE:             { label: 'Carte',   bg: 'bg-blue-100 text-blue-700' },
+  ESPECES_LIVRAISON: { label: 'Espèces', bg: 'bg-amber-100 text-amber-800' },
+}
+
 const statutOptions = ['Tous', 'En attente', 'Confirmée', 'En préparation', 'Expédiée', 'Livrée', 'Annulée']
 
 // An order is archived when manually archived OR (terminal status AND older than 24h)
@@ -407,9 +412,14 @@ export default function Commandes() {
                               </div>
                             </td>
                             <td className="px-5 py-4">
-                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold font-badge bg-amber-100 text-amber-800">
-                                Espèces
-                              </span>
+                              {(() => {
+                                const pm = PAYMENT_CFG[o.paymentMethod] || PAYMENT_CFG.ESPECES_LIVRAISON
+                                return (
+                                  <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold font-badge ${pm.bg}`}>
+                                    {pm.label}
+                                  </span>
+                                )
+                              })()}
                             </td>
                             <td className="px-5 py-4">
                               <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold font-badge ${STATUS_BG[o.status] || 'bg-slate-100 text-slate-600'}`}>

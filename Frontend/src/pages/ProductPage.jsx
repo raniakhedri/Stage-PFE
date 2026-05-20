@@ -2,7 +2,8 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { ChevronRight, Heart, ShoppingBag, Truck, ShieldCheck, Star, Minus, Plus, Wind, Droplets, X, Send, Award, Leaf } from 'lucide-react';
-import { fetchProductBySlug, fetchProductsByCategory, fetchReviewsByProduct, submitReview, fetchMyOrders } from '../api/apiClient';
+import { fetchProductBySlug, fetchProductsByCategory, fetchReviewsByProduct, submitReview, fetchMyOrders, fetchSimilarProducts } from '../api/apiClient';
+import { getUser } from '../api/tokenStorage';
 import ProductCard from '../components/ProductCard';
 import { useShop } from '../context/ShopContext';
 import LoginPromptModal from '../components/LoginPromptModal';
@@ -113,7 +114,7 @@ function formatDate(iso) {
 
 export default function ProductPage() {
   const { slug } = useParams();
-  const user = (() => { try { return JSON.parse(localStorage.getItem('user')); } catch { return null; } })();
+  const user = getUser();
 
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
@@ -141,6 +142,23 @@ export default function ProductPage() {
       .then((p) => {
         setProduct(p);
         setSelectedSize(p.volume || (p.variants?.[0]?.label) || '');
+        // Load similar/upsell products if defined, otherwise fall back to category
+        if (p.upsellTags) {
+          const ids = p.upsellTags.split(',').map(s => s.trim()).filter(Boolean);
+          if (ids.length > 0) {
+            fetchSimilarProducts(ids)
+              .then(prods => setRelatedProducts(prods.filter(rp => rp.id !== p.id)))
+              .catch(() => {
+                if (p.categorySlug) {
+                  fetchProductsByCategory(p.categorySlug)
+                    .then(prods => setRelatedProducts(prods.filter(rp => rp.id !== p.id).slice(0, 4)))
+                    .catch(() => {});
+                }
+              });
+            loadReviews(p.id);
+            return;
+          }
+        }
         if (p.categorySlug) {
           fetchProductsByCategory(p.categorySlug)
             .then(prods => setRelatedProducts(prods.filter(rp => rp.id !== p.id).slice(0, 4)))
