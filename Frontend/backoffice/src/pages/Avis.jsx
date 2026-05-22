@@ -19,7 +19,9 @@ function Stars({ note }) {
   return (
     <div className="flex justify-center text-amber-400">
       {[1, 2, 3, 4, 5].map(i => (
-        <span key={i} className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: i <= note ? "'FILL' 1" : "'FILL' 0" }}>star</span>
+        <span key={i} className="material-icons text-[18px]">
+          {i <= note ? 'star' : 'star_border'}
+        </span>
       ))}
     </div>
   )

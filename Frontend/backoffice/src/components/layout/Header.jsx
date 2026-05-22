@@ -94,6 +94,8 @@ function Header() {
   const navigate = useNavigate()
   const crumbs = getBreadcrumbs(location.pathname)
 
+
+
   return (
     <header className="h-32 bg-white border-b border-slate-200 flex items-center justify-between px-8 sticky top-0 z-10">
       <nav className="flex items-center gap-2">
@@ -131,14 +133,6 @@ function Header() {
             <span className="text-base font-bold text-slate-700">42</span>
           </div>
         </div>
-
-        {/* Notifications */}
-        <div className="relative cursor-pointer">
-          <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-[11px] text-white flex items-center justify-center rounded-full border-2 border-white font-bold">4</span>
-          <span className="material-symbols-outlined text-[28px] text-slate-400">notifications</span>
-        </div>
-
-        <div className="h-10 w-px bg-slate-200 mx-1"></div>
 
         {/* Profile */}
         <div className="flex items-center gap-3 cursor-pointer">

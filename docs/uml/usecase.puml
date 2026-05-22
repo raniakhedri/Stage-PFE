@@ -1,0 +1,187 @@
+@startuml NaturEssence_UseCase
+skinparam actorStyle awesome
+skinparam backgroundColor #FAFAFA
+skinparam usecase {
+  BackgroundColor #EDF7EF
+  BorderColor #2d4a3e
+  FontSize 12
+}
+skinparam actor {
+  BackgroundColor #2d4a3e
+  FontColor #2d4a3e
+  BorderColor #2d4a3e
+}
+skinparam ArrowColor #2d4a3e
+
+title Diagramme des Cas d'Utilisation — NaturEssence
+
+' ─── ACTORS ──────────────────────────────────────────────────────────────
+actor "Visiteur"          as V
+actor "Client"            as C
+actor "Administrateur"    as A
+actor "Système"           as S
+
+C --|> V
+
+' ─── FRONTOFFICE ─────────────────────────────────────────────────────────
+rectangle "Frontoffice - Boutique en ligne" {
+
+  package "Catalogue" {
+    usecase "Parcourir le catalogue"         as UC_Browse
+    usecase "Rechercher un produit"          as UC_Search
+    usecase "Consulter une fiche produit"    as UC_ViewProduct
+    usecase "Filtrer par catégorie"          as UC_Filter
+    usecase "Consulter les recettes"         as UC_Recettes
+  }
+
+  package "Compte & Authentification" {
+    usecase "S'inscrire"                     as UC_Register
+    usecase "Se connecter (JWT)"             as UC_Login
+    usecase "Gérer son profil"               as UC_Profile
+    usecase "Consulter ses points fidélité"  as UC_Points
+  }
+
+  package "Panier & Commande" {
+    usecase "Gérer le panier"                as UC_Cart
+    usecase "Appliquer un coupon"            as UC_Coupon
+    usecase "Passer une commande"            as UC_Order
+    usecase "Payer (CB / Stripe)"            as UC_Pay
+    usecase "Payer à la livraison (COD)"     as UC_COD
+    usecase "Suivre ses commandes"           as UC_TrackOrder
+  }
+
+  package "Après-vente" {
+    usecase "Déposer un avis produit"        as UC_Review
+    usecase "Demander un retour"             as UC_Return
+    usecase "Consulter les favoris"          as UC_Wishlist
+  }
+
+  package "Notifications client" {
+    usecase "Recevoir notif statut commande" as UC_NotifOrder
+    usecase "Recevoir notif retour traité"   as UC_NotifReturn
+    usecase "Recevoir réponse à un avis"     as UC_NotifReview
+  }
+}
+
+' ─── BACKOFFICE ──────────────────────────────────────────────────────────
+rectangle "Backoffice - Administration" {
+
+  package "Tableau de bord" {
+    usecase "Consulter le dashboard"         as UC_Dashboard
+  }
+
+  package "Gestion catalogue" {
+    usecase "Gérer les produits"             as UC_ManageProducts
+    usecase "Gérer les variantes"            as UC_Variants
+    usecase "Gérer les catégories"           as UC_Categories
+    usecase "Gérer les collections"          as UC_Collections
+  }
+
+  package "Gestion commandes" {
+    usecase "Voir / filtrer les commandes"   as UC_AdminOrders
+    usecase "Changer le statut"              as UC_ChangeStatus
+    usecase "Archiver / exporter (PDF)"      as UC_Export
+    usecase "Actions groupées"               as UC_BulkActions
+  }
+
+  package "Clients & Fidélité" {
+    usecase "Gérer les clients"              as UC_Clients
+    usecase "Configurer la fidélité"         as UC_Loyalty
+    usecase "Gérer les segments"             as UC_Segments
+    usecase "Attribuer des rôles"            as UC_Roles
+  }
+
+  package "Promotions & Marketing" {
+    usecase "Gérer les promotions/remises"   as UC_Promos
+    usecase "Gérer les coupons"              as UC_Coupons
+    usecase "Gérer les bannières"            as UC_Banners
+    usecase "Envoyer une newsletter"         as UC_Newsletter
+  }
+
+  package "Après-vente (admin)" {
+    usecase "Traiter les retours"            as UC_AdminReturns
+    usecase "Modérer les avis"               as UC_AdminReviews
+    usecase "Répondre à un avis"             as UC_ReplyReview
+  }
+
+  package "Configuration" {
+    usecase "Configurer TVA & livraison"     as UC_TvaShipping
+    usecase "Personnaliser l'apparence"      as UC_Appearance
+    usecase "Gérer les rôles & permissions"  as UC_Permissions
+  }
+
+  package "Alertes admin" {
+    usecase "Recevoir alertes rupture stock" as UC_AlertStock
+    usecase "Recevoir alertes commandes >24h" as UC_AlertOrders
+    usecase "Recevoir alertes avis en attente" as UC_AlertReviews
+    usecase "Recevoir alertes retours"       as UC_AlertReturns
+  }
+}
+
+' ─── ASSOCIATIONS ────────────────────────────────────────────────────────
+' Visiteur
+V --> UC_Browse
+V --> UC_Search
+V --> UC_ViewProduct
+V --> UC_Filter
+V --> UC_Recettes
+V --> UC_Register
+V --> UC_Login
+V --> UC_Cart
+V --> UC_Order
+V --> UC_Pay
+V --> UC_COD
+
+' Client (extends Visiteur)
+C --> UC_Profile
+C --> UC_Points
+C --> UC_Coupon
+C --> UC_TrackOrder
+C --> UC_Review
+C --> UC_Return
+C --> UC_Wishlist
+C --> UC_NotifOrder
+C --> UC_NotifReturn
+C --> UC_NotifReview
+
+' Admin
+A --> UC_Dashboard
+A --> UC_ManageProducts
+A --> UC_Variants
+A --> UC_Categories
+A --> UC_Collections
+A --> UC_AdminOrders
+A --> UC_ChangeStatus
+A --> UC_Export
+A --> UC_BulkActions
+A --> UC_Clients
+A --> UC_Loyalty
+A --> UC_Segments
+A --> UC_Roles
+A --> UC_Promos
+A --> UC_Coupons
+A --> UC_Banners
+A --> UC_Newsletter
+A --> UC_AdminReturns
+A --> UC_AdminReviews
+A --> UC_ReplyReview
+A --> UC_TvaShipping
+A --> UC_Appearance
+A --> UC_Permissions
+A --> UC_AlertStock
+A --> UC_AlertOrders
+A --> UC_AlertReviews
+A --> UC_AlertReturns
+
+' Système
+S --> UC_NotifOrder : <<email>>
+S --> UC_NotifReturn : <<email>>
+S --> UC_AlertStock : <<poll>>
+S --> UC_AlertOrders : <<poll>>
+
+' Include / Extend
+UC_Order ..> UC_Pay   : <<include>>
+UC_ReplyReview ..> UC_NotifReview : <<trigger>>
+UC_ChangeStatus ..> UC_NotifOrder : <<trigger>>
+
+@enduml

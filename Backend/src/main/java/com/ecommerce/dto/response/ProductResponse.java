@@ -28,14 +28,10 @@ public class ProductResponse {
 
     // Pricing
     private double salePrice;
-    private double costPrice;
     private boolean promoActive;
     private double promoPrice;
     private LocalDate promoStart;
     private LocalDate promoEnd;
-
-    // Computed margin
-    private double marginPct;
 
     // Stock
     private int stock;

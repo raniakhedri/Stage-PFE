@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Heart, ShoppingBag, Star, Eye } from 'lucide-react';
 import { useShop } from '../context/ShopContext';
@@ -102,10 +102,12 @@ export default function ProductCard({ product }) {
         <h3 className="font-headline font-bold text-[15px] text-primary leading-snug hover:text-secondary transition-colors line-clamp-2">
           {product.name}
         </h3>
-        <div className="flex items-center gap-1.5 pt-0.5">
-          <div className="flex gap-0.5">{renderStars(product.rating)}</div>
-          <span className="text-[10px] text-on-surface-variant/70 font-medium">({product.reviews})</span>
-        </div>
+        {product.reviews > 0 && (
+          <div className="flex items-center gap-1.5 pt-0.5">
+            <div className="flex gap-0.5">{renderStars(product.rating)}</div>
+            <span className="text-[10px] text-on-surface-variant/70 font-medium">({product.reviews})</span>
+          </div>
+        )}
         <div className="flex items-end justify-between pt-2 border-t border-outline-variant/8 mt-2">
           <div>
             <span className="text-[11px] text-on-surface-variant/60 block">{product.volume}</span>

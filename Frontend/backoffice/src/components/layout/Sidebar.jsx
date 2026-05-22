@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { useAdminNotifications } from '../../hooks/useAdminNotifications'
 
 const navItems = [
   { path: '/dashboard',      label: 'Tableau de bord',  icon: 'dashboard',        moduleKey: 'TABLEAU_DE_BORD' },
@@ -74,6 +75,47 @@ function Sidebar() {
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['style', 'class', 'data-logo-main', 'data-logo-light'] })
     return () => observer.disconnect()
   }, [readToggle])
+
+  // ── Notification bell ──────────────────────────────────────────────────
+  const { notifications } = useAdminNotifications()
+  const [bellOpen, setBellOpen] = useState(false)
+  const [readIds, setReadIds] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem('admin_notif_read') || '[]')); } catch { return new Set(); }
+  })
+  const bellRef = useRef(null)
+  const btnRef  = useRef(null)
+  const [panelPos, setPanelPos] = useState({ top: null, bottom: null, left: 0 })
+  const unreadCount = notifications.filter(n => !readIds.has(n.id)).length
+
+  useEffect(() => {
+    function onClickOutside(e) {
+      if (bellRef.current && !bellRef.current.contains(e.target)) setBellOpen(false)
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [])
+
+  const handleBellClick = () => {
+    if (btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect()
+      const panelH = 400 // max panel height (header + max-h-80)
+      const spaceBelow = window.innerHeight - rect.top
+      if (spaceBelow < panelH) {
+        // not enough room below → anchor to bottom of button, grow upward
+        setPanelPos({ top: null, bottom: window.innerHeight - rect.bottom, left: rect.right + 8 })
+      } else {
+        setPanelPos({ top: rect.top, bottom: null, left: rect.right + 8 })
+      }
+    }
+    setBellOpen(o => !o)
+    if (!bellOpen) {
+      const all = new Set([...readIds, ...notifications.map(n => n.id)])
+      setReadIds(all)
+      localStorage.setItem('admin_notif_read', JSON.stringify([...all]))
+    }
+  }
+
+  const SEVERITY_COLOR = { error: 'text-red-500', warning: 'text-amber-500', info: 'text-blue-500' }
 
   const handleLogout = () => {
     localStorage.removeItem('accessToken')
@@ -175,6 +217,77 @@ function Sidebar() {
 
       {/* Voir site + Logout */}
       <div className="p-4 mt-auto border-t border-slate-100 space-y-1">
+
+        {/* Notification bell */}
+        <div ref={bellRef}>
+          <button
+            ref={btnRef}
+            onClick={handleBellClick}
+            className="w-full flex items-center gap-3 px-4 py-2 text-slate-600 hover:bg-slate-50 hover:text-sidebar rounded-lg transition-all"
+          >
+            {showIcons && (
+              <span className="relative">
+                <span className="material-symbols-outlined text-[20px]">notifications</span>
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-0.5 bg-red-500 text-[9px] text-white flex items-center justify-center rounded-full font-bold">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </span>
+            )}
+            <span className="text-sm font-medium flex-1 text-left">Notifications</span>
+            {!showIcons && unreadCount > 0 && (
+              <span className="ml-auto min-w-[20px] h-5 px-1 bg-red-500 text-[10px] text-white flex items-center justify-center rounded-full font-bold">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </button>
+
+          {bellOpen && (
+            <div
+              style={{
+                position: 'fixed',
+                top:    panelPos.top    != null ? panelPos.top    : undefined,
+                bottom: panelPos.bottom != null ? panelPos.bottom : undefined,
+                left:   panelPos.left,
+                zIndex: 9999,
+              }}
+              className="w-80 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden"
+            >
+              <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100">
+                <span className="font-bold text-slate-800 text-sm">Alertes</span>
+                {notifications.length === 0 && (
+                  <span className="text-xs text-slate-400">Tout est en ordre</span>
+                )}
+              </div>
+              <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
+                {notifications.length === 0 ? (
+                  <div className="px-5 py-8 text-center text-sm text-slate-400">
+                    <span className="material-symbols-outlined text-3xl block mb-2 text-slate-300">check_circle</span>
+                    Aucune alerte en cours
+                  </div>
+                ) : (
+                  notifications.map(n => (
+                    <button
+                      key={n.id}
+                      onClick={() => { navigate(n.link); setBellOpen(false); }}
+                      className="w-full text-left flex items-start gap-3 px-4 py-3 hover:bg-slate-50 transition-colors"
+                    >
+                      <span className={`material-symbols-outlined text-[20px] mt-0.5 shrink-0 ${SEVERITY_COLOR[n.severity] || 'text-slate-500'}`}>
+                        {n.icon}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-slate-700 truncate">{n.title}</p>
+                        <p className="text-xs text-slate-500 truncate">{n.message}</p>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
         <a
           href="http://localhost:3001"
           className="w-full flex items-center gap-3 px-4 py-2 text-slate-600 hover:bg-slate-50 hover:text-sidebar rounded-lg transition-all"

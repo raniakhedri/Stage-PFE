@@ -78,4 +78,19 @@ public class ProfileController {
     public ResponseEntity<LoyaltyInfoResponse> getMyLoyalty(@AuthenticationPrincipal UserPrincipal principal) {
         return ResponseEntity.ok(loyaltyService.getLoyaltyInfo(principal.getId()));
     }
+
+    // ── Cart persistence (cross-browser sync) ─────────────────────────────────
+
+    @GetMapping("/cart")
+    public ResponseEntity<String> getCart(@AuthenticationPrincipal UserPrincipal principal) {
+        return ResponseEntity.ok(userService.getCart(principal.getId()));
+    }
+
+    @PutMapping("/cart")
+    public ResponseEntity<Void> saveCart(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestBody String cartJson) {
+        userService.saveCart(principal.getId(), cartJson);
+        return ResponseEntity.noContent().build();
+    }
 }

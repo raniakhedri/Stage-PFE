@@ -204,6 +204,20 @@ export async function updateMyProfile(data) {
   });
 }
 
+export async function fetchServerCart() {
+  return authRequest('/profile/cart');
+}
+
+export async function saveServerCart(cartItems) {
+  const token = getAccessToken();
+  if (!token) return;
+  await fetch('http://localhost:8080/api/v1/profile/cart', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(cartItems),
+  });
+}
+
 export async function fetchMyReviews() {
   return authRequest('/profile/reviews');
 }

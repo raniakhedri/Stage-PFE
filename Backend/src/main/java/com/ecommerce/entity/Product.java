@@ -51,9 +51,6 @@ public class Product {
     private double salePrice = 0;
 
     @Builder.Default
-    private double costPrice = 0;
-
-    @Builder.Default
     private boolean promoActive = false;
 
     @Builder.Default

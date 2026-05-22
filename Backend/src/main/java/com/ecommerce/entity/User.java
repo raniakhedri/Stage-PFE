@@ -64,6 +64,10 @@ public class User {
 
     private String note;
 
+    /** Persisted cart (JSON array of cart items) for cross-browser sync */
+    @Column(columnDefinition = "TEXT")
+    private String cartJson;
+
     /** Accumulated loyalty points */
     @Builder.Default
     private Integer loyaltyPoints = 0;

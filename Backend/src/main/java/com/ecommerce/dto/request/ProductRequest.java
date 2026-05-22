@@ -19,7 +19,6 @@ public class ProductRequest {
 
     // Pricing
     private double salePrice;
-    private double costPrice;
     private boolean promoActive;
     private double promoPrice;
     private LocalDate promoStart;

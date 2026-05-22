@@ -1,0 +1,403 @@
+@startuml NaturEssence_ClassDiagram
+skinparam backgroundColor #FAFAFA
+skinparam class {
+  BackgroundColor #EDF7EF
+  BorderColor #2d4a3e
+  ArrowColor #2d4a3e
+  FontSize 11
+  HeaderBackgroundColor #2d4a3e
+  HeaderFontColor #FFFFFF
+}
+skinparam stereotypeCBackgroundColor #c8e6c9
+skinparam linetype ortho
+hide empty members
+
+title Diagramme de Classes — NaturEssence
+
+' ─── ENUMS ───────────────────────────────────────────────────────────────
+enum OrderStatus {
+  EN_ATTENTE
+  EN_PREPARATION
+  EXPEDIEE
+  LIVREE
+  ANNULEE
+  REMBOURSEE
+}
+
+enum ReturnStatus {
+  EN_ATTENTE
+  APPROUVEE
+  REFUSEE
+  REMBOURSEE
+}
+
+enum AccountStatus {
+  ACTIVE
+  SUSPENDED
+  BANNED
+}
+
+enum PaymentMethod {
+  CARD
+  COD
+}
+
+enum Gender {
+  HOMME
+  FEMME
+  AUTRE
+}
+
+' ─── SECURITY / ROLES ────────────────────────────────────────────────────
+class Role {
+  +Long id
+  +String name
+  +String label
+  +String description
+}
+
+class Permission {
+  +Long id
+  +PermissionModule module
+  +boolean granted
+}
+
+' ─── USER ────────────────────────────────────────────────────────────────
+class User {
+  +Long id
+  +String firstName
+  +String lastName
+  +String email
+  +String phone
+  +LocalDate dateOfBirth
+  +Gender gender
+  +String address
+  +String city
+  +AccountStatus status
+  +Integer loyaltyPoints
+  +LocalDateTime lastLogin
+  +LocalDateTime createdAt
+}
+
+class Segment {
+  +Long id
+  +String name
+  +String label
+  +Integer seuilPoints
+  +Double multiplicateurPoints
+  +Double remiseAutomatique
+  +Boolean livraisonGratuiteStandard
+  +Boolean accesVentesPrivees
+}
+
+class RefreshToken {
+  +Long id
+  +String token
+  +LocalDateTime expiryDate
+}
+
+' ─── CATALOGUE ───────────────────────────────────────────────────────────
+class Category {
+  +Long id
+  +String nom
+  +String slug
+  +String description
+  +String imageUrl
+  +boolean visMenu
+  +boolean visHomepage
+  +String statut
+  +LocalDateTime createdAt
+}
+
+class Collection {
+  +Long id
+  +String nom
+  +String slug
+  +String description
+  +String type
+  +String tags
+  +String statut
+  +boolean featured
+  +boolean visHomepage
+  +LocalDateTime createdAt
+}
+
+class Product {
+  +Long id
+  +String nom
+  +String slug
+  +String sku
+  +String description
+  +double salePrice
+  +boolean promoActive
+  +double promoPrice
+  +LocalDate promoStart
+  +LocalDate promoEnd
+  +int stock
+  +String statut
+  +boolean badgeNouveau
+  +boolean badgeBestSeller
+  +boolean badgePromo
+  +boolean badgeExclusif
+  +boolean visibleSite
+  +boolean visibleCategory
+  +String latin
+  +boolean bio
+  +String origine
+  +String inciComposition
+  +String certifications
+  +String volumes
+  +String usageInstructions
+  +String precautions
+  +String imageUrl
+  +String upsellTags
+  +LocalDateTime createdAt
+}
+
+class ProductVariant {
+  +Long id
+  +String label
+  +String colorSwatch
+  +String sku
+  +double price
+  +int stock
+}
+
+' ─── ORDERS ──────────────────────────────────────────────────────────────
+class Order {
+  +Long id
+  +String reference
+  +String email
+  +String firstName
+  +String lastName
+  +String shippingZoneName
+  +Double shippingCost
+  +Double subtotal
+  +Double tvaAmount
+  +Double total
+  +String couponCode
+  +Double couponDiscount
+  +PaymentMethod paymentMethod
+  +OrderStatus status
+  +LocalDateTime createdAt
+  +LocalDateTime deliveredAt
+}
+
+class OrderItem {
+  +Long id
+  +Long productId
+  +String productName
+  +String color
+  +String size
+  +Double unitPrice
+  +Integer quantity
+  +Double lineTotal
+}
+
+' ─── PROMOTIONS ──────────────────────────────────────────────────────────
+class Coupon {
+  +Long id
+  +String code
+  +String type
+  +double valeur
+  +double montantMin
+  +LocalDate dateDebut
+  +LocalDate dateFin
+  +String statut
+  +int limiteGlobale
+  +int limiteClient
+  +String segment
+}
+
+class CouponUsage {
+  +Long id
+  +int count
+  +LocalDateTime usedAt
+}
+
+class Discount {
+  +Long id
+  +String nom
+  +String type
+  +double valeur
+  +Long productId
+  +String statut
+  +LocalDate dateDebut
+  +LocalDate dateFin
+}
+
+' ─── LOYALTY ─────────────────────────────────────────────────────────────
+class LoyaltyConfig {
+  +Long id
+  +Double pointsParTnd
+  +Integer pointsBienvenue
+  +Integer pointsAvis
+  +Integer pointsAnniversaire
+  +Boolean autoSegmentPromotion
+}
+
+class PointsTransaction {
+  +Long id
+  +Long orderId
+  +String type
+  +int points
+  +String description
+  +LocalDateTime createdAt
+}
+
+' ─── AFTER-SALE ──────────────────────────────────────────────────────────
+class Review {
+  +Long id
+  +Long productId
+  +String productName
+  +Integer note
+  +String commentaire
+  +String statut
+  +String reponse
+  +LocalDateTime createdAt
+}
+
+class ReturnRequest {
+  +Long id
+  +String reference
+  +Long orderItemId
+  +Long productId
+  +String productName
+  +String productImage
+  +Double amount
+  +String customerName
+  +String customerEmail
+  +String raison
+  +String commentaire
+  +String photo1
+  +String photo2
+  +String ibanClient
+  +ReturnStatus status
+  +String motifRefus
+  +LocalDateTime createdAt
+}
+
+class ReturnPolicy {
+  +Long id
+  +Integer dureeJours
+  +String eligibilite
+  +String modeRemboursement
+  +String fraisRetour
+  +String conditionsSpeciales
+}
+
+' ─── SETTINGS ────────────────────────────────────────────────────────────
+class Banner {
+  +Long id
+  +String titre
+  +String imageUrl
+  +BannerPosition position
+  +BannerAudience audience
+  +BannerStatut statut
+  +LocalDate dateDebut
+  +LocalDate dateFin
+  +boolean actif
+}
+
+class ShippingZone {
+  +Long id
+  +String nom
+  +String regions
+  +String methode
+  +Double cout
+  +String statut
+}
+
+class TvaConfig {
+  +Long id
+  +Boolean tvaActive
+  +Double tauxDefaut
+  +String devise
+  +Boolean standardEnabled
+  +Boolean expressEnabled
+}
+
+class TvaRate {
+  +Long id
+  +String nom
+  +Double valeur
+  +Boolean actif
+}
+
+class AppearanceSettings {
+  +Long id
+  +String scope
+  +String primaryColor
+  +String secondaryColor
+  +String buttonColor
+  +String buttonHoverColor
+  +String buttonTextColor
+  +String sidebarColor
+  +String badgeColor
+  +String fontPrimary
+  +String fontSecondary
+  +String fontSidebar
+  +String fontButton
+  +String fontBadge
+  +String logoMain
+  +String logoLight
+  +String favicon
+  +String loader
+  +String sidebarStyle
+  +boolean showIcons
+  +boolean showLogo
+  +Integer logoScale
+  +String logoAlign
+  +int borderRadius
+  +boolean darkMode
+  +boolean animations
+  +String brandName
+  +String domain
+  +String phone
+  +String email
+  +String slogan
+  +String instagram
+  +String facebook
+  +String linkedin
+  +String whatsapp
+}
+
+' ─── RELATIONSHIPS ───────────────────────────────────────────────────────
+
+' Role & Permission
+Role "1" *-- "0..*" Permission : contient
+Role "1" o-- "0..*" User       : attribué à
+
+' User
+User "0..*" --> "0..1" Segment : appartient à
+User "1"    *-- "0..*" RefreshToken : possède
+
+' Catalogue
+Category "0..1" o-- "0..*" Category    : parent / enfants
+Category "1"    o-- "0..*" Product     : contient
+Product  "1"    *-- "0..*" ProductVariant : variantes
+Category "1"    o-- "0..*" Discount    : remise sur
+
+' Order
+User      "1"    o-- "0..*" Order       : passe
+Order     "1"    *-- "1..*" OrderItem   : contient
+Order     "0..*" --> "0..1" Coupon      : utilise
+
+' After-sale
+User          "1"    o-- "0..*" Review        : rédige
+Order         "1"    o-- "0..1" Review        : concerne
+Order         "1"    o-- "0..*" ReturnRequest : fait l'objet de
+
+' Loyalty & promotions
+User      "1"    o-- "0..*" PointsTransaction : crédité
+Coupon    "1"    *-- "0..*" CouponUsage       : utilisé par
+CouponUsage "0..*" --> "1" User              : par
+
+' Enums
+Order ..> OrderStatus    : <<use>>
+Order ..> PaymentMethod  : <<use>>
+User  ..> AccountStatus  : <<use>>
+User  ..> Gender         : <<use>>
+ReturnRequest ..> ReturnStatus : <<use>>
+
+@enduml

@@ -240,7 +240,14 @@ public class OrderService {
             order.setDeliveredAt(java.time.LocalDateTime.now());
         }
 
-        return mapToResponse(orderRepository.save(order));
+        Order saved = orderRepository.save(order);
+
+        // Notify customer by email when order is delivered (only once)
+        if (newStatus == OrderStatus.LIVREE && previousStatus != OrderStatus.LIVREE) {
+            emailService.sendDeliveryNotification(saved);
+        }
+
+        return mapToResponse(saved);
     }
 
     // ── Helpers ──

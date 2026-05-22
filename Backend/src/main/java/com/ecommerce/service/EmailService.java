@@ -245,6 +245,105 @@ public class EmailService {
         );
     }
 
+    // ── Delivery notification ─────────────────────────────────────────────────
+
+    @Async
+    public void sendDeliveryNotification(Order order) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("api-key", apiKey);
+
+            String html = buildDeliveryHtml(order);
+
+            java.util.HashMap<String, Object> body = new java.util.HashMap<>();
+            body.put("sender",      Map.of("name", senderName, "email", senderEmail));
+            body.put("to",          List.of(Map.of("email", order.getEmail(),
+                                                   "name",  order.getFirstName() + " " + order.getLastName())));
+            body.put("replyTo",     Map.of("email", replyTo));
+            body.put("subject",     "Votre commande " + order.getReference() + " a été livrée !");
+            body.put("htmlContent", html);
+
+            log.info("[Brevo] Sending delivery notification to {} for order {}", order.getEmail(), order.getReference());
+            HttpEntity<java.util.HashMap<String, Object>> request = new HttpEntity<>(body, headers);
+            ResponseEntity<String> response = restTemplate.postForEntity(BREVO_URL, request, String.class);
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                log.info("[Brevo] Delivery notification sent to {} for order {}", order.getEmail(), order.getReference());
+            } else {
+                log.warn("[Brevo] Non-2xx response {}: {}", response.getStatusCode(), response.getBody());
+            }
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+            log.error("[Brevo] HTTP {} error: {}", e.getStatusCode(), e.getResponseBodyAsString());
+        } catch (Exception e) {
+            log.error("[Brevo] Failed to send delivery notification for order {}: {} — {}", order.getReference(), e.getClass().getSimpleName(), e.getMessage());
+        }
+    }
+
+    private String buildDeliveryHtml(Order order) {
+        String deliveredDate = order.getDeliveredAt() != null
+                ? order.getDeliveredAt().format(DateTimeFormatter.ofPattern("dd MMMM yyyy 'à' HH:mm", Locale.FRENCH))
+                : java.time.LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd MMMM yyyy", Locale.FRENCH));
+
+        return """
+                <!DOCTYPE html>
+                <html lang="fr">
+                <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+                <body style="margin:0;padding:0;background:#f5f0eb;font-family:Georgia,serif;">
+                  <table width="100%%" cellpadding="0" cellspacing="0" style="background:#f5f0eb;padding:32px 0;">
+                    <tr><td align="center">
+                      <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);max-width:600px;">
+
+                        <!-- Header -->
+                        <tr>
+                          <td style="background:#2d4a3e;padding:32px 40px;text-align:center;">
+                            <h1 style="margin:0;color:#f0c866;font-size:28px;letter-spacing:2px;font-weight:300;">NATURESSENCE</h1>
+                            <p style="margin:8px 0 0;color:#c8ddd4;font-size:13px;letter-spacing:1px;">L'Éveil des Sens Naturels</p>
+                          </td>
+                        </tr>
+
+                        <!-- Delivered banner -->
+                        <tr>
+                          <td style="padding:36px 40px 24px;text-align:center;border-bottom:1px solid #f0ebe3;">
+                            <div style="width:64px;height:64px;background:#e8f5e9;border-radius:50%%;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:32px;line-height:64px;">📦</div>
+                            <h2 style="margin:0 0 8px;color:#2d4a3e;font-size:22px;">Commande livrée !</h2>
+                            <p style="margin:0;color:#5a7a6a;font-size:15px;">Bonjour %s, votre commande a bien été livrée.</p>
+                            <p style="margin:12px 0 0;font-size:13px;color:#8aab9a;">Livraison confirmée le %s</p>
+                          </td>
+                        </tr>
+
+                        <!-- Order ref -->
+                        <tr>
+                          <td style="padding:24px 40px;background:#faf8f5;text-align:center;">
+                            <p style="margin:0 0 4px;font-size:11px;color:#8aab9a;text-transform:uppercase;letter-spacing:1px;">Référence commande</p>
+                            <p style="margin:0;font-size:20px;font-weight:700;color:#2d4a3e;letter-spacing:2px;">%s</p>
+                          </td>
+                        </tr>
+
+                        <!-- CTA -->
+                        <tr>
+                          <td style="padding:32px 40px;text-align:center;">
+                            <p style="margin:0 0 20px;color:#5a7a6a;font-size:14px;">Nous espérons que vous apprécierez vos produits NaturEssence.<br>N'hésitez pas à laisser un avis sur votre achat !</p>
+                            <a href="https://naturessence.tn/commandes" style="display:inline-block;background:#2d4a3e;color:#f0c866;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:14px;font-weight:600;letter-spacing:1px;">Voir mes commandes</a>
+                          </td>
+                        </tr>
+
+                        <!-- Footer -->
+                        <tr>
+                          <td style="background:#2d4a3e;padding:24px 40px;text-align:center;">
+                            <p style="margin:0;color:#c8ddd4;font-size:12px;">Merci pour votre confiance. À bientôt sur NaturEssence !</p>
+                            <p style="margin:8px 0 0;color:#8aab9a;font-size:11px;">© 2026 NaturEssence — contact@naturessence.tn</p>
+                          </td>
+                        </tr>
+
+                      </table>
+                    </td></tr>
+                  </table>
+                </body>
+                </html>
+                """.formatted(order.getFirstName(), deliveredDate, order.getReference());
+    }
+
     // ── Newsletter bulk send ───────────────────────────────────────────────────
 
     @Async

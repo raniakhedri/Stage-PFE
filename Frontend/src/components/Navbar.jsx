@@ -6,6 +6,7 @@ import { fetchTopAnnouncementCoupon, fetchTvaConfig } from '../api/apiClient';
 import { getUser, clearTokens, cancelAutoLogout } from '../api/tokenStorage';
 import { useShop } from '../context/ShopContext';
 import CartDrawer from './CartDrawer';
+import NotificationBell from './NotificationBell';
 
 const DEFAULT_ANNOUNCEMENT = "Livraison gratuite dès 49 TND d'achat";
 
@@ -168,55 +169,30 @@ export default function Navbar() {
           {/* Desktop Nav */}
           <nav className="hidden lg:flex items-center gap-6 h-full">
             {navLinks.map((link) => (
-              <div key={link.slug} className="relative h-full flex items-center group mega-menu-trigger">
-                <Link
-                  to={link.to}
-                  className={`text-sm font-headline font-bold tracking-wide pb-1 transition-colors ${
-                    isActive(link.slug)
-                      ? 'text-gold border-b-2 border-gold'
-                      : isHome && !scrolled
-                        ? 'text-white/80 hover:text-white'
-                        : 'text-secondary hover:text-primary'
-                  }`}
-                >
-                  {link.label}
-                </Link>
-
-                {/* Mega Menu */}
-                <div className="mega-menu absolute top-[48px] -left-12 w-[700px] bg-white shadow-2xl rounded-xl p-8 hidden grid-cols-3 gap-8 border border-outline-variant/10 z-[200]">
-                  <div className="space-y-4">
-                    <h4 className="font-headline font-bold text-primary text-xs uppercase tracking-widest">Par Type</h4>
-                    <ul className="space-y-2 text-sm text-secondary">
-                      <li><Link to={link.to} className="hover:text-primary transition-colors">Voir tout</Link></li>
-                      <li><Link to={link.to} className="hover:text-primary transition-colors">Bio certifié</Link></li>
-                      <li><Link to={link.to} className="hover:text-primary transition-colors">Nouveautés</Link></li>
-                      <li><Link to={link.to} className="hover:text-primary transition-colors">Promotions</Link></li>
-                    </ul>
-                  </div>
-                  <div className="space-y-4">
-                    <h4 className="font-headline font-bold text-primary text-xs uppercase tracking-widest">Par Bienfait</h4>
-                    <ul className="space-y-2 text-sm text-secondary">
-                      <li><Link to={link.to} className="hover:text-primary transition-colors">Apaisant</Link></li>
-                      <li><Link to={link.to} className="hover:text-primary transition-colors">Tonifiant</Link></li>
-                      <li><Link to={link.to} className="hover:text-primary transition-colors">Hydratant</Link></li>
-                      <li><Link to={link.to} className="hover:text-primary transition-colors">Purifiant</Link></li>
-                    </ul>
-                  </div>
-                  <div className="bg-secondary-container/30 rounded-lg p-4 flex flex-col justify-center text-center space-y-3">
-                    <span className="text-[10px] font-bold text-secondary uppercase tracking-[0.2em]">Promotion</span>
-                    <h5 className="font-headline text-lg font-bold text-primary leading-tight">Nouveautés Printemps</h5>
-                    <p className="text-xs text-secondary">-20% sur la sélection</p>
-                    <Link to={link.to} className="text-xs font-bold text-primary underline decoration-gold underline-offset-4">Découvrir</Link>
-                  </div>
-                </div>
-              </div>
+              <Link
+                key={link.slug}
+                to={link.to}
+                className={`text-sm font-headline font-bold tracking-wide pb-1 transition-colors ${
+                  isActive(link.slug)
+                    ? 'text-gold border-b-2 border-gold'
+                    : isHome && !scrolled
+                      ? 'text-white/80 hover:text-white'
+                      : 'text-secondary hover:text-primary'
+                }`}
+              >
+                {link.label}
+              </Link>
             ))}
           </nav>
         </div>
 
         {/* Right Actions */}
         <div className="flex items-center gap-5">
-   
+
+          {/* Notification Bell (visible when logged in) */}
+          <div className={isHome && !scrolled ? 'text-white' : 'text-primary'}>
+            <NotificationBell />
+          </div>
 
           {/* Profile Dropdown */}
           <div className="relative" role="profile-dropdown">

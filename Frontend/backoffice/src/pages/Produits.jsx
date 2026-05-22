@@ -269,9 +269,7 @@ function Produits() {
                             <span className="text-[11px] text-slate-400 line-through">{p.salePrice.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} DT</span>
                           )}
                         </div>
-                        {p.costPrice > 0 && (
-                          <span className="text-[10px] text-slate-400">Coût: {p.costPrice.toFixed(2)} DT <span className="text-brand font-bold ml-1">({Math.round(p.marginPct)}%)</span></span>
-                        )}
+
                       </div>
                     </td>
                     <td className="px-6 py-6">

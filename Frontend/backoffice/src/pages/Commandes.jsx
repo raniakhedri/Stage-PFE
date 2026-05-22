@@ -36,7 +36,8 @@ const statutOptions = ['Tous', 'En attente', 'Confirmée', 'En préparation', 'E
 // An order is archived when manually archived OR (terminal status AND older than 24h)
 // manuallyArchived set is passed in at call site
 const isArchivedAuto = (o) => {
-  if (o.status !== 'LIVREE' && o.status !== 'ANNULEE') return false
+  if (o.status === 'LIVREE') return true
+  if (o.status !== 'ANNULEE') return false
   return Date.now() - new Date(o.createdAt).getTime() > 24 * 60 * 60 * 1000
 }
 
@@ -60,6 +61,10 @@ export default function Commandes() {
   // Inline status change
   const [statusMenuId, setStatusMenuId] = useState(null)  // order id whose menu is open
   const [updatingId, setUpdatingId] = useState(null)
+
+  // Bulk actions
+  const [bulkUpdating, setBulkUpdating] = useState(false)
+  const [bulkMenuOpen, setBulkMenuOpen] = useState(false)
 
   // Active orders filters
   const [search, setSearch] = useState('')
@@ -103,11 +108,11 @@ export default function Commandes() {
 
   // Close status dropdown when clicking outside
   useEffect(() => {
-    if (!statusMenuId) return
-    const close = () => setStatusMenuId(null)
+    if (!statusMenuId && !bulkMenuOpen) return
+    const close = () => { setStatusMenuId(null); setBulkMenuOpen(false) }
     document.addEventListener('click', close)
     return () => document.removeEventListener('click', close)
-  }, [statusMenuId])
+  }, [statusMenuId, bulkMenuOpen])
 
   const fetchOrders = async () => {
     try {
@@ -230,6 +235,84 @@ export default function Commandes() {
     }
   }
 
+  const handleBulkStatus = async (newStatus) => {
+    setBulkMenuOpen(false)
+    setBulkUpdating(true)
+    try {
+      await Promise.all(
+        selectedRows.map(id => apiClient.patch(`/admin/orders/${id}/status`, { status: newStatus }))
+      )
+      setOrders(prev => prev.map(o => selectedRows.includes(o.id) ? { ...o, status: newStatus } : o))
+      toast.success(`${selectedRows.length} commande(s) mise(s) à jour : ${STATUS_LABELS[newStatus]}`)
+      setSelectedRows([])
+    } catch {
+      toast.error('Erreur lors de la mise à jour en masse')
+    } finally {
+      setBulkUpdating(false)
+    }
+  }
+
+  const handleBulkArchive = () => {
+    setManuallyArchived(prev => {
+      const next = new Set(prev)
+      selectedRows.forEach(id => next.add(id))
+      try { localStorage.setItem('archivedOrderIds', JSON.stringify([...next])) } catch {}
+      return next
+    })
+    toast.success(`${selectedRows.length} commande(s) archivée(s)`)
+    setSelectedRows([])
+  }
+
+  const handleBulkExport = () => {
+    const rows = orders.filter(o => selectedRows.includes(o.id))
+    const totalSel = rows.reduce((s, o) => s + (o.total || 0), 0)
+    const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
+<title>Commandes sélectionnées — NaturEssence</title>
+<style>
+  body{font-family:Georgia,serif;color:#1e293b;margin:0;padding:32px;}
+  h1{color:#2d4a3e;font-size:22px;margin:0 0 4px;}
+  .sub{color:#64748b;font-size:13px;margin-bottom:28px;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{background:#2d4a3e;color:#fff;padding:10px 14px;text-align:left;font-size:11px;letter-spacing:.5px;text-transform:uppercase;}
+  td{padding:10px 14px;border-bottom:1px solid #e2e8f0;vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  tr:nth-child(even) td{background:#f8fafc;}
+  .badge{display:inline-block;padding:2px 10px;border-radius:99px;font-size:11px;font-weight:700;}
+  .EN_ATTENTE{background:#fef3c7;color:#92400e;}
+  .EN_PREPARATION{background:#e0e7ff;color:#3730a3;}
+  .EXPEDIEE{background:#e0e7ff;color:#3730a3;}
+  .LIVREE{background:#dcfce7;color:#166534;}
+  .ANNULEE{background:#fee2e2;color:#991b1b;}
+  .REMBOURSEE{background:#f3e8ff;color:#6b21a8;}
+  .total-row{font-weight:700;background:#f0fdf4;}
+  .footer{margin-top:32px;font-size:11px;color:#94a3b8;text-align:center;border-top:1px solid #e2e8f0;padding-top:16px;}
+  @media print{body{padding:16px;}}
+</style></head><body>
+<h1>NaturEssence — Export Commandes</h1>
+<div class="sub">${rows.length} commande(s) sélectionnée(s) · Exporté le ${new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'})}</div>
+<table>
+  <thead><tr><th>#</th><th>Référence</th><th>Client</th><th>Email</th><th>Statut</th><th>Total</th><th>Date</th></tr></thead>
+  <tbody>
+    ${rows.map((o,i) => `<tr>
+      <td>${i+1}</td>
+      <td><b>${o.reference}</b></td>
+      <td>${o.firstName} ${o.lastName}</td>
+      <td>${o.email}</td>
+      <td><span class="badge ${o.status}">${STATUS_LABELS[o.status]||o.status}</span></td>
+      <td><b>${(o.total||0).toFixed(2)} DT</b></td>
+      <td>${formatDate(o.createdAt)}</td>
+    </tr>`).join('')}
+    <tr class="total-row"><td colspan="5" style="text-align:right;padding-right:8px;">TOTAL</td><td colspan="2">${totalSel.toFixed(2)} DT</td></tr>
+  </tbody>
+</table>
+<div class="footer">© ${new Date().getFullYear()} NaturEssence · contact@naturessence.tn</div>
+</body></html>`
+    const w = window.open('', '_blank')
+    w.document.write(html)
+    w.document.close()
+    setTimeout(() => w.print(), 400)
+  }
+
   const resetFilters = () => {
     setSearch('')
     setFilterStatut('Tous')
@@ -329,15 +412,66 @@ export default function Commandes() {
 
           {/* ── Bulk actions bar ── */}
           {selectedRows.length > 0 && (
-            <div className="bg-brand/5 border border-brand/20 rounded-custom p-4 flex items-center justify-between">
-              <span className="text-sm font-bold text-brand">
+            <div className="bg-brand/5 border border-brand/20 rounded-custom p-3 flex items-center gap-3 flex-wrap">
+              <span className="text-sm font-bold text-brand mr-2">
                 {selectedRows.length} commande(s) sélectionnée(s)
               </span>
+
+              {/* Change status dropdown */}
+              <div className="relative">
+                <button
+                  disabled={bulkUpdating}
+                  onClick={(e) => { e.stopPropagation(); setBulkMenuOpen(o => !o) }}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm disabled:opacity-50"
+                >
+                  {bulkUpdating
+                    ? <span className="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>
+                    : <span className="material-symbols-outlined text-[16px]">sync</span>
+                  }
+                  Changer statut
+                  <span className="material-symbols-outlined text-[14px]">expand_more</span>
+                </button>
+                {bulkMenuOpen && (
+                  <div onClick={e => e.stopPropagation()} className="absolute left-0 top-full mt-1 w-48 bg-white rounded-xl shadow-xl border border-slate-200 z-30 py-2">
+                    {['EN_ATTENTE', 'EN_PREPARATION', 'EXPEDIEE', 'LIVREE'].map(s => (
+                      <button key={s} onClick={() => handleBulkStatus(s)}
+                        className="w-full text-left px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 transition-colors">
+                        {STATUS_LABELS[s]}
+                      </button>
+                    ))}
+                    <div className="border-t border-slate-100 my-1" />
+                    <button onClick={() => handleBulkStatus('ANNULEE')}
+                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors font-semibold">
+                      <span className="material-symbols-outlined text-sm mr-1.5 align-middle">cancel</span>
+                      Annuler
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Archive */}
               <button
-                onClick={() => setSelectedRows([])}
-                className="px-4 py-2 text-slate-500 text-xs font-bold hover:text-slate-700 transition-colors"
+                onClick={handleBulkArchive}
+                className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm"
               >
-                Annuler
+                <span className="material-symbols-outlined text-[16px]">inventory_2</span>
+                Archiver
+              </button>
+
+              {/* Export PDF */}
+              <button
+                onClick={handleBulkExport}
+                className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm"
+              >
+                <span className="material-symbols-outlined text-[16px]">picture_as_pdf</span>
+                Exporter PDF
+              </button>
+
+              <button
+                onClick={() => { setSelectedRows([]); setBulkMenuOpen(false) }}
+                className="ml-auto px-3 py-1.5 text-slate-400 text-xs font-bold hover:text-slate-700 transition-colors"
+              >
+                Désélectionner
               </button>
             </div>
           )}

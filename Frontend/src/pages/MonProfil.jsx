@@ -19,12 +19,7 @@ function getInitials(firstName, lastName) {
     .filter(Boolean).join('').toUpperCase() || '?';
 }
 
-const GOUVERNORATS = [
-  'Ariana','Béja','Ben Arous','Bizerte','Gabès','Gafsa','Jendouba',
-  'Kairouan','Kasserine','Kébili','Kef','Mahdia','Manouba','Médenine',
-  'Monastir','Nabeul','Sfax','Sidi Bouzid','Siliana','Sousse',
-  'Tataouine','Tozeur','Tunis','Zaghouan',
-];
+import { TUNISIA_CITIES, getCityInfo } from '../data/tunisiaCities';
 
 const GENDER_LABELS = { HOMME: 'Homme', FEMME: 'Femme', NON_PRECISE: 'Non précisé' };
 
@@ -423,15 +418,29 @@ function AddressSection({ profile, onSaved }) {
               <input className={inputCls} value={form.postalCode} onChange={e => setForm(f => ({...f, postalCode: e.target.value}))} placeholder="XXXX" />
             </FormField>
             <FormField label="Ville">
-              <input className={inputCls} value={form.city} onChange={e => setForm(f => ({...f, city: e.target.value}))} placeholder="Votre ville" />
+              <select
+                className={inputCls}
+                value={form.city}
+                onChange={e => {
+                  const cityName = e.target.value;
+                  const info = getCityInfo(cityName);
+                  setForm(f => ({ ...f, city: cityName, gouvernorat: info?.gouvernorat || f.gouvernorat }));
+                }}
+              >
+                <option value="">— Sélectionner —</option>
+                {TUNISIA_CITIES.map(c => <option key={c.city} value={c.city}>{c.city}</option>)}
+              </select>
             </FormField>
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
             <FormField label="Gouvernorat">
-              <select className={inputCls} value={form.gouvernorat} onChange={e => setForm(f => ({...f, gouvernorat: e.target.value}))}>
-                <option value="">— Choisir —</option>
-                {GOUVERNORATS.map(g => <option key={g} value={g}>{g}</option>)}
-              </select>
+              <input
+                className={inputCls}
+                value={form.gouvernorat}
+                readOnly
+                placeholder="Sélectionnez une ville"
+                style={{ cursor: 'not-allowed', background: '#f8f9fa' }}
+              />
             </FormField>
             <FormField label="Pays">
               <input className={inputCls} value={form.country} onChange={e => setForm(f => ({...f, country: e.target.value}))} placeholder="Tunisie" />

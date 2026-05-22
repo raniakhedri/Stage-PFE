@@ -141,7 +141,6 @@ public class ProductService {
                 .subCategory(request.getSubCategory())
                 .collections(request.getCollections())
                 .salePrice(request.getSalePrice())
-                .costPrice(request.getCostPrice())
                 .promoActive(request.isPromoActive())
                 .promoPrice(request.getPromoPrice())
                 .promoStart(request.getPromoStart())
@@ -211,7 +210,6 @@ public class ProductService {
         product.setSubCategory(request.getSubCategory());
         product.setCollections(request.getCollections());
         product.setSalePrice(request.getSalePrice());
-        product.setCostPrice(request.getCostPrice());
         product.setPromoActive(request.isPromoActive());
         product.setPromoPrice(request.getPromoPrice());
         product.setPromoStart(request.getPromoStart());
@@ -324,12 +322,6 @@ public class ProductService {
         return "Optimal";
     }
 
-    private double computeMargin(double salePrice, double costPrice) {
-        if (salePrice <= 0)
-            return 0;
-        return Math.round(((salePrice - costPrice) / salePrice) * 100.0);
-    }
-
     private List<ProductVariant> buildVariants(
             List<ProductRequest.ProductVariantRequest> requests, Product product) {
         List<ProductVariant> result = new ArrayList<>();
@@ -377,12 +369,10 @@ public class ProductService {
                 .subCategory(p.getSubCategory())
                 .collections(p.getCollections())
                 .salePrice(p.getSalePrice())
-                .costPrice(p.getCostPrice())
                 .promoActive(p.isPromoActive())
                 .promoPrice(p.getPromoPrice())
                 .promoStart(p.getPromoStart())
                 .promoEnd(p.getPromoEnd())
-                .marginPct(computeMargin(p.getSalePrice(), p.getCostPrice()))
                 .stock(p.getStock())
                 .stockStatus(computeStockStatus(p.getStock()))
                 .statut(p.getStatut())

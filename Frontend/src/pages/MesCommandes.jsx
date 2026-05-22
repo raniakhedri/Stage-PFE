@@ -289,7 +289,7 @@ function ReviewModal({ order, item, onClose, onSuccess }) {
       await submitReview({ orderId: order.id, productId: item.productId, note, commentaire });
       onSuccess();
     } catch (err) {
-      setError(err?.message || 'Erreur lors de la soumission.');
+      setError(err?.error || err?.message || 'Erreur lors de la soumission.');
     } finally {
       setLoading(false);
     }

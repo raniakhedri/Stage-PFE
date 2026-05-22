@@ -237,6 +237,19 @@ public class UserService {
         return authService.mapToUserResponse(user);
     }
 
+    @Transactional(readOnly = true)
+    public String getCart(Long userId) {
+        User user = findUserOrThrow(userId);
+        return user.getCartJson() != null ? user.getCartJson() : "[]";
+    }
+
+    @Transactional
+    public void saveCart(Long userId, String cartJson) {
+        User user = findUserOrThrow(userId);
+        user.setCartJson(cartJson);
+        userRepository.save(user);
+    }
+
     private User findUserOrThrow(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé avec l'id: " + id));

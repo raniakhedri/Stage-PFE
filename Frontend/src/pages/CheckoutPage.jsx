@@ -7,6 +7,7 @@ import { getUser } from '../api/tokenStorage';
 import { Elements } from '@stripe/react-stripe-js';
 import StripePaymentForm from '../components/StripePaymentForm';
 import { fetchMyProfile } from '../api/apiClient';
+import { TUNISIA_CITIES, getCityInfo } from '../data/tunisiaCities';
 
 const STRIPE_PK = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '';
 const stripePromise = STRIPE_PK ? loadStripe(STRIPE_PK) : null;
@@ -81,6 +82,8 @@ export default function CheckoutPage() {
   // Saved address from profile
   const [savedAddress, setSavedAddress] = useState(null);
   const [addressMode, setAddressMode] = useState('new'); // 'saved' | 'new'
+  const [savedPhone, setSavedPhone] = useState('');
+  const [phoneMode, setPhoneMode] = useState('saved'); // 'saved' | 'new'
 
   const [form, setForm] = useState({
     firstName: '',
@@ -106,6 +109,7 @@ export default function CheckoutPage() {
           email: u.email || '',
           phone: u.phone || '',
         }));
+        if (u.phone) setSavedPhone(u.phone);
         // Fetch full profile to get saved address
         fetchMyProfile().then((profile) => {
           if (profile?.address) {
@@ -233,6 +237,17 @@ export default function CheckoutPage() {
     setForm((f) => ({ ...f, [name]: value }));
   };
 
+  const handleCityChange = (e) => {
+    const cityName = e.target.value;
+    const info = getCityInfo(cityName);
+    setForm((f) => ({
+      ...f,
+      city: cityName,
+      gouvernorat: info?.gouvernorat || f.gouvernorat,
+      shippingZoneName: info?.zone || f.shippingZoneName,
+    }));
+  };
+
   const handleInfoSubmit = async (e) => {
     e.preventDefault();
     if (items.length === 0) return;
@@ -352,12 +367,14 @@ export default function CheckoutPage() {
                         checked={addressMode === 'saved'}
                         onChange={() => {
                           setAddressMode('saved');
+                          const cityInfo = getCityInfo(savedAddress.city || '');
                           setForm((f) => ({
                             ...f,
                             address: savedAddress.address || '',
                             city: savedAddress.city || '',
                             postalCode: savedAddress.postalCode || '',
-                            gouvernorat: savedAddress.gouvernorat || '',
+                            gouvernorat: savedAddress.gouvernorat || cityInfo?.gouvernorat || '',
+                            shippingZoneName: cityInfo?.zone || f.shippingZoneName,
                           }));
                         }}
                         className="mt-0.5 accent-primary flex-shrink-0"
@@ -432,16 +449,42 @@ export default function CheckoutPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-primary uppercase tracking-wider mb-1">Téléphone *</label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={form.phone}
-                    onChange={handleChange}
-                    required
-                    placeholder="Ex: 20 123 456"
-                    className="w-full border border-outline-variant/30 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-primary"
-                  />
+                  <label className="block text-xs font-bold text-primary uppercase tracking-wider mb-1">
+                    Téléphone {!savedPhone && '*'}
+                  </label>
+                  {savedPhone && phoneMode === 'saved' ? (
+                    <div className="flex items-center justify-between border border-outline-variant/30 rounded-lg px-4 py-2.5 bg-gray-50">
+                      <span className="text-sm text-primary">{savedPhone}</span>
+                      <button
+                        type="button"
+                        onClick={() => setPhoneMode('new')}
+                        className="text-xs text-primary font-semibold underline underline-offset-2 ml-3 flex-shrink-0"
+                      >
+                        Modifier
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={form.phone}
+                        onChange={handleChange}
+                        required
+                        placeholder="Ex: 20 123 456"
+                        className="w-full border border-outline-variant/30 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-primary"
+                      />
+                      {savedPhone && (
+                        <button
+                          type="button"
+                          onClick={() => { setPhoneMode('saved'); setForm((f) => ({ ...f, phone: savedPhone })); }}
+                          className="text-xs text-secondary hover:text-primary transition-colors"
+                        >
+                          ← Utiliser mon numéro enregistré ({savedPhone})
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
                 {/* Show address fields only when 'new' selected, or always when no saved address */}
                 {(addressMode === 'new' || !savedAddress) && (
@@ -460,14 +503,18 @@ export default function CheckoutPage() {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs font-bold text-primary uppercase tracking-wider mb-1">Ville *</label>
-                        <input
-                          type="text"
+                        <select
                           name="city"
                           value={form.city}
-                          onChange={handleChange}
+                          onChange={handleCityChange}
                           required
-                          className="w-full border border-outline-variant/30 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-primary"
-                        />
+                          className="w-full border border-outline-variant/30 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-primary bg-white"
+                        >
+                          <option value="">— Sélectionner une ville —</option>
+                          {TUNISIA_CITIES.map((c) => (
+                            <option key={c.city} value={c.city}>{c.city}</option>
+                          ))}
+                        </select>
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-primary uppercase tracking-wider mb-1">Code Postal *</label>
@@ -487,49 +534,16 @@ export default function CheckoutPage() {
                         type="text"
                         name="gouvernorat"
                         value={form.gouvernorat}
-                        onChange={handleChange}
-                        className="w-full border border-outline-variant/30 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-primary"
+                        readOnly
+                        placeholder="Sélectionnez une ville"
+                        className="w-full border border-outline-variant/30 rounded-lg px-4 py-2.5 text-sm bg-gray-50 text-secondary cursor-not-allowed"
                       />
                     </div>
                   </>
                 )}
               </div>
 
-              {/* Shipping Zone */}
-              {zones.length > 0 && (
-                <div className="bg-white rounded-2xl border border-outline-variant/10 p-6 space-y-4">
-                  <h2 className="font-headline font-bold text-xl text-primary flex items-center gap-2">
-                    <Truck size={20} /> Zone de livraison
-                  </h2>
-                  <div className="space-y-2">
-                    {zones.map((z) => (
-                      <label
-                        key={z.id}
-                        className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                          form.shippingZoneName === z.nom ? 'border-primary bg-primary/5' : 'border-outline-variant/20 hover:border-outline-variant/50'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <input
-                            type="radio"
-                            name="shippingZoneName"
-                            value={z.nom}
-                            checked={form.shippingZoneName === z.nom}
-                            onChange={handleChange}
-                            className="accent-primary"
-                          />
-                          <span className="font-medium text-primary text-sm">{z.nom}</span>
-                        </div>
-                        <span className="font-bold text-primary text-sm">
-                          {freeShippingThreshold && total >= freeShippingThreshold
-                            ? 'Gratuite'
-                            : z.cout === 0 ? 'Gratuite' : `${z.cout?.toFixed(2)} TND`}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
+
 
               {/* Payment Method */}
               <div className="bg-white rounded-2xl border border-outline-variant/10 p-6 space-y-4">

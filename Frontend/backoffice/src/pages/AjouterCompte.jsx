@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import apiClient from '../api/apiClient'
+import { TUNISIA_CITIES } from '../data/tunisiaCities'
 import PageHeader from '../components/ui/PageHeader'
 import CustomSelect from '../components/ui/CustomSelect'
 import Spinner from '../components/ui/Spinner'
@@ -225,7 +226,14 @@ export default function AjouterCompte() {
                 </Field>
               </div>
               <Field label="Ville">
-                <FormInput value={form.ville} onChange={setE('ville')} placeholder="Paris" />
+                <select
+                  value={form.ville}
+                  onChange={setE('ville')}
+                  className="w-full px-3.5 py-2.5 rounded-lg border text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand focus:border-brand outline-none transition-all border-slate-200"
+                >
+                  <option value="">— Sélectionner —</option>
+                  {TUNISIA_CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
               </Field>
               <Field label="Code postal">
                 <FormInput value={form.codePostal} onChange={setE('codePostal')} placeholder="75001" />
