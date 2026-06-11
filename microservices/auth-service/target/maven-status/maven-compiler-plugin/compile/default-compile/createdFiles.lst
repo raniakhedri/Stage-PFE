@@ -1,0 +1,4 @@
+com\naturessence\auth\AuthServiceApplication.class
+com\naturessence\auth\service\CustomUserDetailsService.class
+com\naturessence\auth\config\DataSeeder.class
+com\naturessence\auth\config\SecurityConfig.class
