@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, User, Heart, ShoppingBag, Menu, X, ChevronDown, ChevronRight, Truck, Phone, LogOut } from 'lucide-react';
-import { categories } from '../data/categories';
-import { fetchTopAnnouncementCoupon, fetchTvaConfig } from '../api/apiClient';
+import { fetchTopAnnouncementCoupon, fetchTvaConfig, fetchMenuCategories } from '../api/apiClient';
 import { getUser, clearTokens, cancelAutoLogout } from '../api/tokenStorage';
 import { useShop } from '../context/ShopContext';
 import CartDrawer from './CartDrawer';
@@ -60,6 +59,7 @@ export default function Navbar() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [announcementText, setAnnouncementText] = useState(DEFAULT_ANNOUNCEMENT);
+  const [navLinks, setNavLinks] = useState([]);
   const location = useLocation();
   const navigate = useNavigate();
   const isHome = location.pathname === '/';
@@ -126,14 +126,17 @@ export default function Navbar() {
     navigate('/');
   };
 
-  const navLinks = categories.map(c => ({
-    label: c.name.split(' ')[0] === 'Huiles' ? (c.slug === 'essentielles' ? 'Essentielles' : 'Végétales') :
-           c.slug === 'actifs' ? 'Actifs' :
-           c.slug === 'beurres' ? 'Beurres' :
-           c.slug === 'hydrolats' ? 'Hydrolats' : 'Argiles',
-    to: `/categories/${c.slug}`,
-    slug: c.slug,
-  }));
+  useEffect(() => {
+    fetchMenuCategories()
+      .then((cats) => {
+        setNavLinks(cats.map((c) => ({
+          label: c.name,
+          to: `/categories/${c.slug}`,
+          slug: c.slug,
+        })));
+      })
+      .catch(() => setNavLinks([]));
+  }, []);
 
   const isActive = (slug) => location.pathname === `/categories/${slug}`;
 
@@ -167,12 +170,13 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden lg:flex items-center gap-6 h-full">
+          <nav className="hidden lg:flex items-center gap-4 h-full max-w-[56vw] overflow-x-auto hide-scrollbar">
             {navLinks.map((link) => (
               <Link
                 key={link.slug}
                 to={link.to}
-                className={`text-sm font-headline font-bold tracking-wide pb-1 transition-colors ${
+                title={link.label}
+                className={`text-sm font-headline font-bold tracking-wide pb-1 whitespace-nowrap transition-colors ${
                   isActive(link.slug)
                     ? 'text-gold border-b-2 border-gold'
                     : isHome && !scrolled

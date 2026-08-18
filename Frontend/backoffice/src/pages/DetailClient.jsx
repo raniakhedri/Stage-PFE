@@ -17,8 +17,9 @@ const roleIconMap = {
 }
 
 const statusBadge = {
-  ACTIVE:  { cls: 'bg-badge/10 text-badge', label: 'Actif' },
-  BLOCKED: { cls: 'bg-red-100 text-red-600',         label: 'Bloqué' },
+  ACTIVE:   { cls: 'bg-badge/10 text-badge',       label: 'Actif' },
+  INACTIVE: { cls: 'bg-amber-100 text-amber-700',  label: 'Inactif' },
+  BLOCKED:  { cls: 'bg-red-100 text-red-600',       label: 'Bloqué' },
 }
 
 /* ── Toggle ─────────────────────────────────────────────────────────────────── */
@@ -65,6 +66,10 @@ export default function DetailClient() {
   const [newsletter,  setNewsletter]  = useState(true)
   const [saveConfirm, setSaveConfirm] = useState(null)
   const [deleteConfirm, setDeleteConfirm] = useState(false)
+  const [contactModal, setContactModal] = useState(false)
+  const [contactSubject, setContactSubject] = useState('')
+  const [contactMessage, setContactMessage] = useState('')
+  const [contactSending, setContactSending] = useState(false)
 
   /* ── Original values ref (to detect changes) ── */
   const originalRef = useRef({})
@@ -195,15 +200,37 @@ export default function DetailClient() {
     }
   }
 
+  /* ── Contact user via email ── */
+  const handleContactSend = async () => {
+    if (!contactSubject.trim()) return toast.error('Veuillez saisir un sujet.')
+    if (!contactMessage.trim()) return toast.error('Veuillez saisir un message.')
+    setContactSending(true)
+    try {
+      const res = await apiClient.post(`/admin/email/contact/${id}`, {
+        subject: contactSubject.trim(),
+        message: contactMessage.trim(),
+      })
+      toast.success(res.data?.message || 'Email envoyé avec succès !')
+      setContactModal(false)
+      setContactSubject('')
+      setContactMessage('')
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Erreur lors de l’envoi de l’email')
+    } finally {
+      setContactSending(false)
+    }
+  }
+
   /* ── Toggle status ── */
   const handleToggleStatus = async () => {
     const newStatus = status === 'ACTIVE' ? 'BLOCKED' : 'ACTIVE'
     try {
-      await apiClient.put(`/admin/users/${id}`, { status: newStatus })
-      setStatus(newStatus)
-      toast.success(`Compte ${newStatus === 'ACTIVE' ? 'activé' : 'désactivé'}`)
-    } catch {
-      toast.error('Erreur lors du changement de statut')
+      const res = await apiClient.patch(`/admin/users/${id}/status`, { status: newStatus })
+      setStatus(res.data.status)
+      toast.success(`Compte ${newStatus === 'ACTIVE' ? 'activé' : 'désactivé'} avec succès`)
+    } catch (err) {
+      const msg = err.response?.data?.error || err.response?.data?.message || 'Erreur lors du changement de statut'
+      toast.error(typeof msg === 'string' ? msg : JSON.stringify(msg))
     }
   }
 
@@ -233,7 +260,7 @@ export default function DetailClient() {
       {/* ── Header ── */}
       <PageHeader title={fullName}>
         <PageHeader.DangerBtn icon="delete" onClick={() => setDeleteConfirm(true)}>Supprimer</PageHeader.DangerBtn>
-        <PageHeader.SecondaryBtn icon="mail" onClick={() => toast.info('Email envoyé !')}>Contacter</PageHeader.SecondaryBtn>
+        <PageHeader.SecondaryBtn icon="mail" onClick={() => setContactModal(true)}>Contacter</PageHeader.SecondaryBtn>
         <PageHeader.PrimaryBtn icon="save" onClick={handleSaveClick}>{saving ? 'Enregistrement...' : 'Sauvegarder'}</PageHeader.PrimaryBtn>
       </PageHeader>
 
@@ -527,7 +554,7 @@ export default function DetailClient() {
               <h3 className="text-sm font-bold text-slate-800">Actions rapides</h3>
             </div>
             <div className="p-4 space-y-2">
-              <button type="button" onClick={() => toast.info('Email envoyé !')} className="flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-slate-100 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all">
+              <button type="button" onClick={() => setContactModal(true)} className="flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-slate-100 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all">
                 <span className="material-symbols-outlined text-lg text-blue-500">mail</span>Envoyer un email
               </button>
               <button type="button" onClick={handleToggleStatus} className="flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-red-100 text-sm font-semibold text-red-600 hover:bg-red-50 transition-all">
@@ -603,6 +630,57 @@ export default function DetailClient() {
               <button onClick={handleSave} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-brand hover:bg-brand/90 transition-colors flex items-center justify-center gap-2">
                 <span className="material-symbols-outlined text-lg">check</span>
                 Confirmer
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+      {/* ── Contact Modal ── */}
+      {contactModal && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setContactModal(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-0 overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="flex flex-col px-8 pt-8 pb-2">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-blue-600 text-xl">mail</span>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-800">Contacter {fullName}</h3>
+                  <p className="text-xs text-slate-400">{email}</p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Sujet <span className="text-red-500">*</span></label>
+                  <input
+                    value={contactSubject}
+                    onChange={e => setContactSubject(e.target.value)}
+                    placeholder="Ex: Information sur votre commande"
+                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Message <span className="text-red-500">*</span></label>
+                  <textarea
+                    value={contactMessage}
+                    onChange={e => setContactMessage(e.target.value)}
+                    placeholder="Bonjour, nous vous contactons au sujet de..."
+                    rows={5}
+                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand transition-all resize-none"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-3 px-8 py-6">
+              <button onClick={() => { setContactModal(false); setContactSubject(''); setContactMessage('') }}
+                className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
+                Annuler
+              </button>
+              <button onClick={handleContactSend} disabled={contactSending}
+                className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-60 transition-colors flex items-center justify-center gap-2">
+                <span className="material-symbols-outlined text-lg">send</span>
+                {contactSending ? 'Envoi...' : 'Envoyer'}
               </button>
             </div>
           </div>

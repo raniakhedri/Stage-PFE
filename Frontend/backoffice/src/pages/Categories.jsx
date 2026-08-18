@@ -6,6 +6,7 @@ import KpiCard from '../components/ui/KpiCard'
 import PageHeader from '../components/ui/PageHeader'
 import CustomSelect from '../components/ui/CustomSelect'
 import { categoryApi } from '../api/categoryApi'
+import { storefrontCategoryUrl } from '../lib/storefront'
 
 const statutMap = {
   'actif':     { bg: 'bg-badge/10 text-badge', label: 'ACTIF' },
@@ -40,7 +41,6 @@ export default function Categories() {
   const [filterVis, setFilterVis] = useState('Tous')
   const [filterNiveau, setFilterNiveau] = useState('Tous')
   const [expanded, setExpanded] = useState({})
-  const [previewCat, setPreviewCat] = useState(null)
 
   // ── Map API response → UI row ──────────────────────────────────
   const mapCategory = (cat) => {
@@ -57,7 +57,7 @@ export default function Categories() {
       parentId: cat.parentId || null,
       niveau: cat.niveau || 0,
       type: cat.type || 'Principale',
-      produits: 0,
+      produits: cat.productCount || 0,
       sousCategories: cat.childrenCount || 0,
       visibilite: vis,
       statut: cat.statut || 'actif',
@@ -87,10 +87,14 @@ export default function Categories() {
   const activeCats = categories.filter(c => c.statut === 'actif').length
   const maxNiveau = categories.reduce((m, c) => Math.max(m, c.niveau), 0)
 
+  const categorizedProducts = categories
+    .filter(c => c.niveau === 0)
+    .reduce((sum, c) => sum + (Number(c.produits) || 0), 0)
+
   const kpiData = [
     { label: 'Total Catégories', value: String(totalCats), sub: '', subColor: 'text-slate-400', icon: 'folder', iconBg: 'bg-slate-50 text-slate-500' },
     { label: 'Catégories Actives', value: String(activeCats), sub: totalCats ? `${Math.round(activeCats/totalCats*100)}% total` : '0%', subColor: 'text-slate-400', icon: 'check_circle', iconBg: 'bg-badge/10 text-badge' },
-    { label: 'Produits Catégorisés', value: '—', sub: '', subColor: 'text-slate-400', icon: 'inventory_2', iconBg: 'bg-blue-50 text-blue-500' },
+    { label: 'Produits Catégorisés', value: String(categorizedProducts), sub: '', subColor: 'text-slate-400', icon: 'inventory_2', iconBg: 'bg-blue-50 text-blue-500' },
     { label: 'Niveaux Max', value: String(maxNiveau + 1), sub: `${maxNiveau + 1} niveaux`, subColor: 'text-slate-400', icon: 'account_tree', iconBg: 'bg-purple-50 text-purple-500' },
   ]
 
@@ -252,7 +256,7 @@ export default function Categories() {
                 <span className="material-symbols-outlined text-amber-400 text-sm">star</span>
               )}
               {cat.sousCategories > 0 && (
-                <span className="text-[10px] text-slate-400 font-medium">({cat.sousCategories})</span>
+                <span className="text-[10px] text-slate-400 font-medium" title="Sous-catégories">({cat.sousCategories})</span>
               )}
             </div>
             <p className="text-[11px] text-slate-400 font-mono">{cat.slug}</p>
@@ -296,10 +300,16 @@ export default function Categories() {
               {cat.statut === 'actif' ? 'toggle_on' : 'toggle_off'}
             </span>
           </button>
-          {/* Preview */}
-          <button onClick={() => setPreviewCat(cat)} title="Voir sur le site" className="p-1 rounded text-slate-400 hover:text-blue-500 hover:bg-blue-50 transition-colors">
+          {/* Preview on storefront */}
+          <a
+            href={storefrontCategoryUrl(cat.slug)}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Voir sur le site"
+            className="p-1 rounded text-slate-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"
+          >
             <span className="material-symbols-outlined text-lg">language</span>
-          </button>
+          </a>
           {/* Modifier */}
           <button onClick={() => navigate(`/categories/edit/${cat.id}`)} title="Modifier" className="p-1 rounded text-slate-400 hover:text-brand hover:bg-brand/10 transition-colors">
             <span className="material-symbols-outlined text-lg">edit</span>
@@ -419,132 +429,6 @@ export default function Categories() {
           </div>
         </div>
       </div>
-      {/* Preview Modal — Mega Menu */}
-      {previewCat && (() => {
-        // Build tree: only ACTIVE parent categories sorted by ordre (live)
-        const mainCats = categories.filter(c => !c.parentId && c.statut === 'actif').sort((a, b) => a.ordre - b.ordre)
-        const getChildrenSorted = (parentId) => categories.filter(c => c.parentId === parentId && c.statut === 'actif').sort((a, b) => a.ordre - b.ordre)
-        // If the previewed category is a child, highlight its parent
-        const activePId = previewCat.parentId || previewCat.id
-        const activeSubs = getChildrenSorted(activePId)
-        const activeParent = categories.find(c => c.id === activePId)
-
-        const defaultImages = [
-          { src: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAJQhRHs1LQR4UNja_x9yQVfMHehbR_t-JIfaodRdtY4gD7xGXGYbDNbH-ZCjVj1sU49UMJXNID8_gK5ixOXUkbYLuzVxLgTPbANWWA2NpnrSIENSDMeJsLgfI1QUzOlJNQUTPl2j8tVCGCDACAE7tPOyL4kvRBflemJSgA3d0NwSMzcRM1pW5KLD6S7bzKTsRzULtqXAaOuHxp-w4FuDUR8tNF8ONTrEdN6diqAnSmhNObnBhxOo-AEEcbNdaznDnWjEB7h2blfdBD', title: 'NOUVELLE COLLECTION', sub: 'EXPLORE NOW' },
-          { src: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDcrZZpKULBR9lw_-0agerJ7Vlll61-gUQyag-3Ntn5s3sS3Lpeooo8T53p3a3C_fKNy_9Q_RldRM90HQ9xyxFUv1guhMdxJ28Uw-So7asGh_Xu06SPKCCzNSWHOB2TqbBi2zzrPsmEwucnLlkktTwgWC3IBsrSR1gKeeGPzf0HUQZDgs0LiMKJrA4XGCQhwYJcJv0EinPAF2xa_4Yn104m57zyiCSyPlbVdP3XD4aUCjjDKTXlOzg12fnCKHqTMg_PrC8FbHaSjY-d', title: 'SPRING SUMMER 2026', sub: 'THE LOOKBOOK' },
-        ]
-
-        const parentImg = activeParent?.img
-        const images = parentImg
-          ? [{ src: parentImg, title: (activeParent?.nom || '').toUpperCase(), sub: 'DÉCOUVRIR' }, defaultImages[1]]
-          : defaultImages
-
-        return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setPreviewCat(null)}>
-            <div className="bg-white rounded-2xl shadow-2xl w-[94vw] max-w-6xl h-[88vh] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
-              {/* Modal Header — same original style */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50 rounded-t-2xl">
-                <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-brand">storefront</span>
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-800">Aperçu Front Office — Menu</h3>
-                    <p className="text-[11px] text-slate-400">Vue en direct · L'ordre et les modifications se reflètent immédiatement</p>
-                  </div>
-                </div>
-                <button onClick={() => setPreviewCat(null)} className="p-1.5 rounded-lg hover:bg-slate-200 transition-colors">
-                  <span className="material-symbols-outlined text-slate-500">close</span>
-                </button>
-              </div>
-
-              {/* Mega Menu inside the card */}
-              <div className="flex-1 flex flex-col overflow-hidden bg-white">
-                {/* Fake nav bar */}
-                <nav className="flex justify-between items-center px-8 py-4 border-b border-slate-100 shrink-0">
-                  <div className="flex items-center gap-3 flex-1">
-                    <span className="material-symbols-outlined text-[20px] text-slate-800">search</span>
-                    <span className="text-[11px] tracking-[0.15em] font-medium uppercase text-slate-400">SEARCH</span>
-                  </div>
-                  <div className="flex-1 flex justify-center">
-                    <div className="flex flex-col items-center gap-0.5">
-                      <span className="text-2xl font-black tracking-[0.15em] uppercase text-[#005b3d]">NATUR</span>
-                      <span className="text-[9px] font-medium tracking-[0.35em] uppercase text-[#005b3d]">ESSENCE</span>
-                    </div>
-                  </div>
-                  <div className="flex-1 flex justify-end items-center gap-5">
-                    <span className="material-symbols-outlined text-[20px] text-slate-800">person</span>
-                    <span className="material-symbols-outlined text-[20px] text-slate-800">shopping_bag</span>
-                    <span className="material-symbols-outlined text-[20px] text-slate-800">close</span>
-                  </div>
-                </nav>
-
-                {/* 3-column mega menu content */}
-                <div className="flex-1 flex flex-col md:flex-row gap-8 px-8 pt-8 pb-6 overflow-y-auto">
-                  {/* Column 1: Main Categories */}
-                  <div className="md:w-[28%] flex flex-col">
-                    <nav className="flex flex-col space-y-1">
-                      {mainCats.map((cat) => (
-                        <button
-                          key={cat.id}
-                          onMouseEnter={() => setPreviewCat(cat)}
-                          className={`text-left font-black text-3xl xl:text-4xl tracking-tighter transition-colors duration-300 leading-tight ${
-                            (cat.id === activePId) ? 'text-slate-900' : 'text-slate-300 hover:text-slate-900'
-                          }`}
-                        >
-                          {cat.nom.toUpperCase()}
-                        </button>
-                      ))}
-                    </nav>
-                    <div className="mt-auto pt-8 flex flex-col space-y-2 text-[11px] tracking-[0.1em] text-slate-400">
-                      <span>AIDE</span>
-                      <span>MON COMPTE</span>
-                      <span>CONNEXION</span>
-                    </div>
-                  </div>
-
-                  {/* Column 2: Sub-categories */}
-                  <div className="md:w-[22%] pt-1">
-                    <h2 className="text-[10px] tracking-[0.2em] font-medium text-slate-400 mb-6 uppercase">
-                      SEASON 2026 / {(activeParent?.nom || previewCat.nom).toUpperCase()}
-                    </h2>
-                    <nav className="flex flex-col space-y-3 text-[13px] tracking-widest uppercase">
-                      {activeSubs.length > 0 ? activeSubs.map((sub, i) => (
-                        <span
-                          key={sub.id}
-                          className={`${i === 0 ? 'text-slate-900 font-bold' : 'text-slate-500'}`}
-                        >
-                          {sub.nom}
-                        </span>
-                      )) : (
-                        <span className="text-slate-900 font-bold">TOUT VOIR</span>
-                      )}
-                      <div className="pt-6">
-                        <span className="text-[10px] tracking-[0.2em] border-b border-slate-800 pb-1 inline-block">VIEW ALL</span>
-                      </div>
-                    </nav>
-                  </div>
-
-                  {/* Column 3: Editorial Images */}
-                  <div className="md:w-[50%] grid grid-cols-2 gap-3">
-                    {images.map((img, i) => (
-                      <div key={`${activePId}-${i}`} className="relative aspect-[3/4] group overflow-hidden bg-slate-100 rounded-lg">
-                        <img
-                          className="w-full h-full object-cover grayscale brightness-90 group-hover:scale-105 transition-transform duration-700"
-                          src={img.src}
-                          alt={img.title}
-                        />
-                        <div className="absolute bottom-0 left-0 w-full p-5 bg-gradient-to-t from-black/40 to-transparent">
-                          <h3 className="text-white text-lg font-black tracking-tighter uppercase">{img.title}</h3>
-                          <p className="text-white/80 text-[10px] tracking-[0.15em] mt-1">{img.sub}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )
-      })()}
       {/* Delete Confirmation Modal */}
       {deleteConfirm && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setDeleteConfirm(null)}>

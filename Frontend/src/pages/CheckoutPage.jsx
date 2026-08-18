@@ -24,13 +24,26 @@ async function fetchTvaConfig() {
   return res.json();
 }
 
+function extractApiError(payload, fallback) {
+  if (!payload) return fallback;
+  if (typeof payload.error === 'string') return payload.error;
+  if (typeof payload.message === 'string') return payload.message;
+  if (payload.error && typeof payload.error === 'object') {
+    return Object.values(payload.error).filter(Boolean).join(', ');
+  }
+  return fallback;
+}
+
 async function createPaymentIntent(amount, orderReference) {
   const res = await fetch(`${API}/stripe/payment-intent`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ amount, orderReference }),
   });
-  if (!res.ok) throw new Error('Stripe error');
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(extractApiError(err, 'Erreur lors de la création du paiement'));
+  }
   return res.json();
 }
 
@@ -53,7 +66,7 @@ async function placeOrder(payload) {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || err.message || 'Erreur commande');
+    throw new Error(extractApiError(err, 'Erreur commande'));
   }
   return res.json();
 }
@@ -263,7 +276,7 @@ export default function CheckoutPage() {
         setClientSecret(cs);
         setStep('payment');
       } catch (err) {
-        setError('Erreur lors de la création du paiement. Veuillez réessayer.');
+        setError(err.message || 'Erreur lors de la création du paiement. Veuillez réessayer.');
       } finally {
         setLoading(false);
       }

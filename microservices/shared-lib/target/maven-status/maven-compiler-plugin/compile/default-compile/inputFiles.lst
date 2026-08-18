@@ -1,3 +1,4 @@
+C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\exception\GlobalExceptionHandler.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\dto\request\ReturnPolicyRequest.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\entity\ShippingZone.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\dto\request\RegisterRequest.java
@@ -33,6 +34,7 @@ C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\natu
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\dto\request\UpdateUserRequest.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\enums\Gender.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\enums\AccountStatus.java
+C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\dto\analytics\UserFeaturesDTO.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\dto\response\CategoryResponse.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\dto\request\ReturnRequestDTO.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\dto\request\UpdatePermissionsRequest.java
@@ -43,9 +45,11 @@ C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\natu
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\dto\request\CategoryRequest.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\repository\BannerRepository.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\repository\TvaRateRepository.java
+C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\security\JwtUtil.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\dto\response\MessageResponse.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\dto\request\TvaRateRequest.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\dto\response\ProductStatsResponse.java
+C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\dto\request\ContactUserRequest.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\dto\request\SegmentRequest.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\repository\PointsTransactionRepository.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\dto\request\NewsletterRequest.java
@@ -78,6 +82,7 @@ C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\natu
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\entity\Product.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\dto\request\UpdateProfileRequest.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\entity\Coupon.java
+C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\security\JwtAuthenticationFilter.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\dto\response\PromotionStatsResponse.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\repository\CouponUsageRepository.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\dto\response\ReturnPolicyResponse.java
@@ -101,6 +106,7 @@ C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\natu
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\dto\request\CouponRequest.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\enums\ClientSegment.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\repository\ReturnRequestRepository.java
+C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\dto\response\UserFeaturesDTO.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\dto\request\DiscountRequest.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\entity\TvaConfig.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\dto\response\ReturnResponse.java

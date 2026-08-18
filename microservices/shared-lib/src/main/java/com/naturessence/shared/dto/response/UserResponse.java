@@ -2,18 +2,20 @@ package com.naturessence.shared.dto.response;
 
 import com.naturessence.shared.enums.AccountStatus;
 import com.naturessence.shared.enums.Gender;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Map;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
+@NoArgsConstructor
 @AllArgsConstructor
 public class UserResponse {
+
     private Long id;
     private String firstName;
     private String lastName;

@@ -1,7 +1,17 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Leaf } from 'lucide-react';
+import { fetchFooterCategories } from '../api/apiClient';
 
 export default function Footer() {
+  const [navCats, setNavCats] = useState([]);
+
+  useEffect(() => {
+    fetchFooterCategories()
+      .then((cats) => setNavCats(cats))
+      .catch(() => setNavCats([]));
+  }, []);
+
   return (
     <footer className="w-full py-12 px-6 md:px-24 grid grid-cols-1 md:grid-cols-4 gap-8 bg-[#163328] text-[#FEF8F3] mt-12">
       <div className="space-y-4">
@@ -18,10 +28,13 @@ export default function Footer() {
         <h4 className="font-headline font-bold text-sm uppercase tracking-widest mb-4 text-gold">Navigation</h4>
         <ul className="space-y-2 text-sm opacity-60 font-body">
           <li><Link to="/" className="hover:text-gold hover:opacity-100 transition-all">Accueil</Link></li>
-          <li><Link to="/categories/essentielles" className="hover:text-gold hover:opacity-100 transition-all">Essentielles</Link></li>
-          <li><Link to="/categories/vegetales" className="hover:text-gold hover:opacity-100 transition-all">Végétales</Link></li>
-          <li><Link to="/categories/actifs" className="hover:text-gold hover:opacity-100 transition-all">Actifs</Link></li>
-          <li><Link to="/categories/beurres" className="hover:text-gold hover:opacity-100 transition-all">Beurres</Link></li>
+          {navCats.map((c) => (
+            <li key={c.slug}>
+              <Link to={`/categories/${c.slug}`} className="hover:text-gold hover:opacity-100 transition-all">
+                {c.name}
+              </Link>
+            </li>
+          ))}
         </ul>
       </div>
 
@@ -38,26 +51,13 @@ export default function Footer() {
 
       <div className="space-y-4">
         <h4 className="font-headline font-bold text-sm uppercase tracking-widest mb-4 text-gold">Newsletter</h4>
-        <p className="text-xs opacity-60 mb-4">Restez informé de nos nouveautés et recevez nos formulations exclusives.</p>
-        <div className="flex">
+        <p className="text-sm opacity-60 font-body">Recevez nos conseils botaniques et offres exclusives.</p>
+        <div className="flex gap-2">
           <input
             type="email"
-            className="bg-white/10 border-none rounded-l-lg text-sm w-full focus:ring-1 focus:ring-gold px-4 py-2"
-            placeholder="votre@email.com"
+            placeholder="Votre email"
+            className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm placeholder:text-white/40 focus:outline-none focus:border-gold"
           />
-          <button className="bg-gold text-primary px-4 py-2 rounded-r-lg font-bold text-sm hover:opacity-90 transition-opacity">
-            OK
-          </button>
-        </div>
-      </div>
-
-      <div className="md:col-span-4 pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4">
-        <span className="text-xs opacity-40">© 2026 NaturEssence. Tous droits réservés.</span>
-        <div className="flex gap-4 text-xs opacity-40">
-          <span>Visa</span>
-          <span>Mastercard</span>
-          <span>PayPal</span>
-          <span>Apple Pay</span>
         </div>
       </div>
     </footer>

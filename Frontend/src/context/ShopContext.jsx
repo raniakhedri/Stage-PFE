@@ -67,10 +67,10 @@ export function ShopProvider({ children }) {
     setCart(prev => {
       const existing = prev.find(i => i.id === product.id);
       if (existing) {
-        showToast(`Quantité mise à jour — ${product.nom || product.name}`, 'cart');
+        showToast(`Quantité mise à jour — ${product.name}`, 'cart');
         return prev.map(i => i.id === product.id ? { ...i, qty: i.qty + qty } : i);
       }
-      showToast(`${product.nom || product.name} ajouté au panier`, 'cart');
+      showToast(`${product.name} ajouté au panier`, 'cart');
       return [...prev, { ...product, qty }];
     });
   }, [showToast]);
@@ -96,10 +96,10 @@ export function ShopProvider({ children }) {
     setWishlist(prev => {
       const exists = prev.find(i => i.id === product.id);
       if (exists) {
-        showToast(`${product.nom || product.name} retiré des favoris`, 'wishlist');
+        showToast(`${product.name} retiré des favoris`, 'wishlist');
         return prev.filter(i => i.id !== product.id);
       }
-      showToast(`${product.nom || product.name} ajouté aux favoris`, 'wishlist');
+      showToast(`${product.name} ajouté aux favoris`, 'wishlist');
       return [...prev, product];
     });
     return { requiresLogin: false };

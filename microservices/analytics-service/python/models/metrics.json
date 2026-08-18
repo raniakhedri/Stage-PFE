@@ -1,0 +1,23 @@
+{
+  "model": "RandomForestClassifier",
+  "n_estimators": 300,
+  "accuracy": 0.8733,
+  "roc_auc": 0.9501,
+  "cv_roc_auc_mean": 0.9472,
+  "cv_roc_auc_std": 0.0026,
+  "train_size": 9600,
+  "test_size": 2400,
+  "churn_rate": 0.5629,
+  "top_features": {
+    "days_since_last_login": 0.23216313897620364,
+    "order_frequency": 0.20699070475882744,
+    "loyalty_points": 0.11463632314697494,
+    "total_orders": 0.09234675721316099,
+    "total_spent": 0.07364359126682937,
+    "avg_rating": 0.05452703799307652,
+    "tenure_days": 0.049002451699959135,
+    "avg_order_value": 0.0314815140679251,
+    "review_count": 0.027657928495931166,
+    "age": 0.026473972864539414
+  }
+}

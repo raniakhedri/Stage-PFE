@@ -65,7 +65,24 @@ const RETURN_REASONS = [
   'Autre',
 ];
 
-function ReturnModal({ order, item, existingReturnIds, onClose, onSuccess }) {
+const RETURN_RESULT = {
+  FERME: {
+    title: 'Retour refusé',
+    subtitle: 'Votre demande de retour a été traitée et refusée.',
+    icon: XCircle,
+    iconWrap: 'bg-red-50',
+    iconClass: 'text-red-500',
+  },
+  REMBOURSE: {
+    title: 'Retour accepté',
+    subtitle: 'Votre demande a été acceptée et le remboursement a été effectué.',
+    icon: CheckCircle,
+    iconWrap: 'bg-emerald-50',
+    iconClass: 'text-emerald-500',
+  },
+};
+
+function ReturnModal({ order, item, existingReturns, onClose, onSuccess }) {
   const [raison, setRaison] = useState(RETURN_REASONS[0]);
   const [commentaire, setCommentaire] = useState('');
   const [duplicate, setDuplicate] = useState(false);
@@ -75,7 +92,10 @@ function ReturnModal({ order, item, existingReturnIds, onClose, onSuccess }) {
   const [error, setError] = useState('');
   const [policy, setPolicy] = useState(null);
 
-  const alreadyReturned = existingReturnIds.includes(item.id);
+  const existingReturn = (existingReturns || []).find(r => r.orderItemId === item.id);
+  const alreadyReturned = Boolean(existingReturn);
+  const processedReturn = existingReturn && RETURN_RESULT[existingReturn.status];
+  const ResultIcon = processedReturn?.icon;
   const needsIban = policy?.modeRemboursement === 'Virement bancaire';
   const duree = policy?.dureeJours ?? 30;
   const windowStart = order.deliveredAt || null;
@@ -150,11 +170,36 @@ function ReturnModal({ order, item, existingReturnIds, onClose, onSuccess }) {
         {/* Scrollable body */}
         <div className="px-6 py-5 overflow-y-auto max-h-[calc(100vh-200px)]">
           {alreadyReturned || duplicate ? (
-            <div className="text-center py-8">
-              <RefreshCw size={32} className="mx-auto text-emerald-500 mb-3" />
-              <p className="font-semibold text-primary">Retour déjà soumis</p>
-              <p className="text-sm text-secondary mt-1">Une demande de retour existe déjà pour cet article.</p>
-            </div>
+            processedReturn ? (
+              <div className="text-center py-6 px-2">
+                <div className={`w-14 h-14 rounded-full ${processedReturn.iconWrap} flex items-center justify-center mx-auto mb-4`}>
+                  <ResultIcon size={28} className={processedReturn.iconClass} />
+                </div>
+                <p className="font-semibold text-primary text-base">{processedReturn.title}</p>
+                <p className="text-sm text-secondary mt-2">{processedReturn.subtitle}</p>
+                {existingReturn.reference && (
+                  <p className="text-xs text-secondary mt-2">Référence : <strong className="text-primary">{existingReturn.reference}</strong></p>
+                )}
+                {existingReturn.status === 'FERME' && existingReturn.motifRefus && (
+                  <div className="mt-4 text-left bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+                    <p className="text-xs font-semibold text-red-700 mb-1">Motif du refus</p>
+                    <p className="text-sm text-red-700">{existingReturn.motifRefus}</p>
+                  </div>
+                )}
+                {existingReturn.status === 'REMBOURSE' && existingReturn.ibanClient && (
+                  <p className="text-xs text-emerald-700 mt-3">Virement vers : <span className="font-mono">{existingReturn.ibanClient}</span></p>
+                )}
+                <Link to="/retours" className="inline-flex items-center gap-1.5 mt-5 text-sm font-semibold text-primary hover:underline">
+                  Voir mes retours <ArrowRight size={14} />
+                </Link>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <RefreshCw size={32} className="mx-auto text-emerald-500 mb-3" />
+                <p className="font-semibold text-primary">Retour déjà soumis</p>
+                <p className="text-sm text-secondary mt-1">Une demande de retour existe déjà pour cet article.</p>
+              </div>
+            )
           ) : isExpired ? (
             <div className="text-center py-10 px-4">
               <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
@@ -582,7 +627,7 @@ function OrderCard({ order, onReviewSuccess, myReturnItemIds, myReturns, onRetur
         <ReturnModal
           order={order}
           item={returnItem}
-          existingReturnIds={myReturnItemIds || []}
+          existingReturns={myReturns || []}
           onClose={() => setReturnItem(null)}
           onSuccess={() => { setReturnItem(null); onReturnSuccess?.(); }}
         />

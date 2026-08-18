@@ -26,29 +26,47 @@ async function authRequest(path, options = {}) {
 
 // ── Categories ──────────────────────────────────────────────────────────────
 
-export async function fetchCategories() {
-  const cats = await request('/categories/homepage');
-  return cats.map(mapCategory);
-}
-
-export async function fetchCategoryBySlug(slug) {
-  const cats = await request('/categories');
-  const cat = cats.find((c) => c.slug === slug);
-  if (!cat) return null;
-  return mapCategory(cat);
+function normalizeSlug(slug) {
+  return String(slug || '').replace(/^\/+/, '').replace(/\/+$/, '');
 }
 
 function mapCategory(c) {
   return {
     id: c.id,
-    slug: c.slug,
+    slug: normalizeSlug(c.slug),
     name: c.nom,
     description: c.description || '',
     image: c.imageUrl || '',
     heroImage: c.imageUrl || '',
     subcategories: (c.children || []).map((ch) => ch.nom),
-    productCount: c.childrenCount || 0,
+    productCount: Number(c.productCount) || 0,
+    visMenu: Boolean(c.visMenu),
+    visHomepage: Boolean(c.visHomepage),
+    visFooter: Boolean(c.visFooter),
   };
+}
+
+export async function fetchCategories() {
+  const cats = await request('/categories/homepage');
+  return cats.map(mapCategory);
+}
+
+export async function fetchMenuCategories() {
+  const cats = await request('/categories/menu');
+  return cats.map(mapCategory);
+}
+
+export async function fetchFooterCategories() {
+  const cats = await request('/categories/footer');
+  return cats.map(mapCategory);
+}
+
+export async function fetchCategoryBySlug(slug) {
+  const cats = await request('/categories');
+  const wanted = normalizeSlug(slug);
+  const cat = cats.find((c) => normalizeSlug(c.slug) === wanted);
+  if (!cat) return null;
+  return mapCategory(cat);
 }
 
 // ── Products ────────────────────────────────────────────────────────────────
@@ -63,7 +81,8 @@ function slugifyCategory(name) {
 export async function fetchProductsByCategory(categorySlug) {
   // First resolve category slug to parent id
   const cats = await request('/categories');
-  const cat = cats.find((c) => c.slug === categorySlug);
+  const wanted = normalizeSlug(categorySlug);
+  const cat = cats.find((c) => normalizeSlug(c.slug) === wanted);
   if (!cat) return [];
   const products = await request(`/products/parent-category/${cat.id}`);
   return products.map(mapProduct);
@@ -227,7 +246,7 @@ function mapBanner(b) {
     id: b.id,
     title: b.titre || '',
     subtitle: b.sousTitre || '',
-    badgeText: b.badgeTexte || 'Nouvelle Collection',
+    badgeText: b.badgeTexte || '',
     badgeBgColor: b.badgeBgColor || 'rgba(255,255,255,0.15)',
     badgeTextColor: b.badgeTextColor || '#ffffff',
     alignement: b.alignement || 'center',

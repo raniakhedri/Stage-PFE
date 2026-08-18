@@ -25,6 +25,8 @@
         <module>order-service</module>
         <module>marketing-service</module>
         <module>api-gateway</module>
+        <module>analytics-service</module>
+
     </modules>
 
     <properties>

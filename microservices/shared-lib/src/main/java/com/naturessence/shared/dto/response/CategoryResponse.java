@@ -23,6 +23,7 @@ public class CategoryResponse {
     private String type;
     private int niveau;
     private long childrenCount;
+    private long productCount;
     private List<CategoryResponse> children;
 
     // Visibility

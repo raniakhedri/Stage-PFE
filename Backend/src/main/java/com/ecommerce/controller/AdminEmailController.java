@@ -1,5 +1,6 @@
 package com.ecommerce.controller;
 
+import com.ecommerce.dto.request.ContactUserRequest;
 import com.ecommerce.dto.request.NewsletterRequest;
 import com.ecommerce.dto.response.EmailStatsResponse;
 import com.ecommerce.dto.response.MessageResponse;
@@ -9,6 +10,7 @@ import com.ecommerce.enums.AccountStatus;
 import com.ecommerce.repository.SegmentRepository;
 import com.ecommerce.repository.UserRepository;
 import com.ecommerce.service.EmailService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -86,5 +88,23 @@ public class AdminEmailController {
         emailService.sendNewsletter(recipients, req.getSubject(), req.getHtmlContent());
         return ResponseEntity.ok(new MessageResponse(
                 "Newsletter envoyée à " + recipients.size() + " client(s) en arrière-plan."));
+    }
+
+    @PostMapping("/contact/{userId}")
+    public ResponseEntity<MessageResponse> contactUser(
+            @PathVariable Long userId,
+            @Valid @RequestBody ContactUserRequest req) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Utilisateur introuvable: " + userId));
+
+        if (user.getEmail() == null || user.getEmail().isBlank()) {
+            return ResponseEntity.badRequest()
+                    .body(new MessageResponse("Cet utilisateur n'a pas d'adresse email."));
+        }
+
+        emailService.sendContactEmail(user, req.getSubject(), req.getMessage());
+        return ResponseEntity.ok(new MessageResponse(
+                "Email envoyé à " + user.getFirstName() + " " + user.getLastName() + " (" + user.getEmail() + ")."));
     }
 }

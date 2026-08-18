@@ -39,53 +39,35 @@ export default function HomePage() {
     }
   };
 
-  const fallbackHero = {
-    id: 'fallback',
-    title: "L'Âme Pure des Plantes",
-    subtitle: "Découvrez nos extraits botaniques d'exception, sourcés de manière éthique pour sublimer vos rituels de soin quotidiens.",
-    badgeText: 'Nouvelle Collection',
-    badgeBgColor: 'rgba(255,255,255,0.15)',
-    badgeTextColor: '#ffffff',
-    alignement: 'left',
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAWVj8BZ8_Z5-wxdOSa_VKdUM7tzna6WHwcuUNavG640Vu2uF5ahJosCOKcencohIQ2Q9B9PQZUlOtvYnmJyLK9gH547ehL4CI4rMKvWvFCiWeBLCwvKbLAlLpNUgE9CbAnLUA4svNg_mmVXPLxsDSKk-qPCXaRclrE_WgBT4YZXObzOpIO1QojV5wpblFdtRMo7WBCzxK8-6xHCLKMf_D1Eb2harWRydo6AUswLJo-CCRReJE5NfsEekZ624Og1OCAxiKISuHZp8Tp',
-    mobileImageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAWVj8BZ8_Z5-wxdOSa_VKdUM7tzna6WHwcuUNavG640Vu2uF5ahJosCOKcencohIQ2Q9B9PQZUlOtvYnmJyLK9gH547ehL4CI4rMKvWvFCiWeBLCwvKbLAlLpNUgE9CbAnLUA4svNg_mmVXPLxsDSKk-qPCXaRclrE_WgBT4YZXObzOpIO1QojV5wpblFdtRMo7WBCzxK8-6xHCLKMf_D1Eb2harWRydo6AUswLJo-CCRReJE5NfsEekZ624Og1OCAxiKISuHZp8Tp',
-    videoUrl: '',
-    ctaText: 'Découvrir la collection',
-    ctaType: 'categorie',
-    ctaLink: '/categories/essentielles',
-    durationSeconds: 5,
-    animation: 'fade',
-  };
-
-  const currentHero = heroBanners[heroIndex] || fallbackHero;
+  const currentHero = heroBanners[heroIndex] || null;
   const hasMultipleBanners = heroBanners.length > 1;
-  const linkValue = currentHero.ctaLink || '/';
-  const isExternalCta = currentHero.ctaType === 'lien-externe' || /^https?:\/\//i.test(linkValue);
+  const linkValue = currentHero?.ctaLink || '/';
+  const isExternalCta = currentHero?.ctaType === 'lien-externe' || /^https?:\/\//i.test(linkValue);
   const isInternalCta = !isExternalCta;
-  const isYouTubeVideo = /youtube\.com|youtu\.be/i.test(currentHero.videoUrl || '');
+  const isYouTubeVideo = /youtube\.com|youtu\.be/i.test(currentHero?.videoUrl || '');
 
   const heroAlignmentClass =
-    currentHero.alignement === 'center'
+    currentHero?.alignement === 'center'
       ? 'items-center text-center'
-      : currentHero.alignement === 'right'
+      : currentHero?.alignement === 'right'
         ? 'items-end text-right ml-auto'
         : 'items-start text-left';
 
   const heroCtaAlignmentClass =
-    currentHero.alignement === 'center'
+    currentHero?.alignement === 'center'
       ? 'justify-center'
-      : currentHero.alignement === 'right'
+      : currentHero?.alignement === 'right'
         ? 'justify-end'
         : 'justify-start';
 
   const heroAnimationClass =
-    currentHero.animation === 'slide'
+    currentHero?.animation === 'slide'
       ? 'hero-anim-slide'
-      : currentHero.animation === 'zoom'
+      : currentHero?.animation === 'zoom'
         ? 'hero-anim-zoom'
-        : currentHero.animation === 'ken-burns'
+        : currentHero?.animation === 'ken-burns'
           ? 'hero-anim-ken-burns'
-          : currentHero.animation === 'blur'
+          : currentHero?.animation === 'blur'
             ? 'hero-anim-blur'
             : 'hero-anim-fade';
 
@@ -98,9 +80,9 @@ export default function HomePage() {
     return isHex || isRgb || isHsl ? v : fallback;
   };
 
-  const heroBadgeText = currentHero.badgeText || fallbackHero.badgeText;
-  const heroBadgeBgColor = toSafeCssColor(currentHero.badgeBgColor, fallbackHero.badgeBgColor);
-  const heroBadgeTextColor = toSafeCssColor(currentHero.badgeTextColor, fallbackHero.badgeTextColor);
+  const heroBadgeText = currentHero?.badgeText || '';
+  const heroBadgeBgColor = toSafeCssColor(currentHero?.badgeBgColor, 'rgba(255,255,255,0.15)');
+  const heroBadgeTextColor = toSafeCssColor(currentHero?.badgeTextColor, '#ffffff');
 
   const goToPrevBanner = () => {
     if (!heroBanners.length) return;
@@ -143,18 +125,19 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    if (!hasMultipleBanners) return;
+    if (!hasMultipleBanners || !currentHero) return;
     const durationMs = Math.max(2, Number(currentHero.durationSeconds || 5)) * 1000;
     const timer = setTimeout(() => {
       setHeroIndex((prev) => (prev + 1) % heroBanners.length);
     }, durationMs);
 
     return () => clearTimeout(timer);
-  }, [hasMultipleBanners, currentHero.durationSeconds, heroBanners.length, heroIndex]);
+  }, [hasMultipleBanners, currentHero?.durationSeconds, heroBanners.length, heroIndex]);
 
   return (
     <>
-      {/* Hero Section */}
+      {/* Hero Section — only from back-office banners */}
+      {currentHero && (
       <section className="relative h-screen w-full overflow-hidden">
         <div className="w-full h-full relative group overflow-hidden">
           {currentHero.videoUrl ? (
@@ -181,33 +164,40 @@ export default function HomePage() {
             <picture key={`${currentHero.id}-${heroIndex}`} className={`block w-full h-full ${heroAnimationClass}`}>
               <source
                 media="(max-width: 768px)"
-                srcSet={currentHero.mobileImageUrl || currentHero.imageUrl || fallbackHero.mobileImageUrl}
+                srcSet={currentHero.mobileImageUrl || currentHero.imageUrl}
               />
               <img
                 className="w-full h-full object-cover brightness-90"
-                src={currentHero.imageUrl || fallbackHero.imageUrl}
+                src={currentHero.imageUrl}
                 alt={currentHero.title || 'Bannière NaturEssence'}
               />
             </picture>
           )}
           <div className="absolute inset-0 bg-gradient-to-r from-primary/70 to-transparent flex items-center px-8 md:px-20">
             <div className={`max-w-2xl text-white flex flex-col ${heroAlignmentClass}`}>
-              <span
-                className="inline-block px-3 py-1 rounded-full backdrop-blur-md text-xs font-body tracking-widest uppercase mb-6"
-                style={{ backgroundColor: heroBadgeBgColor, color: heroBadgeTextColor }}
-              >
-                {heroBadgeText}
-              </span>
-              <h1 className="text-4xl md:text-7xl font-headline font-bold leading-tight mb-8">
-                {currentHero.title || fallbackHero.title}
-              </h1>
-              <p className="text-lg text-white/80 mb-10 max-w-lg font-light leading-relaxed">
-                {currentHero.subtitle || fallbackHero.subtitle}
-              </p>
+              {heroBadgeText && (
+                <span
+                  className="inline-block px-3 py-1 rounded-full backdrop-blur-md text-xs font-body tracking-widest uppercase mb-6"
+                  style={{ backgroundColor: heroBadgeBgColor, color: heroBadgeTextColor }}
+                >
+                  {heroBadgeText}
+                </span>
+              )}
+              {currentHero.title && (
+                <h1 className="text-4xl md:text-7xl font-headline font-bold leading-tight mb-8">
+                  {currentHero.title}
+                </h1>
+              )}
+              {currentHero.subtitle && (
+                <p className="text-lg text-white/80 mb-10 max-w-lg font-light leading-relaxed">
+                  {currentHero.subtitle}
+                </p>
+              )}
+              {currentHero.ctaText && (
               <div className={`flex gap-4 flex-wrap ${heroCtaAlignmentClass}`}>
                 {isInternalCta ? (
                   <Link to={linkValue} className="btn-liquid bg-primary text-on-primary px-8 py-4 rounded-lg font-medium transition-all shadow-xl">
-                    {currentHero.ctaText || 'Découvrir la collection'}
+                    {currentHero.ctaText}
                   </Link>
                 ) : (
                   <a
@@ -216,11 +206,11 @@ export default function HomePage() {
                     rel="noopener noreferrer"
                     className="btn-liquid bg-primary text-on-primary px-8 py-4 rounded-lg font-medium transition-all shadow-xl"
                   >
-                    {currentHero.ctaText || 'Découvrir la collection'}
+                    {currentHero.ctaText}
                   </a>
                 )}
-              
               </div>
+              )}
             </div>
           </div>
 
@@ -260,6 +250,7 @@ export default function HomePage() {
           )}
         </div>
       </section>
+      )}
 
       {/* Categories Grid */}
       <section className="py-24 px-6 md:px-12">
@@ -288,9 +279,11 @@ export default function HomePage() {
             <span className="text-xs font-body uppercase tracking-widest text-secondary mb-2 block">Incontournables</span>
             <h2 className="text-4xl font-headline font-bold text-primary">Meilleures Ventes</h2>
           </div>
-          <Link to="/categories/essentielles" className="text-primary font-bold text-sm border-b-2 border-gold pb-1 hover:text-secondary transition-colors">
-            Voir tout →
-          </Link>
+          {categories[0] && (
+            <Link to={`/categories/${categories[0].slug}`} className="text-primary font-bold text-sm border-b-2 border-gold pb-1 hover:text-secondary transition-colors">
+              Voir tout →
+            </Link>
+          )}
         </div>
         <div className="flex gap-6 overflow-x-auto px-6 md:px-12 hide-scrollbar pb-8">
           {featuredProducts.map((product) => (

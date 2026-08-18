@@ -93,12 +93,14 @@ public class ReturnService {
                 .stream().map(this::mapToResponse).toList();
     }
 
+    @Transactional(readOnly = true)
     public ReturnResponse getReturnById(Long id) {
         ReturnRequest rr = returnRequestRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Demande de retour introuvable"));
         return mapToResponse(rr);
     }
 
+    @Transactional
     public ReturnResponse updateStatus(Long id, String newStatus, String motifRefus) {
         ReturnRequest rr = returnRequestRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Demande de retour introuvable"));

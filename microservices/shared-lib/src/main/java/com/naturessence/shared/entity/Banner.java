@@ -43,8 +43,7 @@ public class Banner {
     private String videoUrl;
 
     @Column(name = "badge_texte")
-    @Builder.Default
-    private String badgeTexte = "Nouvelle Collection";
+    private String badgeTexte;
 
     @Column(name = "badge_bg_color")
     @Builder.Default

@@ -34,6 +34,7 @@ public class UserService {
     private final AuthService authService;
     private final RefreshTokenRepository refreshTokenRepository;
     private final CouponUsageRepository couponUsageRepository;
+    private final EmailService emailService;
 
     // ── Admin: Create user ────────────────────────────────────────────────────
     @Transactional
@@ -54,9 +55,11 @@ public class UserService {
                     .orElseThrow(() -> new RuntimeException("Segment par défaut NOUVEAU introuvable"));
         }
 
+        String rawTempPassword = null;
         String encodedPassword;
         if (request.isSendInvite() || request.getPassword() == null || request.getPassword().isBlank()) {
-            encodedPassword = passwordEncoder.encode("TempPass@" + System.currentTimeMillis());
+            rawTempPassword = "NaturEssence@" + (System.currentTimeMillis() % 100000);
+            encodedPassword = passwordEncoder.encode(rawTempPassword);
         } else {
             encodedPassword = passwordEncoder.encode(request.getPassword());
         }
@@ -80,6 +83,12 @@ public class UserService {
                 .build();
 
         user = userRepository.save(user);
+
+        // Send invite email if requested
+        if (request.isSendInvite() && rawTempPassword != null) {
+            emailService.sendAccountInvite(user, rawTempPassword);
+        }
+
         return authService.mapToUserResponse(user);
     }
 

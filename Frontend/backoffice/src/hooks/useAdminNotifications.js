@@ -9,6 +9,26 @@ function isOverdue(createdAt) {
   return new Date(createdAt).getTime() < cutoff;
 }
 
+function isPendingReturn(status) {
+  const s = String(status || '').toUpperCase();
+  return s === 'EN_ATTENTE' || s === 'PENDING';
+}
+
+function isPendingReview(statut) {
+  const s = String(statut || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return s === 'EN_ATTENTE' || s === 'EN ATTENTE';
+}
+
+async function safeGet(path) {
+  try {
+    const { data } = await apiClient.get(path);
+    return Array.isArray(data) ? data : [];
+  } catch (err) {
+    console.error(`[AdminNotifications] ${path} failed:`, err?.response?.status || err.message);
+    return [];
+  }
+}
+
 export function useAdminNotifications() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -17,65 +37,63 @@ export function useAdminNotifications() {
     setLoading(true);
     const results = [];
 
-    try {
-      // ── Out-of-stock products ────────────────────────────────────────────
-      const { data: products } = await apiClient.get('/admin/products');
-      const oos = (Array.isArray(products) ? products : []).filter(p => p.stock === 0 && p.statut !== 'ARCHIVE');
-      oos.forEach(p => results.push({
-        id:       `oos-${p.id}`,
-        type:     'stock',
-        icon:     'inventory_2',
-        title:    'Rupture de stock',
-        message:  p.nom,
-        link:     `/produits/edit/${p.id}`,
+    const [products, returns, orders, reviews] = await Promise.all([
+      safeGet('/admin/products'),
+      safeGet('/admin/returns'),
+      safeGet('/admin/orders'),
+      safeGet('/admin/reviews'),
+    ]);
+
+    products
+      .filter((p) => p.stock === 0 && String(p.statut || '').toLowerCase() !== 'archive')
+      .forEach((p) => results.push({
+        id: `oos-${p.id}`,
+        type: 'stock',
+        icon: 'inventory_2',
+        title: 'Rupture de stock',
+        message: p.nom,
+        link: `/produits/edit/${p.id}`,
         severity: 'error',
       }));
 
-      // ── Pending returns (EN_ATTENTE) ─────────────────────────────────────
-      const { data: returns } = await apiClient.get('/admin/returns');
-      const pending = (Array.isArray(returns) ? returns : []).filter(r => r.status === 'EN_ATTENTE');
-      pending.forEach(r => results.push({
-        id:       `ret-${r.id}`,
-        type:     'return',
-        icon:     'keyboard_return',
-        title:    'Retour en attente',
-        message:  `${r.customerName} — ${r.productName}`,
-        link:     `/retours`,
+    returns
+      .filter((r) => isPendingReturn(r.status || r.statut))
+      .forEach((r) => results.push({
+        id: `ret-${r.id}`,
+        type: 'return',
+        icon: 'keyboard_return',
+        title: 'Retour en attente',
+        message: `${r.customerName || 'Client'} — ${r.productName || ''}`.trim(),
+        link: `/retours`,
         severity: 'warning',
       }));
 
-      // ── Overdue orders (EN_ATTENTE / EN_PREPARATION for > 24 h) ─────────
-      const { data: orders } = await apiClient.get('/admin/orders');
-      const overdue = (Array.isArray(orders) ? orders : []).filter(
-        o =>
-          (o.status === 'EN_ATTENTE' || o.status === 'EN_PREPARATION') &&
-          isOverdue(o.createdAt)
-      );
-      overdue.forEach(o => results.push({
-        id:       `ord-${o.id}`,
-        type:     'order',
-        icon:     'schedule',
-        title:    'Commande non traitée (>24h)',
-        message:  `${o.reference} — ${o.firstName} ${o.lastName}`,
-        link:     `/commandes/${o.id}`,
+    orders
+      .filter((o) =>
+        (o.status === 'EN_ATTENTE' || o.status === 'EN_PREPARATION') &&
+        isOverdue(o.createdAt)
+      )
+      .forEach((o) => results.push({
+        id: `ord-${o.id}`,
+        type: 'order',
+        icon: 'schedule',
+        title: 'Commande non traitée (>24h)',
+        message: `${o.reference || ''} — ${o.firstName || ''} ${o.lastName || ''}`.trim(),
+        link: `/commandes/${o.id}`,
         severity: 'warning',
       }));
 
-      // ── Pending reviews awaiting moderation ──────────────────────────────
-      const { data: reviews } = await apiClient.get('/admin/reviews');
-      const pendingReviews = (Array.isArray(reviews) ? reviews : []).filter(r => r.statut === 'EN_ATTENTE');
-      pendingReviews.forEach(r => results.push({
-        id:       `rev-${r.id}`,
-        type:     'review',
-        icon:     'rate_review',
-        title:    'Avis en attente de modération',
-        message:  `${r.clientName} — ${r.productName}`,
-        link:     `/avis`,
+    reviews
+      .filter((r) => isPendingReview(r.statut))
+      .forEach((r) => results.push({
+        id: `rev-${r.id}`,
+        type: 'review',
+        icon: 'rate_review',
+        title: 'Avis en attente de modération',
+        message: `${r.clientName || 'Client'} — ${r.productName || ''}`.trim(),
+        link: `/avis`,
         severity: 'info',
       }));
-    } catch (err) {
-      console.error('[AdminNotifications] fetch error:', err);
-    }
 
     setNotifications(results);
     setLoading(false);

@@ -23,7 +23,7 @@ public class BannerRequest {
 
     private String videoUrl;
 
-    private String badgeTexte = "Nouvelle Collection";
+    private String badgeTexte;
 
     private String badgeBgColor = "rgba(255,255,255,0.15)";
 

@@ -1,0 +1,6 @@
+com\naturessence\analytics\config\SecurityConfig.class
+com\naturessence\analytics\controller\ChurnController.class
+com\naturessence\analytics\AnalyticsApplication.class
+com\naturessence\analytics\service\ChurnPredictionService.class
+com\naturessence\analytics\service\FeatureExtractionService$1.class
+com\naturessence\analytics\service\FeatureExtractionService.class

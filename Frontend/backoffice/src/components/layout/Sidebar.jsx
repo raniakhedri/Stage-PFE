@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAdminNotifications } from '../../hooks/useAdminNotifications'
+import { STOREFRONT_URL } from '../../lib/storefront'
 
 const navItems = [
   { path: '/dashboard',      label: 'Tableau de bord',  icon: 'dashboard',        moduleKey: 'TABLEAU_DE_BORD' },
@@ -289,7 +290,9 @@ function Sidebar() {
         </div>
 
         <a
-          href="http://localhost:3001"
+          href={STOREFRONT_URL}
+          target="_blank"
+          rel="noopener noreferrer"
           className="w-full flex items-center gap-3 px-4 py-2 text-slate-600 hover:bg-slate-50 hover:text-sidebar rounded-lg transition-all"
         >
           {showIcons && <span className="material-symbols-outlined text-[20px]">language</span>}

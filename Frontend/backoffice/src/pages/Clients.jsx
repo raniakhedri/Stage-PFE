@@ -208,14 +208,15 @@ export default function Clients() {
   const toggleStatus = async (client) => {
     const newStatus = client.status === 'ACTIVE' ? 'BLOCKED' : 'ACTIVE'
     try {
-      await apiClient.put(`/admin/users/${client.id}`, { status: newStatus })
+      await apiClient.patch(`/admin/users/${client.id}/status`, { status: newStatus })
       toast.success(`Compte "${client.firstName} ${client.lastName}" ${newStatus === 'ACTIVE' ? 'activé' : 'désactivé'}.`)
       fetchClients()
       // Refresh stats too
       const statsRes = await apiClient.get('/admin/users/stats')
       setStats(statsRes.data)
-    } catch {
-      toast.error('Erreur lors de la mise à jour du statut')
+    } catch (err) {
+      const msg = err.response?.data?.error || err.response?.data?.message || 'Erreur lors de la mise à jour du statut'
+      toast.error(typeof msg === 'string' ? msg : JSON.stringify(msg))
     }
   }
 

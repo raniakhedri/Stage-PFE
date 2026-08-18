@@ -37,7 +37,7 @@ export function ToastProvider({ children }) {
               style={{ animation: 'toastIn 0.3s ease-out' }}
             >
               <span className="text-base shrink-0">{style.icon}</span>
-              <span>{message}</span>
+              <span>{toast.message}</span>
             </div>
           );
         })}

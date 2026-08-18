@@ -165,7 +165,7 @@ export default function Bannieres() {
     imageUrl: banner.imageUrl || null,
     mobileImageUrl: banner.mobileImageUrl || null,
     videoUrl: banner.videoUrl || null,
-    badgeTexte: banner.badgeTexte || 'Nouvelle Collection',
+    badgeTexte: banner.badgeTexte || '',
     badgeBgColor: banner.badgeBgColor || 'rgba(255,255,255,0.15)',
     badgeTextColor: banner.badgeTextColor || '#ffffff',
     ctaTexte: banner.ctaTexte || '',
@@ -603,12 +603,14 @@ export default function Bannieres() {
             {/* Hero content */}
             <div className="absolute inset-0 z-[4] flex items-center px-8 md:px-20">
               <div className={`max-w-2xl text-white flex flex-col ${previewAlignmentClass}`}>
+                {previewBanner.badgeTexte && (
                 <span
                   className="inline-block px-3 py-1 rounded-full backdrop-blur-md text-xs font-body tracking-widest uppercase mb-6"
                   style={{ backgroundColor: badgeBg, color: badgeText }}
                 >
-                  {previewBanner.badgeTexte || 'Nouvelle Collection'}
+                  {previewBanner.badgeTexte}
                 </span>
+                )}
                 <h1 className="text-4xl md:text-7xl font-headline font-bold leading-tight mb-8">
                   {previewBanner.titre || "L'Âme Pure des Plantes"}
                 </h1>

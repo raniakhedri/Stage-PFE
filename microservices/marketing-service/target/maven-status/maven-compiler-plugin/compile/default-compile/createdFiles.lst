@@ -1,1 +1,11 @@
+com\naturessence\marketing\controller\AdminAppearanceController.class
+com\naturessence\marketing\service\AppearanceService.class
+com\naturessence\marketing\config\SecurityConfig.class
 com\naturessence\marketing\MarketingServiceApplication.class
+com\naturessence\marketing\controller\PublicBannerController.class
+com\naturessence\marketing\controller\AdminEmailController.class
+com\naturessence\marketing\config\AsyncConfig.class
+com\naturessence\marketing\service\EmailService.class
+com\naturessence\marketing\service\BannerService.class
+com\naturessence\marketing\controller\PublicAppearanceController.class
+com\naturessence\marketing\controller\AdminBannerController.class

@@ -4,6 +4,7 @@ import { toast } from 'react-toastify'
 import CustomSelect from '../components/ui/CustomSelect'
 import PageHeader from '../components/ui/PageHeader'
 import { categoryApi } from '../api/categoryApi'
+import CategoryStorefrontPreview from '../components/CategoryStorefrontPreview'
 
 // ── Reusable helpers ──────────────────────────────────────────────────────────
 function Toggle({ checked, onChange }) {
@@ -544,164 +545,20 @@ export default function EditCategorie() {
 
         {/* ── Right Column (1/3) — Sticky Aperçu ───────────────────── */}
         <div className="lg:sticky lg:top-[88px] lg:self-start space-y-6">
-
-          {/* ── Aperçu Front Office (MEGA MENU PREVIEW) ─────────── */}
-          <div className="bg-white rounded-custom border border-slate-200 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
-              <span className="material-symbols-outlined text-brand text-lg">storefront</span>
-              <h2 className="text-sm font-bold text-slate-700">Aperçu Front Office</h2>
-              <span className="ml-auto relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand/60 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-brand"></span>
-              </span>
-            </div>
-            <div className="p-4">
-              {/* Mini mega-menu replica */}
-              <div className="rounded-lg border border-slate-200 bg-white overflow-hidden shadow-sm">
-                {/* Fake top nav bar */}
-                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-white">
-                  <span className="material-symbols-outlined text-slate-400 text-sm">search</span>
-                  <div className="flex flex-col items-center">
-                    <span className="text-[10px] font-black tracking-[0.12em] text-[#005b3d]">NATUR</span>
-                    <span className="text-[5px] tracking-[0.25em] text-[#005b3d]">ESSENCE</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-slate-400 text-[10px]">person</span>
-                    <span className="material-symbols-outlined text-slate-400 text-[10px]">shopping_bag</span>
-                  </div>
-                </div>
-
-                {/* Mega menu body */}
-                <div className="flex gap-0 bg-white" style={{ minHeight: 220 }}>
-                  {/* Col 1: Main categories */}
-                  <div className="w-[38%] py-3 pl-3 pr-2 flex flex-col gap-0.5">
-                    {(() => {
-                      const editId = Number(id)
-                      const rootCats = allCats.filter(c => !c.parentId).sort((a, b) => (a.menuPosition || 0) - (b.menuPosition || 0))
-
-                      if (type === 'Principale') {
-                        // Remove edited category, then splice it at the chosen position
-                        const others = rootCats.filter(c => c.id !== editId)
-                        const editedName = (nom || 'CATÉGORIE').toUpperCase()
-                        const editedEntry = { id: editId, nom: editedName, isEdited: true }
-                        const items = [...others]
-                        const insertIdx = Math.min(menuPosition - 1, items.length)
-                        items.splice(insertIdx, 0, editedEntry)
-
-                        return items.map((c) => (
-                          <span key={c.id} className={`text-[${c.isEdited ? '13' : '11'}px] font-black tracking-tight leading-tight ${c.isEdited ? 'text-[#1a1a1a]' : 'text-slate-300'}`}>
-                            {c.isEdited ? editedName : c.nom.toUpperCase()}
-                          </span>
-                        ))
-                      } else {
-                        return rootCats.length > 0
-                          ? rootCats.map(c => (
-                            <span key={c.id} className={`text-[${c.id === selectedParent?.id ? '13' : '11'}px] font-black tracking-tight leading-tight ${c.id === selectedParent?.id ? 'text-[#1a1a1a]' : 'text-slate-300'}`}>
-                              {c.nom.toUpperCase()}
-                            </span>
-                          ))
-                          : <span className="text-[13px] font-black tracking-tight text-[#1a1a1a] leading-tight">PARENT</span>
-                      }
-                    })()}
-
-                    <div className="mt-auto pt-3 flex flex-col gap-0.5">
-                      <span className="text-[6px] tracking-wider text-slate-300 uppercase">AIDE</span>
-                      <span className="text-[6px] tracking-wider text-slate-300 uppercase">MON COMPTE</span>
-                    </div>
-                  </div>
-
-                  {/* Col 2: Season + sub-categories */}
-                  <div className="w-[28%] py-3 pr-1">
-                    <p className="text-[5px] tracking-[0.15em] text-slate-400 mb-2 uppercase">
-                      SEASON 2026 / {type === 'Principale' ? (nom || 'CATÉGORIE').toUpperCase() : (selectedParent?.nom || 'PARENT').toUpperCase()}
-                    </p>
-                    <div className="flex flex-col gap-1">
-                      {(() => {
-                        const editId = Number(id)
-
-                        if (type === 'Secondaire') {
-                          // Remove edited, then splice at chosen position
-                          const allSiblings = allCats
-                            .filter(c => c.parentId === selectedParent?.id)
-                            .sort((a, b) => (a.menuPosition || 0) - (b.menuPosition || 0))
-                          const others = allSiblings.filter(c => c.id !== editId)
-                          const editedName = (nom || 'SOUS-CAT').toUpperCase()
-                          const editedEntry = { id: editId, nom: editedName, isEdited: true }
-                          const items = [...others]
-                          const insertIdx = Math.min(menuPosition - 1, items.length)
-                          items.splice(insertIdx, 0, editedEntry)
-
-                          return items.map(c => {
-                            return (
-                              <span key={c.id} className={`text-[7px] tracking-wider uppercase ${c.isEdited ? 'font-bold text-[#1a1a1a] bg-amber-50 px-1 rounded' : 'text-slate-400'}`}>
-                                {c.isEdited ? editedName : c.nom.toUpperCase()}
-                              </span>
-                            )
-                          })
-                        } else {
-                          // Root category: show its children
-                          const children = allCats
-                            .filter(c => c.parentId === editId)
-                            .sort((a, b) => (a.menuPosition || 0) - (b.menuPosition || 0))
-                            .slice(0, 6)
-                          return children.length > 0
-                            ? children.map(c => (
-                              <span key={c.id} className="text-[7px] tracking-wider uppercase text-slate-400">{c.nom.toUpperCase()}</span>
-                            ))
-                            : <span className="text-[7px] tracking-wider uppercase text-slate-300 italic">Sous-catégories...</span>
-                        }
-                      })()}
-                    </div>
-                  </div>
-
-                  {/* Col 3: Editorial images */}
-                  <div className="w-[34%] py-2 pr-2 grid grid-cols-2 gap-1">
-                    <div className="relative rounded overflow-hidden bg-slate-100 aspect-[3/4]">
-                      {imagePreview ? (
-                        <img src={imagePreview} alt="" className="w-full h-full object-cover grayscale brightness-90" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <span className="material-symbols-outlined text-slate-300 text-lg">image</span>
-                        </div>
-                      )}
-                      <div className="absolute bottom-0 left-0 w-full p-1.5 bg-gradient-to-t from-black/50 to-transparent">
-                        <p className="text-[6px] font-black text-white tracking-tight uppercase leading-tight">NOUVELLE COLLECTION</p>
-                        <p className="text-[4px] text-white/80 tracking-wider">EXPLORE NOW</p>
-                      </div>
-                    </div>
-                    <div className="relative rounded overflow-hidden bg-slate-100 aspect-[3/4]">
-                      {imagePreview ? (
-                        <img src={imagePreview} alt="" className="w-full h-full object-cover grayscale brightness-75" style={{ objectPosition: 'center 30%' }} />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <span className="material-symbols-outlined text-slate-300 text-lg">image</span>
-                        </div>
-                      )}
-                      <div className="absolute bottom-0 left-0 w-full p-1.5 bg-gradient-to-t from-black/50 to-transparent">
-                        <p className="text-[6px] font-black text-white tracking-tight uppercase leading-tight">SPRING SUMMER 2026</p>
-                        <p className="text-[4px] text-white/80 tracking-wider">THE LOOKBOOK</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Info badges below preview */}
-              <div className="flex flex-wrap gap-1.5 mt-3">
-                {visMenu && (
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-brand bg-brand/10 px-2 py-0.5 rounded-full">Menu #{menuPosition}</span>
-                )}
-                {visHomepage && (
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-brand bg-brand/5 px-2 py-0.5 rounded-full">Homepage</span>
-                )}
-              </div>
-
-              <p className="text-[10px] text-slate-400 text-center mt-3 flex items-center justify-center gap-1">
-                <span className="material-symbols-outlined text-xs">info</span>
-                Aperçu en temps réel — tel que vu sur le site
-              </p>
-            </div>
-          </div>
+          <CategoryStorefrontPreview
+            allCats={allCats}
+            nom={nom}
+            slug={slug}
+            type={type}
+            parentId={selectedParent?.id || null}
+            menuPosition={menuPosition}
+            visMenu={visMenu}
+            visFooter={visFooter}
+            visHomepage={visHomepage}
+            visMobile={visMobile}
+            imageUrl={imagePreview || ''}
+            currentId={Number(id)}
+          />
         </div>
       </form>
     </div>

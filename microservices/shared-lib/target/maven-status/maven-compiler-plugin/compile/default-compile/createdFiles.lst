@@ -9,6 +9,7 @@ com\naturessence\shared\repository\ShippingZoneRepository.class
 com\naturessence\shared\repository\CouponUsageRepository.class
 com\naturessence\shared\dto\response\DashboardResponse$MonthlyData$MonthlyDataBuilder.class
 com\naturessence\shared\dto\response\CollectionResponse$CollectionResponseBuilder.class
+com\naturessence\shared\dto\response\UserFeaturesDTO.class
 com\naturessence\shared\repository\PointsTransactionRepository.class
 com\naturessence\shared\dto\response\CollectionResponse.class
 com\naturessence\shared\repository\TvaRateRepository.class
@@ -67,6 +68,7 @@ com\naturessence\shared\dto\response\ShippingZoneResponse.class
 com\naturessence\shared\dto\response\EmailStatsResponse$SegmentCount$SegmentCountBuilder.class
 com\naturessence\shared\entity\PointsTransaction.class
 com\naturessence\shared\dto\response\OrderItemResponse.class
+com\naturessence\shared\dto\request\ContactUserRequest.class
 com\naturessence\shared\dto\request\AdjustPointsRequest.class
 com\naturessence\shared\dto\response\DiscountResponse.class
 com\naturessence\shared\dto\response\PromotionStatsResponse.class
@@ -92,6 +94,7 @@ com\naturessence\shared\dto\response\CategoryResponse$CategoryResponseBuilder.cl
 com\naturessence\shared\entity\Product$ProductBuilder.class
 com\naturessence\shared\dto\request\OrderItemRequest.class
 com\naturessence\shared\dto\response\ShippingZoneResponse$ShippingZoneResponseBuilder.class
+com\naturessence\shared\security\JwtUtil.class
 com\naturessence\shared\dto\response\DashboardResponse$StockAlertItem$StockAlertItemBuilder.class
 com\naturessence\shared\repository\RefreshTokenRepository.class
 com\naturessence\shared\dto\request\LoginRequest.class
@@ -99,6 +102,7 @@ com\naturessence\shared\entity\Order$OrderBuilder.class
 com\naturessence\shared\enums\Gender.class
 com\naturessence\shared\dto\request\ShippingZoneRequest.class
 com\naturessence\shared\entity\Product.class
+com\naturessence\shared\security\JwtAuthenticationFilter.class
 com\naturessence\shared\entity\TvaConfig$TvaConfigBuilder.class
 com\naturessence\shared\entity\User$UserBuilder.class
 com\naturessence\shared\dto\response\OrderItemResponse$OrderItemResponseBuilder.class
@@ -120,6 +124,7 @@ com\naturessence\shared\enums\ReturnStatus.class
 com\naturessence\shared\dto\response\AppearanceResponse$AppearanceResponseBuilder.class
 com\naturessence\shared\dto\response\TvaConfigResponse.class
 com\naturessence\shared\entity\ProductVariant$ProductVariantBuilder.class
+com\naturessence\shared\dto\response\UserFeaturesDTO$UserFeaturesDTOBuilder.class
 com\naturessence\shared\entity\OrderItem$OrderItemBuilder.class
 com\naturessence\shared\enums\ClientSegment.class
 com\naturessence\shared\dto\response\TvaRateResponse$TvaRateResponseBuilder.class
@@ -132,6 +137,7 @@ com\naturessence\shared\dto\request\CategoryRequest.class
 com\naturessence\shared\entity\Collection$CollectionBuilder.class
 com\naturessence\shared\repository\SegmentRepository.class
 com\naturessence\shared\dto\response\BannerResponse.class
+com\naturessence\shared\exception\GlobalExceptionHandler.class
 com\naturessence\shared\dto\request\PaymentIntentRequest.class
 com\naturessence\shared\dto\request\AppearanceRequest.class
 com\naturessence\shared\entity\ReturnPolicy$ReturnPolicyBuilder.class
@@ -142,6 +148,7 @@ com\naturessence\shared\repository\ProductRepository.class
 com\naturessence\shared\dto\response\DashboardResponse$StockAlertItem.class
 com\naturessence\shared\entity\OrderItem.class
 com\naturessence\shared\enums\PaymentMethod.class
+com\naturessence\shared\dto\analytics\UserFeaturesDTO.class
 com\naturessence\shared\dto\response\EmailStatsResponse$SegmentCount.class
 com\naturessence\shared\dto\request\CreateUserRequest.class
 com\naturessence\shared\entity\TvaRate$TvaRateBuilder.class
@@ -151,6 +158,7 @@ com\naturessence\shared\dto\response\CouponResponse.class
 com\naturessence\shared\dto\response\DashboardResponse.class
 com\naturessence\shared\dto\response\SegmentResponse$SegmentResponseBuilder.class
 com\naturessence\shared\dto\response\ReturnPolicyResponse.class
+com\naturessence\shared\dto\analytics\UserFeaturesDTO$UserFeaturesDTOBuilder.class
 com\naturessence\shared\repository\CollectionRepository.class
 com\naturessence\shared\dto\response\ProductStatsResponse.class
 com\naturessence\shared\dto\request\RefreshTokenRequest.class

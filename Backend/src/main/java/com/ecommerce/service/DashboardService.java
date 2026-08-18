@@ -8,6 +8,7 @@ import com.ecommerce.enums.ReturnStatus;
 import com.ecommerce.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.YearMonth;
@@ -26,6 +27,7 @@ public class DashboardService {
     private final ReviewRepository reviewRepository;
     private final CategoryRepository categoryRepository;
 
+    @Transactional(readOnly = true)
     public DashboardResponse getDashboard() {
         List<Order> allOrders = orderRepository.findAllByOrderByCreatedAtDesc();
         List<Product> allProducts = productRepository.findAllByOrderByCreatedAtDesc();

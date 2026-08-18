@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import CustomSelect from '../components/ui/CustomSelect'
 import PageHeader from '../components/ui/PageHeader'
 import { bannerApi } from '../api/bannerApi'
+import { productApi } from '../api/productApi'
+import { categoryApi } from '../api/categoryApi'
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 const Label = ({ children }) => <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">{children}</label>
@@ -82,6 +84,40 @@ const truncateText = (value, max, fallback) => {
   return text.length > max ? `${text.slice(0, max - 1)}…` : text
 }
 
+const normalizeSlug = (slug) => String(slug || '').replace(/^\/+/, '').replace(/\/+$/, '')
+
+const productLink = (p) => `/produits/${normalizeSlug(p.slug)}`
+const categoryLink = (c) => `/categories/${normalizeSlug(c.slug)}`
+
+const slugFromPath = (path, prefix) => {
+  const raw = String(path || '').trim()
+  const re = new RegExp(`^\\/?${prefix}\\/(.+)$`)
+  const m = raw.match(re)
+  return m ? normalizeSlug(m[1]) : ''
+}
+
+const flattenCategories = (cats) => {
+  const out = []
+  const walk = (list) => {
+    (Array.isArray(list) ? list : []).forEach((c) => {
+      if (c) out.push(c)
+      if (c?.children?.length) walk(c.children)
+    })
+  }
+  walk(cats)
+  const seen = new Set()
+  return out.filter((c) => {
+    if (c?.id == null || seen.has(c.id)) return false
+    seen.add(c.id)
+    return true
+  })
+}
+
+const isUsableStatus = (statut) => {
+  const s = String(statut || '').toUpperCase()
+  return !['ARCHIVE', 'ARCHIVED', 'INACTIF', 'INACTIVE', 'DESACTIVE', 'DEACTIVATED', 'DRAFT'].includes(s)
+}
+
 // ── Component ──────────────────────────────────────────────────────────────────
 export default function AjouterBanniere() {
   const navigate = useNavigate()
@@ -99,7 +135,7 @@ export default function AjouterBanniere() {
   const [titre, setTitre] = useState('')
   const [sousTitre, setSousTitre] = useState('')
   const [alignement, setAlignement] = useState('center')
-  const [badgeTexte, setBadgeTexte] = useState('Nouvelle Collection')
+  const [badgeTexte, setBadgeTexte] = useState('')
   const [badgeBgColor, setBadgeBgColor] = useState('rgba(255,255,255,0.15)')
   const [badgeTextColor, setBadgeTextColor] = useState('#ffffff')
 
@@ -107,6 +143,9 @@ export default function AjouterBanniere() {
   const [ctaTexte, setCtaTexte] = useState('')
   const [ctaType, setCtaType] = useState('produit')
   const [ctaLien, setCtaLien] = useState('')
+  const [ctaSearch, setCtaSearch] = useState('')
+  const [allProducts, setAllProducts] = useState([])
+  const [allCategories, setAllCategories] = useState([])
 
   // ─ Position
   const [position, setPosition] = useState('HOMEPAGE_HERO')
@@ -159,9 +198,90 @@ export default function AjouterBanniere() {
   const previewTitle = truncateText(titre, previewDeviceIsMobile ? 30 : 58, 'Titre de la bannière')
   const previewSubtitle = truncateText(sousTitre, previewDeviceIsMobile ? 40 : 85, 'Sous-titre de la bannière')
   const previewCtaText = truncateText(ctaTexte, previewDeviceIsMobile ? 20 : 30, 'Bouton CTA')
-  const previewBadgeText = truncateText(badgeTexte, previewDeviceIsMobile ? 24 : 32, 'Nouvelle Collection')
+  const previewBadgeText = truncateText(badgeTexte, previewDeviceIsMobile ? 24 : 32, '')
   const badgePreviewBg = toSafeCssColor(badgeBgColor, 'rgba(255,255,255,0.15)')
   const badgePreviewText = toSafeCssColor(badgeTextColor, '#ffffff')
+
+  // ─ Catalogs for CTA picker
+  useEffect(() => {
+    Promise.all([productApi.getAll(), categoryApi.getAll()])
+      .then(([prods, cats]) => {
+        setAllProducts(Array.isArray(prods) ? prods : [])
+        setAllCategories(flattenCategories(cats))
+      })
+      .catch(() => {
+        setAllProducts([])
+        setAllCategories([])
+      })
+  }, [])
+
+  const selectableProducts = useMemo(
+    () => allProducts.filter((p) => p?.slug && isUsableStatus(p.statut)),
+    [allProducts]
+  )
+  const selectableCategories = useMemo(
+    () => allCategories.filter((c) => c?.slug && isUsableStatus(c.statut)),
+    [allCategories]
+  )
+
+  const selectedProduct = useMemo(() => {
+    if (ctaType !== 'produit') return null
+    const slug = slugFromPath(ctaLien, 'produits')
+    if (!slug) return null
+    return allProducts.find((p) => normalizeSlug(p.slug) === slug) || null
+  }, [ctaType, ctaLien, allProducts])
+
+  const selectedCategory = useMemo(() => {
+    if (ctaType !== 'categorie') return null
+    const slug = slugFromPath(ctaLien, 'categories')
+    if (!slug) return null
+    return allCategories.find((c) => normalizeSlug(c.slug) === slug) || null
+  }, [ctaType, ctaLien, allCategories])
+
+  const filteredProducts = useMemo(() => {
+    const q = ctaSearch.trim().toLowerCase()
+    const list = !q
+      ? selectableProducts
+      : selectableProducts.filter((p) =>
+          [p.nom, p.sku, p.slug, p.categoryNom, p.parentCategoryNom]
+            .filter(Boolean)
+            .some((v) => String(v).toLowerCase().includes(q))
+        )
+    return list.slice(0, 40)
+  }, [selectableProducts, ctaSearch])
+
+  const filteredCategories = useMemo(() => {
+    const q = ctaSearch.trim().toLowerCase()
+    const list = !q
+      ? selectableCategories
+      : selectableCategories.filter((c) =>
+          [c.nom, c.slug, c.parentNom]
+            .filter(Boolean)
+            .some((v) => String(v).toLowerCase().includes(q))
+        )
+    return list.slice(0, 40)
+  }, [selectableCategories, ctaSearch])
+
+  const handleCtaTypeChange = (next) => {
+    setCtaType(next)
+    setCtaSearch('')
+    if (next !== ctaType) setCtaLien('')
+  }
+
+  const selectProduct = (p) => {
+    setCtaLien(productLink(p))
+    setCtaSearch('')
+  }
+
+  const selectCategory = (c) => {
+    setCtaLien(categoryLink(c))
+    setCtaSearch('')
+  }
+
+  const clearCtaTarget = () => {
+    setCtaLien('')
+    setCtaSearch('')
+  }
 
   // ─ Load existing banner for edit mode
   useEffect(() => {
@@ -172,7 +292,7 @@ export default function AjouterBanniere() {
         setTitre(data.titre || '')
         setSousTitre(data.sousTitre || '')
         setAlignement(data.alignement || 'center')
-        setBadgeTexte(data.badgeTexte || 'Nouvelle Collection')
+        setBadgeTexte(data.badgeTexte || '')
         setBadgeBgColor(data.badgeBgColor || 'rgba(255,255,255,0.15)')
         setBadgeTextColor(data.badgeTextColor || '#ffffff')
         setDesktopImage(data.imageUrl || '')
@@ -232,11 +352,25 @@ export default function AjouterBanniere() {
     e.preventDefault()
     if (!titre.trim()) { toast.error('Le titre est obligatoire'); return }
 
+    const hasCta = Boolean(ctaTexte.trim() || ctaLien.trim())
+    if (hasCta && ctaType === 'produit' && !selectedProduct) {
+      toast.error('Sélectionnez un produit pour le bouton CTA')
+      return
+    }
+    if (hasCta && ctaType === 'categorie' && !selectedCategory) {
+      toast.error('Sélectionnez une catégorie pour le bouton CTA')
+      return
+    }
+    if (ctaType === 'lien-externe' && ctaLien.trim() && !/^https?:\/\//i.test(ctaLien.trim())) {
+      toast.error('Le lien externe doit commencer par http:// ou https://')
+      return
+    }
+
     const payload = {
       titre: titre.trim(),
       sousTitre: sousTitre.trim(),
       alignement,
-      badgeTexte: badgeTexte.trim() || 'Nouvelle Collection',
+      badgeTexte: badgeTexte.trim(),
       badgeBgColor: badgeBgColor.trim() || 'rgba(255,255,255,0.15)',
       badgeTextColor: badgeTextColor.trim() || '#ffffff',
       imageUrl: desktopImage || null,
@@ -469,12 +603,120 @@ export default function AjouterBanniere() {
                 </div>
                 <div>
                   <Label>Type</Label>
-                  <CustomSelect value={ctaType} onChange={setCtaType} options={ctaTypeOptions} />
+                  <CustomSelect value={ctaType} onChange={handleCtaTypeChange} options={ctaTypeOptions} />
                 </div>
-                <div>
-                  <Label>Lien de redirection</Label>
-                  <Input value={ctaLien} onChange={(e) => setCtaLien(e.target.value)} placeholder="/categorie/vestes ou https://..." />
-                </div>
+                {ctaType === 'lien-externe' ? (
+                  <div>
+                    <Label>Lien de redirection</Label>
+                    <Input
+                      value={ctaLien}
+                      onChange={(e) => setCtaLien(e.target.value)}
+                      placeholder="https://exemple.com"
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <Label>{ctaType === 'produit' ? 'Produit cible' : 'Catégorie cible'}</Label>
+                    {((ctaType === 'produit' && selectedProduct) || (ctaType === 'categorie' && selectedCategory)) ? (
+                      <div className="flex items-center gap-3 rounded-lg border border-brand/20 bg-brand/5 px-3 py-2.5">
+                        {ctaType === 'produit' && selectedProduct?.imageUrl ? (
+                          <img src={selectedProduct.imageUrl} alt="" className="h-10 w-10 rounded-md object-cover bg-slate-100 flex-shrink-0" />
+                        ) : ctaType === 'categorie' && selectedCategory?.imageUrl ? (
+                          <img src={selectedCategory.imageUrl} alt="" className="h-10 w-10 rounded-md object-cover bg-slate-100 flex-shrink-0" />
+                        ) : (
+                          <span className="h-10 w-10 rounded-md bg-slate-100 flex items-center justify-center flex-shrink-0">
+                            <span className="material-symbols-outlined text-slate-400 text-xl">
+                              {ctaType === 'produit' ? 'inventory_2' : 'category'}
+                            </span>
+                          </span>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-bold text-slate-800 truncate">
+                            {ctaType === 'produit' ? selectedProduct.nom : selectedCategory.nom}
+                          </p>
+                          <p className="text-[11px] text-slate-400 truncate font-mono">{ctaLien}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={clearCtaTarget}
+                          className="text-slate-400 hover:text-red-500 transition-colors flex-shrink-0"
+                          title="Changer"
+                        >
+                          <span className="material-symbols-outlined text-lg">close</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="border border-slate-200 rounded-lg bg-white overflow-hidden shadow-sm">
+                        <div className="p-3 border-b border-slate-100">
+                          <div className="relative">
+                            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
+                            <input
+                              value={ctaSearch}
+                              onChange={(e) => setCtaSearch(e.target.value)}
+                              placeholder={ctaType === 'produit' ? 'Nom, SKU ou catégorie…' : 'Nom de catégorie…'}
+                              className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand outline-none"
+                            />
+                          </div>
+                        </div>
+                        <div className="max-h-52 overflow-y-auto divide-y divide-slate-50">
+                          {ctaType === 'produit' && filteredProducts.map((p) => (
+                            <button
+                              key={p.id}
+                              type="button"
+                              onClick={() => selectProduct(p)}
+                              className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-slate-50 transition-colors"
+                            >
+                              {p.imageUrl ? (
+                                <img src={p.imageUrl} alt="" className="h-9 w-9 rounded-md object-cover bg-slate-100 flex-shrink-0" />
+                              ) : (
+                                <span className="h-9 w-9 rounded-md bg-slate-100 flex items-center justify-center flex-shrink-0">
+                                  <span className="material-symbols-outlined text-slate-400 text-base">inventory_2</span>
+                                </span>
+                              )}
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-medium text-slate-700 truncate">{p.nom}</p>
+                                <p className="text-[10px] text-slate-400 truncate">
+                                  {[p.sku, p.categoryNom].filter(Boolean).join(' · ')}
+                                </p>
+                              </div>
+                              {p.salePrice != null && (
+                                <span className="text-xs font-bold text-slate-600 flex-shrink-0">{Number(p.salePrice).toFixed(2)} DT</span>
+                              )}
+                            </button>
+                          ))}
+                          {ctaType === 'categorie' && filteredCategories.map((c) => (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => selectCategory(c)}
+                              className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-slate-50 transition-colors"
+                            >
+                              {c.imageUrl ? (
+                                <img src={c.imageUrl} alt="" className="h-9 w-9 rounded-md object-cover bg-slate-100 flex-shrink-0" />
+                              ) : (
+                                <span className="h-9 w-9 rounded-md bg-slate-100 flex items-center justify-center flex-shrink-0">
+                                  <span className="material-symbols-outlined text-slate-400 text-base">category</span>
+                                </span>
+                              )}
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-medium text-slate-700 truncate">{c.nom}</p>
+                                <p className="text-[10px] text-slate-400 truncate">
+                                  {c.parentNom ? `${c.parentNom} · ` : ''}{normalizeSlug(c.slug)}
+                                </p>
+                              </div>
+                            </button>
+                          ))}
+                          {ctaType === 'produit' && filteredProducts.length === 0 && (
+                            <p className="text-center text-slate-400 text-sm py-6">Aucun produit trouvé</p>
+                          )}
+                          {ctaType === 'categorie' && filteredCategories.length === 0 && (
+                            <p className="text-center text-slate-400 text-sm py-6">Aucune catégorie trouvée</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               <div>
                 <Label>Priorité d'affichage</Label>
@@ -732,12 +974,14 @@ export default function AjouterBanniere() {
 
                   <div className={`relative z-10 h-full flex items-center ${previewDeviceIsMobile ? 'px-3 py-2' : 'px-4 py-3'}`}>
                     <div className={`max-w-[88%] text-white flex flex-col gap-1 ${previewAlignmentClass}`}>
+                      {previewBadgeText && (
                       <span
                         className={`inline-block rounded-full px-2.5 py-1 font-bold uppercase tracking-wider ${previewDeviceIsMobile ? 'text-[7px]' : 'text-[9px]'}`}
                         style={{ backgroundColor: badgePreviewBg, color: badgePreviewText }}
                       >
                         {previewBadgeText}
                       </span>
+                      )}
                       <p className={`font-bold text-white drop-shadow ${previewDeviceIsMobile ? 'text-[11px] leading-[1.1]' : 'text-sm leading-tight'}`}>
                         {previewTitle}
                       </p>
