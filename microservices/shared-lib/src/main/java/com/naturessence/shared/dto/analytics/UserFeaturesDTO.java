@@ -38,6 +38,7 @@ public class UserFeaturesDTO {
 
     // ── Engagement ────────────────────────────────────────────────────────────
     private Long daysSinceLastLogin;
+    private Long daysSinceLastOrder;
     private Integer reviewCount;
     private Double avgRating;
 

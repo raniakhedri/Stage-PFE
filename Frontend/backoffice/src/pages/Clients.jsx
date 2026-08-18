@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import apiClient from '../api/apiClient'
+import { churnApi } from '../api/churnApi'
 import KpiCard from '../components/ui/KpiCard'
 import PageHeader from '../components/ui/PageHeader'
 import CustomSelect from '../components/ui/CustomSelect'
@@ -13,11 +14,12 @@ const statusConfig = {
   BLOCKED:  { label: 'Bloqué',  cls: 'bg-red-500 text-white' },
 }
 
-const defaultSegmentColors = {
-  NOUVEAU: 'bg-blue-50 text-blue-600 border border-blue-100',
-  FIDELE:  'bg-badge/10 text-badge border border-badge/10',
-  VIP:     'bg-amber-100 text-amber-700 border border-amber-200',
-  INACTIF: 'bg-slate-100 text-slate-500 border border-slate-200',
+const churnBadge = {
+  HIGH: { label: 'Risque élevé', cls: 'bg-red-100 text-red-700' },
+  MEDIUM: { label: 'Risque moyen', cls: 'bg-amber-100 text-amber-700' },
+  LOW: { label: 'Risque faible', cls: 'bg-emerald-100 text-emerald-700' },
+  INSUFFICIENT_HISTORY: { label: 'Pas assez d’historique', cls: 'bg-slate-100 text-slate-500' },
+  UNAVAILABLE: { label: '—', cls: 'bg-slate-50 text-slate-400' },
 }
 
 // ── Commandes Modal (placeholder – no orders backend yet) ─────────────────────
@@ -132,6 +134,7 @@ export default function Clients() {
   const [totalPages, setTotalPages] = useState(0)
 
   const [commandesClient, setCommandesClient] = useState(null)
+  const [churnByUser, setChurnByUser] = useState({})
 
   // ── Segment map for display ───────────────────────
   const segmentMap = {}
@@ -198,6 +201,28 @@ export default function Clients() {
   useEffect(() => {
     fetchClients()
   }, [fetchClients])
+
+  useEffect(() => {
+    const ids = clients.map((c) => c.id).filter(Boolean)
+    if (!ids.length) {
+      setChurnByUser({})
+      return
+    }
+    let cancelled = false
+    churnApi.getBatchIds(ids)
+      .then((data) => {
+        if (cancelled) return
+        const map = {}
+        ;(data.predictions || []).forEach((p) => {
+          map[p.userId] = p
+        })
+        setChurnByUser(map)
+      })
+      .catch(() => {
+        if (!cancelled) setChurnByUser({})
+      })
+    return () => { cancelled = true }
+  }, [clients])
 
   // ── Reset page when filters change ────────────────
   useEffect(() => {
@@ -322,13 +347,14 @@ export default function Clients() {
                   <th className="px-6 py-4 text-center">Fréquence</th>
                   <th className="px-6 py-4">Total Dépensé</th>
                   <th className="px-6 py-4">Statut</th>
+                  <th className="px-6 py-4">Risque churn</th>
                   <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {clients.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="py-16 text-center text-slate-400 text-sm">
+                    <td colSpan={8} className="py-16 text-center text-slate-400 text-sm">
                       Aucun client trouvé.
                     </td>
                   </tr>
@@ -379,6 +405,20 @@ export default function Clients() {
                         <span className={`px-3 py-1 rounded-full text-[10px] font-bold font-badge uppercase tracking-wider ${sta.cls}`}>
                           {sta.label}
                         </span>
+                      </td>
+                      <td className="px-6 py-5" onClick={(e) => e.stopPropagation()}>
+                        {(() => {
+                          const pred = churnByUser[client.id]
+                          const badge = churnBadge[pred?.risk] || churnBadge.UNAVAILABLE
+                          const pct = pred?.churnProbability != null
+                            ? `${Math.round(pred.churnProbability * 100)}%`
+                            : ''
+                          return (
+                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${badge.cls}`} title={pct ? `P(churn) = ${pct}` : ''}>
+                              {badge.label}{pct ? ` · ${pct}` : ''}
+                            </span>
+                          )
+                        })()}
                       </td>
                       <td className="px-6 py-5 text-right" onClick={(e) => e.stopPropagation()}>
                         <ActionMenu

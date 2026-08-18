@@ -4,12 +4,14 @@ import com.naturessence.shared.dto.analytics.UserFeaturesDTO;
 import com.naturessence.shared.entity.Order;
 import com.naturessence.shared.entity.Review;
 import com.naturessence.shared.entity.User;
+import com.naturessence.shared.enums.OrderStatus;
 import com.naturessence.shared.repository.OrderRepository;
 import com.naturessence.shared.repository.ReviewRepository;
 import com.naturessence.shared.repository.UserRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.EnumSet;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,13 +20,18 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class FeatureExtractionService {
 
+    private static final EnumSet<OrderStatus> NON_PURCHASE = EnumSet.of(
+        OrderStatus.ANNULEE,
+        OrderStatus.REMBOURSEE
+    );
+
     private final UserRepository userRepository;
     private final OrderRepository orderRepository;
     private final ReviewRepository reviewRepository;
 
     /**
-     * Extracts the full ML feature vector for a user from the live database.
-     * Feature names and semantics match naturessence_churn_dataset.csv exactly.
+     * Features known *today* (inference-time snapshot).
+     * Same columns as the training table, which was built at a historical T.
      */
     public UserFeaturesDTO extract(Long userId) {
         User user = userRepository
@@ -35,16 +42,11 @@ public class FeatureExtractionService {
 
         LocalDateTime now = LocalDateTime.now();
 
-        // ── Demographics ──────────────────────────────────────────────────────
-        int age = 30; // fallback when date of birth is not set
+        int age = 30;
         if (user.getDateOfBirth() != null) {
-            age = (int) ChronoUnit.YEARS.between(
-                user.getDateOfBirth(),
-                LocalDate.now()
-            );
+            age = (int) ChronoUnit.YEARS.between(user.getDateOfBirth(), LocalDate.now());
         }
 
-        // Map DB enum (HOMME/FEMME) to the training labels (Male/Female/Other)
         String gender = "Other";
         if (user.getGender() != null) {
             gender = switch (user.getGender()) {
@@ -54,64 +56,61 @@ public class FeatureExtractionService {
         }
 
         String city = user.getCity() != null ? user.getCity() : "Tunis";
-        String gouvernorat =
-            user.getGouvernorat() != null ? user.getGouvernorat() : "Tunis";
+        String gouvernorat = user.getGouvernorat() != null
+            ? user.getGouvernorat()
+            : city;
 
-        // ── Account lifecycle ─────────────────────────────────────────────────
-        long tenureDays =
-            user.getCreatedAt() != null
-                ? ChronoUnit.DAYS.between(user.getCreatedAt(), now)
-                : 0L;
+        long tenureDays = user.getCreatedAt() != null
+            ? ChronoUnit.DAYS.between(user.getCreatedAt(), now)
+            : 0L;
 
-        int segmentId = (user.getSegment() != null &&
-            user.getSegment().getId() != null)
+        int segmentId = (user.getSegment() != null && user.getSegment().getId() != null)
             ? user.getSegment().getId().intValue()
             : 1;
 
-        int loyaltyPoints =
-            user.getLoyaltyPoints() != null ? user.getLoyaltyPoints() : 0;
+        int loyaltyPoints = user.getLoyaltyPoints() != null ? user.getLoyaltyPoints() : 0;
 
-        // ── Days since last login ─────────────────────────────────────────────
-        long daysSinceLastLogin =
-            user.getLastLogin() != null
-                ? ChronoUnit.DAYS.between(user.getLastLogin(), now)
-                : 999L;
+        List<Order> purchases = orderRepository
+            .findByUserIdOrderByCreatedAtDesc(userId)
+            .stream()
+            .filter(o -> o.getStatus() == null || !NON_PURCHASE.contains(o.getStatus()))
+            .toList();
 
-        // ── Order behaviour ───────────────────────────────────────────────────
-        List<Order> orders = orderRepository.findByUserIdOrderByCreatedAtDesc(
-            userId
-        );
-
-        int totalOrders = orders.size();
-        double totalSpent = orders.stream().mapToDouble(Order::getTotal).sum();
+        int totalOrders = purchases.size();
+        double totalSpent = purchases
+            .stream()
+            .mapToDouble(o -> o.getTotal() != null ? o.getTotal() : 0.0)
+            .sum();
         double avgOrderValue = totalOrders > 0 ? totalSpent / totalOrders : 0.0;
-
-        // order_frequency = orders per month over the account lifetime
         double tenureMonths = Math.max(tenureDays / 30.0, 1.0);
         double orderFrequency = totalOrders / tenureMonths;
 
-        // coupon_usage_count = orders that were placed with a coupon code
-        long couponUsageCount = orders
+        long couponUsageCount = purchases
             .stream()
-            .filter(
-                o -> o.getCouponCode() != null && !o.getCouponCode().isBlank()
-            )
+            .filter(o -> o.getCouponCode() != null && !o.getCouponCode().isBlank())
             .count();
+        double discountUserRatio = totalOrders > 0
+            ? (double) couponUsageCount / totalOrders
+            : 0.0;
 
-        // discount_user_ratio = fraction of orders that used a coupon
-        double discountUserRatio =
-            totalOrders > 0 ? (double) couponUsageCount / totalOrders : 0.0;
+        long daysSinceLastOrder = tenureDays;
+        if (!purchases.isEmpty() && purchases.get(0).getCreatedAt() != null) {
+            daysSinceLastOrder = Math.max(
+                0,
+                ChronoUnit.DAYS.between(purchases.get(0).getCreatedAt(), now)
+            );
+        }
 
-        // ── Engagement / reviews ──────────────────────────────────────────────
-        List<Review> reviews =
-            reviewRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        long daysSinceLastLogin;
+        if (user.getLastLogin() != null) {
+            daysSinceLastLogin = Math.max(0, ChronoUnit.DAYS.between(user.getLastLogin(), now));
+        } else {
+            daysSinceLastLogin = daysSinceLastOrder;
+        }
 
+        List<Review> reviews = reviewRepository.findByUserIdOrderByCreatedAtDesc(userId);
         int reviewCount = reviews.size();
-        double avgRating = reviews
-            .stream()
-            .mapToInt(Review::getNote)
-            .average()
-            .orElse(0.0);
+        double avgRating = reviews.stream().mapToInt(Review::getNote).average().orElse(0.0);
 
         return UserFeaturesDTO.builder()
             .userId(userId)
@@ -127,6 +126,7 @@ public class FeatureExtractionService {
             .avgOrderValue(avgOrderValue)
             .orderFrequency(orderFrequency)
             .daysSinceLastLogin(daysSinceLastLogin)
+            .daysSinceLastOrder(daysSinceLastOrder)
             .reviewCount(reviewCount)
             .avgRating(avgRating)
             .couponUsageCount((int) couponUsageCount)

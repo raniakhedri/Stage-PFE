@@ -1,23 +1,42 @@
 {
-  "model": "RandomForestClassifier",
-  "n_estimators": 300,
-  "accuracy": 0.8733,
-  "roc_auc": 0.9501,
-  "cv_roc_auc_mean": 0.9472,
-  "cv_roc_auc_std": 0.0026,
+  "horizon_days": 90,
+  "label": "no_order_in_next_90_days_given_prior_purchase",
+  "n_customers": 12000,
+  "churn_rate": 0.4711,
   "train_size": 9600,
   "test_size": 2400,
-  "churn_rate": 0.5629,
+  "baseline_recency": {
+    "accuracy": 0.5942,
+    "roc_auc": 0.8025
+  },
+  "logistic_regression": {
+    "accuracy": 0.7558,
+    "roc_auc": 0.8228
+  },
+  "random_forest": {
+    "accuracy": 0.7571,
+    "roc_auc": 0.8327,
+    "cv_roc_auc_mean": 0.8389,
+    "cv_roc_auc_std": 0.003,
+    "n_estimators": 300
+  },
+  "thresholds": {
+    "high": 0.7,
+    "medium": 0.4,
+    "high_quantile": 0.8372,
+    "medium_quantile": 0.4617,
+    "f1_optimal": 0.3411
+  },
   "top_features": {
-    "days_since_last_login": 0.23216313897620364,
-    "order_frequency": 0.20699070475882744,
-    "loyalty_points": 0.11463632314697494,
-    "total_orders": 0.09234675721316099,
-    "total_spent": 0.07364359126682937,
-    "avg_rating": 0.05452703799307652,
-    "tenure_days": 0.049002451699959135,
-    "avg_order_value": 0.0314815140679251,
-    "review_count": 0.027657928495931166,
-    "age": 0.026473972864539414
+    "days_since_last_login": 0.2335,
+    "days_since_last_order": 0.2021,
+    "order_frequency": 0.103,
+    "total_spent": 0.0709,
+    "loyalty_points": 0.062,
+    "tenure_days": 0.0529,
+    "avg_order_value": 0.0471,
+    "total_orders": 0.0423,
+    "age": 0.0357,
+    "avg_rating": 0.0296
   }
 }

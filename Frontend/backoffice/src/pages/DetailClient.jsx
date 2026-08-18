@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import apiClient from '../api/apiClient'
+import { churnApi } from '../api/churnApi'
 import KpiCard from '../components/ui/KpiCard'
 import PageHeader from '../components/ui/PageHeader'
 import CustomSelect from '../components/ui/CustomSelect'
@@ -44,6 +45,7 @@ export default function DetailClient() {
   const [segments, setSegments] = useState([])
   const [orders, setOrders]     = useState([])
   const [ordersLoading, setOrdersLoading] = useState(false)
+  const [churn, setChurn] = useState(null)
 
   /* ── Form state ── */
   const [firstName, setFirstName] = useState('')
@@ -122,6 +124,13 @@ export default function DetailClient() {
         setOrders([])
       } finally {
         setOrdersLoading(false)
+      }
+
+      try {
+        const pred = await churnApi.getByUser(id)
+        setChurn(pred)
+      } catch {
+        setChurn(null)
       }
     } catch {
       toast.error('Impossible de charger les données du client')
@@ -270,14 +279,33 @@ export default function DetailClient() {
         const totalSpent   = activeOrders.reduce((s, o) => s + (o.total || 0), 0)
         const deliveredCount = orders.filter(o => o.status === 'LIVREE').length
         return (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
             <KpiCard label="Total dépensé"   value={ordersLoading ? '…' : `${totalSpent.toFixed(2)} DT`}   sub={`${deliveredCount} commande(s) livrée(s)`} subColor="text-slate-400" icon="payments"      iconBg="bg-badge/10 text-badge" />
             <KpiCard label="Commandes"        value={ordersLoading ? '…' : orders.length}  sub="Toutes méthodes de paiement" subColor="text-slate-400" icon="shopping_bag"   iconBg="bg-slate-50 text-slate-400" />
             <KpiCard label="Statut"           value={stBadge.label} sub={`Depuis ${memberSince}`} subColor="text-slate-400" icon="verified_user"  iconBg="bg-blue-50 text-blue-500" />
             <KpiCard label="Client depuis"    value={memberSince} sub={`Dernière connexion: ${lastLogin}`} subColor="text-brand" icon="calendar_today" iconBg="bg-slate-50 text-slate-400" />
+            <KpiCard
+              label="Risque de churn"
+              value={churn?.risk === 'INSUFFICIENT_HISTORY' ? 'N/A' : (churn?.risk || '…')}
+              sub={
+                churn?.churnProbability != null
+                  ? `${Math.round(churn.churnProbability * 100)}% de probabilité à 90 jours`
+                  : (churn?.risk === 'INSUFFICIENT_HISTORY' ? 'Aucune commande éligible' : 'Modèle analytics')
+              }
+              subColor={churn?.risk === 'HIGH' ? 'text-red-600' : churn?.risk === 'MEDIUM' ? 'text-amber-600' : 'text-slate-400'}
+              icon="psychology"
+              iconBg={churn?.risk === 'HIGH' ? 'bg-red-50 text-red-500' : churn?.risk === 'MEDIUM' ? 'bg-amber-50 text-amber-500' : 'bg-emerald-50 text-emerald-600'}
+            />
           </div>
         )
       })()}
+      {churn && (
+        <p className="mt-3 text-xs text-slate-500">
+          {churn.risk === 'INSUFFICIENT_HISTORY'
+            ? 'Le score de churn n’est calculé que pour les clients ayant au moins une commande (hors annulations / remboursements).'
+            : `Probabilité qu’il n’y ait aucune commande dans les 90 prochains jours. Dernier achat il y a ${churn.daysSinceLastOrder ?? '—'} jour(s).`}
+        </p>
+      )}
 
       {/* ── Main grid ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
