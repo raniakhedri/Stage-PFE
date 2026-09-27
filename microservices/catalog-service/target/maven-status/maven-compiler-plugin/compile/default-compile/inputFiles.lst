@@ -8,6 +8,7 @@ C:\Users\alloa\Desktop\Stage-PFE\microservices\catalog-service\src\main\java\com
 C:\Users\alloa\Desktop\Stage-PFE\microservices\catalog-service\src\main\java\com\naturessence\catalog\controller\AdminReviewController.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\catalog-service\src\main\java\com\naturessence\catalog\service\CollectionService.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\catalog-service\src\main\java\com\naturessence\catalog\config\SecurityConfig.java
+C:\Users\alloa\Desktop\Stage-PFE\microservices\catalog-service\src\main\java\com\naturessence\catalog\controller\PublicTryOnController.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\catalog-service\src\main\java\com\naturessence\catalog\CatalogServiceApplication.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\catalog-service\src\main\java\com\naturessence\catalog\controller\AdminCollectionController.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\catalog-service\src\main\java\com\naturessence\catalog\controller\PublicReviewController.java
@@ -15,3 +16,4 @@ C:\Users\alloa\Desktop\Stage-PFE\microservices\catalog-service\src\main\java\com
 C:\Users\alloa\Desktop\Stage-PFE\microservices\catalog-service\src\main\java\com\naturessence\catalog\controller\PublicCategoryController.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\catalog-service\src\main\java\com\naturessence\catalog\controller\AdminCategoryController.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\catalog-service\src\main\java\com\naturessence\catalog\controller\AdminProductController.java
+C:\Users\alloa\Desktop\Stage-PFE\microservices\catalog-service\src\main\java\com\naturessence\catalog\service\DecartTryOnService.java

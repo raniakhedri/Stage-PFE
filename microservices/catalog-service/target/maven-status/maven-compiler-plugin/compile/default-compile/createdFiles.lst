@@ -4,6 +4,7 @@ com\naturessence\catalog\service\ProductService.class
 com\naturessence\catalog\controller\AdminReviewController.class
 com\naturessence\catalog\controller\PublicReviewController.class
 com\naturessence\catalog\service\ReviewService.class
+com\naturessence\catalog\service\DecartTryOnService.class
 com\naturessence\catalog\CatalogServiceApplication.class
 com\naturessence\catalog\controller\AdminCollectionController.class
 com\naturessence\catalog\controller\PublicProductController.class
@@ -11,6 +12,7 @@ com\naturessence\catalog\controller\AdminProductController.class
 com\naturessence\catalog\controller\PublicCollectionController.class
 com\naturessence\catalog\service\CategoryService.class
 com\naturessence\catalog\controller\PublicCategoryController.class
+com\naturessence\catalog\controller\PublicTryOnController.class
 com\naturessence\catalog\config\WebConfig.class
 com\naturessence\catalog\controller\FileUploadController.class
 com\naturessence\catalog\service\CollectionService.class

@@ -93,6 +93,25 @@ export async function fetchProductBySlug(slug) {
   return mapProduct(p);
 }
 
+export async function createTryOnToken() {
+  const attempts = [
+    'http://localhost:8080/api/v1/public/tryon/token',
+    '/api/tryon/token',
+  ]
+  let lastError = new Error('Essayage indisponible')
+  for (const url of attempts) {
+    try {
+      const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+      const data = await res.json().catch(() => ({}))
+      if (res.ok && data.apiKey) return data
+      lastError = new Error(data.message || data.error || `Essayage: ${res.status}`)
+    } catch (err) {
+      lastError = err instanceof Error ? err : lastError
+    }
+  }
+  throw lastError
+}
+
 export async function fetchSimilarProducts(ids) {
   if (!ids || ids.length === 0) return [];
   const p = await request(`/products/by-ids?ids=${ids.join(',')}`);
@@ -136,6 +155,25 @@ export async function fetchTvaConfig() {
   }
 }
 
+function resolveMediaUrl(url) {
+  if (!url) return ''
+  if (/^https?:\/\//i.test(url) || url.startsWith('data:') || url.startsWith('blob:')) return url
+  return `http://localhost:8080${url.startsWith('/') ? '' : '/'}${url}`
+}
+
+function firstProductImage(p) {
+  if (p.imageUrl) return p.imageUrl
+  const raw = String(p.images || '').trim()
+  if (raw.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed) && parsed[0]) return parsed[0]
+    } catch { /* ignore */ }
+  }
+  if (raw.startsWith('data:')) return raw
+  return raw.split(',')[0]?.trim() || ''
+}
+
 function mapProduct(p) {
   const badge = p.badgeNouveau ? 'Nouveau'
     : p.badgeBestSeller ? 'Best-Seller'
@@ -158,7 +196,8 @@ function mapProduct(p) {
     reviews: 0,
     badge,
     bio: Boolean(p.bio),
-    image: p.imageUrl || '',
+    stock: Number(p.stock) || 0,
+    image: resolveMediaUrl(firstProductImage(p)),
     description: p.description || '',
     // Cosmetic detail fields
     origine: p.origine || '',

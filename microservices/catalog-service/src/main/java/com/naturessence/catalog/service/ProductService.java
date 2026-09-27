@@ -166,6 +166,16 @@ public class ProductService {
                 .inciComposition(request.getInciComposition())
                 .certifications(request.getCertifications())
                 .volumes(request.getVolumes())
+                .tissu(request.getTissu())
+                .couleur(request.getCouleur())
+                .couleurHex(request.getCouleurHex())
+                .coupe(request.getCoupe())
+                .col(request.getCol())
+                .manches(request.getManches())
+                .entretien(request.getEntretien())
+                .tailles(request.getTailles())
+                .saison(request.getSaison())
+                .genre(request.getGenre())
                 .performance(request.getPerformance())
                 .imageUrl(request.getImageUrl())
                 .images(request.getImages())
@@ -235,6 +245,16 @@ public class ProductService {
         product.setInciComposition(request.getInciComposition());
         product.setCertifications(request.getCertifications());
         product.setVolumes(request.getVolumes());
+        product.setTissu(request.getTissu());
+        product.setCouleur(request.getCouleur());
+        product.setCouleurHex(request.getCouleurHex());
+        product.setCoupe(request.getCoupe());
+        product.setCol(request.getCol());
+        product.setManches(request.getManches());
+        product.setEntretien(request.getEntretien());
+        product.setTailles(request.getTailles());
+        product.setSaison(request.getSaison());
+        product.setGenre(request.getGenre());
         product.setPerformance(request.getPerformance());
         product.setImageUrl(request.getImageUrl());
         product.setImages(request.getImages());
@@ -389,6 +409,16 @@ public class ProductService {
                 .inciComposition(p.getInciComposition())
                 .certifications(p.getCertifications())
                 .volumes(p.getVolumes())
+                .tissu(p.getTissu())
+                .couleur(p.getCouleur())
+                .couleurHex(p.getCouleurHex())
+                .coupe(p.getCoupe())
+                .col(p.getCol())
+                .manches(p.getManches())
+                .entretien(p.getEntretien())
+                .tailles(p.getTailles())
+                .saison(p.getSaison())
+                .genre(p.getGenre())
                 .performance(p.getPerformance())
                 .imageUrl(p.getImageUrl())
                 .images(p.getImages())

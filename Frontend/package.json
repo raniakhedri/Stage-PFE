@@ -18,6 +18,7 @@
     "lint": "npm run lint --workspace=backoffice"
   },
   "dependencies": {
+    "@decartai/sdk": "^0.2.3",
     "@stripe/react-stripe-js": "^6.2.0",
     "@stripe/stripe-js": "^9.3.0"
   }

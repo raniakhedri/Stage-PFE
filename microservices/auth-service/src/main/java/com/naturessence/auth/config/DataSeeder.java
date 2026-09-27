@@ -13,6 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Set;
 
@@ -51,6 +52,7 @@ public class DataSeeder implements CommandLineRunner {
 		seedTvaAndShipping();
 		seedLoyaltyConfig();
 		seedCategoriesAndProducts();
+		seedTryOnPull();
 		log.info("✅ Database initialization completed!");
 	}
 
@@ -472,6 +474,58 @@ public class DataSeeder implements CommandLineRunner {
 		seedProduct("Poudre de Shikakai Bio", "poudre-shikakai", "Acacia concinna", argiles, 7.50, "100g", true, false, "50g,100g", "https://images.unsplash.com/photo-1547793549-70faf88c5ba4?w=600");
 
 		log.info("✓ 36 cosmetic products created");
+	}
+
+	private void seedTryOnPull() {
+		if (productRepository.existsBySlug("pull-uni-cachemire-laine")) {
+			log.info("✓ Try-on pull already exists");
+			return;
+		}
+		Category category = categoryRepository.findAll().stream()
+				.filter(c -> c.getNom() != null && c.getNom().toLowerCase().contains("végétales"))
+				.findFirst()
+				.orElseGet(() -> categoryRepository.findBySlug("vegetales")
+						.orElseGet(() -> categoryRepository.findAll().stream()
+								.filter(c -> c.getParent() == null)
+								.findFirst()
+								.orElse(null)));
+		if (category == null) {
+			log.warn("⚠ No category available for try-on pull");
+			return;
+		}
+		String image = "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=800";
+		Product product = Product.builder()
+				.nom("PULL UNI CACHEMIRE LAINE")
+				.slug("pull-uni-cachemire-laine")
+				.sku("PULL-CACHE-LAINE")
+				.latin("Cashmere / Wool")
+				.description("Aubergine Pull avec tissu principal composé de cachemire et laine. Col rond et manches longues. Finitions côtelées.")
+				.category(category)
+				.salePrice(89.00)
+				.bio(false)
+				.volumes("Aubergine,Ciment")
+				.origine("Italie")
+				.usageInstructions("Porter sur une base fine. Entretien : lavage à la main à l'eau froide, séchage à plat.")
+				.inciComposition("Cachemire, Laine")
+				.imageUrl(image)
+				.images(image)
+				.stock(100)
+				.statut("actif")
+				.badgeNouveau(true)
+				.visibleSite(true)
+				.visibleCategory(true)
+				.variants(new ArrayList<>())
+				.build();
+		ProductVariant aubergine = ProductVariant.builder()
+				.product(product).label("Aubergine").colorSwatch("#5B2C6F")
+				.sku("PULL-CACHE-AUB").price(89.00).stock(50).build();
+		ProductVariant ciment = ProductVariant.builder()
+				.product(product).label("Ciment").colorSwatch("#8B8589")
+				.sku("PULL-CACHE-CIM").price(89.00).stock(50).build();
+		product.getVariants().add(aubergine);
+		product.getVariants().add(ciment);
+		productRepository.save(product);
+		log.info("✓ Try-on pull PULL UNI CACHEMIRE LAINE created");
 	}
 
 	private void seedProduct(String nom, String slug, String latin, Category category,

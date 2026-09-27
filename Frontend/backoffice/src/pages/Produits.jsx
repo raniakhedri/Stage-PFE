@@ -5,7 +5,7 @@ import CustomSelect from '../components/ui/CustomSelect'
 import KpiCard from '../components/ui/KpiCard'
 import PageHeader from '../components/ui/PageHeader'
 import Spinner from '../components/ui/Spinner'
-import { productApi } from '../api/productApi'
+import { parseProductImages, productApi, resolveImgUrl } from '../api/productApi'
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 function stockMeta(stock, status) {
@@ -216,8 +216,7 @@ function Produits() {
                 const colsList = p.collections ? p.collections.split(',').map(c => c.trim()).filter(Boolean) : []
                 const isDeactivated = p.statut === 'desactive'
                 const currentPrice = p.promoActive && p.promoPrice > 0 ? p.promoPrice : p.salePrice
-                // Resolve display image: imageUrl → first colorImages slot → placeholder
-                let displayImg = p.imageUrl || null
+                let displayImg = p.imageUrl || parseProductImages(p)[0] || null
                 if (!displayImg && p.colorImages) {
                   try {
                     const ci = JSON.parse(p.colorImages)
@@ -225,6 +224,7 @@ function Produits() {
                     if (firstColor) displayImg = firstColor[0]
                   } catch { /* ignore */ }
                 }
+                displayImg = resolveImgUrl(displayImg)
                 return (
                   <tr key={p.id} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="px-6 py-6"><input type="checkbox" checked={selected.includes(p.id)} onChange={() => toggleSelect(p.id)} className="rounded border-slate-300 text-brand focus:ring-brand cursor-pointer" /></td>

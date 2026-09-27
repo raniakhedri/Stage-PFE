@@ -123,6 +123,39 @@ public class Product {
     @Column(columnDefinition = "TEXT")
     private String volumes;
 
+    // ── Clothing-specific ─────────────────────────────────────────
+    /** Fabric, e.g. "Cachemire et laine" */
+    private String tissu;
+
+    /** Color name, e.g. "Aubergine" */
+    private String couleur;
+
+    /** Hex swatch for the main color */
+    private String couleurHex;
+
+    /** Fit: slim, regular, oversize… */
+    private String coupe;
+
+    /** Neckline: col rond, col V… */
+    private String col;
+
+    /** Sleeves: manches longues, courtes… */
+    private String manches;
+
+    /** Care instructions */
+    @Column(columnDefinition = "TEXT")
+    private String entretien;
+
+    /** Comma-separated sizes, e.g. "XS,S,M,L,XL" */
+    @Column(columnDefinition = "TEXT")
+    private String tailles;
+
+    /** Season: automne-hiver, été… */
+    private String saison;
+
+    /** femme, homme, unisexe */
+    private String genre;
+
     // ── SEO ───────────────────────────────────────────────────────
     @Column(name = "meta_title")
     private String metaTitle;

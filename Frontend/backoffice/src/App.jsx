@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate, Outlet } from 'react-router-dom'
 import { ToastContainer } from 'react-toastify'
 import { useEffect } from 'react'
 import 'react-toastify/dist/ReactToastify.css'
@@ -33,6 +33,22 @@ import Promotions from './pages/Promotions'
 import Fidelite from './pages/Fidelite'
 import EmailMarketing from './pages/EmailMarketing'
 import NotFound from './pages/NotFound'
+import ConfigurationBoutique from './pages/ConfigurationBoutique'
+import { storeApi } from './api/storeApi'
+
+function StoreSetupGate() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  useEffect(() => {
+    if (location.pathname.startsWith('/configuration')) return
+    storeApi.get()
+      .then((store) => {
+        if (store && store.onboarded === false) navigate('/configuration', { replace: true })
+      })
+      .catch(() => {})
+  }, [location.pathname, navigate])
+  return <Outlet />
+}
 
 function ExternalLoginRedirect() {
   useEffect(() => {
@@ -77,7 +93,9 @@ function App() {
 
         {/* Routes protégées avec Layout */}
         <Route element={<RequireAuth />}>
-          <Route element={<Layout />}>
+          <Route element={<StoreSetupGate />}>
+            <Route path="/configuration" element={<ConfigurationBoutique />} />
+            <Route element={<Layout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/produits" element={<Produits />} />
             <Route path="/produits/nouveau" element={<AjouterProduit />} />
@@ -104,6 +122,7 @@ function App() {
             <Route path="/promotions" element={<Promotions />} />
             <Route path="/fidelite" element={<Fidelite />} />
             <Route path="/email-marketing" element={<EmailMarketing />} />
+          </Route>
           </Route>
         </Route>
 

@@ -60,6 +60,14 @@ apiClient.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
+  // Let the browser set multipart boundary. A hardcoded Content-Type breaks uploads.
+  if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+    if (typeof config.headers.delete === 'function') {
+      config.headers.delete('Content-Type')
+    } else {
+      delete config.headers['Content-Type']
+    }
+  }
   return config
 })
 

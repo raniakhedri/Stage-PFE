@@ -5,7 +5,6 @@ import com.naturessence.shared.dto.response.CategoryResponse;
 import com.naturessence.shared.entity.Category;
 import com.naturessence.shared.repository.CategoryRepository;
 import com.naturessence.shared.repository.ProductRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,11 +14,18 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-@RequiredArgsConstructor
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
+
+    public CategoryService(
+        CategoryRepository categoryRepository,
+        ProductRepository productRepository
+    ) {
+        this.categoryRepository = categoryRepository;
+        this.productRepository = productRepository;
+    }
 
     // ── Admin: Get all categories (flat, ordered) ──────────────────────
     @Transactional(readOnly = true)

@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import CustomSelect from '../components/ui/CustomSelect'
 import PageHeader from '../components/ui/PageHeader'
-import { productApi } from '../api/productApi'
+import { applyProductImage, computeProductStock, productApi, resolveImgUrl, serializeProductImages } from '../api/productApi'
 import { categoryApi } from '../api/categoryApi'
+import { storeApi } from '../api/storeApi'
+import ClothingFields, { clothingPayload, emptyClothing } from '../components/ClothingFields'
 
 // ── Toggle component ───────────────────────────────────────────────────────────
 function Toggle({ checked, onChange }) {
@@ -73,14 +75,6 @@ function Section({ title, children, rightSlot }) {
     </div>
   )
 }
-// Resolve image URL: /uploads/xxx → full backend URL, http(s) URLs → as-is
-const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') || 'http://localhost:8080'
-function resolveImgUrl(url) {
-  if (!url) return ''
-  if (url.startsWith('http://') || url.startsWith('https://')) return url
-  return `${API_BASE}${url.startsWith('/') ? '' : '/'}${url}`
-}
-// ── Main Page ──────────────────────────────────────────────────────────────────
 function AjouterProduit() {
   const navigate = useNavigate()
 
@@ -108,10 +102,12 @@ function AjouterProduit() {
       }
     }).catch(() => {})
     productApi.getAll().then(setAllProducts).catch(() => {})
+    storeApi.get().then((store) => setClothes(store?.businessType === 'CLOTHES')).catch(() => {})
   }, [])
 
   // Pricing
   const [salePrice, setSalePrice] = useState('')
+  const [stock, setStock] = useState('100')
   const [promoActive, setPromoActive] = useState(false)
   const [promoPrice, setPromoPrice] = useState('')
   const [promoStart, setPromoStart] = useState('')
@@ -142,6 +138,8 @@ function AjouterProduit() {
   const [precautions, setPrecautions] = useState('')
   const [inciComposition, setInciComposition] = useState('')
   const [certifications, setCertifications] = useState('')
+  const [clothes, setClothes] = useState(false)
+  const [clothing, setClothing] = useState(emptyClothing)
 
   // Variants
   const [variants, setVariants] = useState([])
@@ -235,7 +233,7 @@ function AjouterProduit() {
         promoPrice: promoActive ? (parseFloat(promoPrice) || 0) : 0,
         promoStart: promoStart || null,
         promoEnd: promoEnd || null,
-        stock: variants.reduce((sum, v) => sum + (parseInt(v.stock) || 0), 0),
+        stock: computeProductStock(stock),
         statut: 'actif',
         badgeNouveau: badges.nouveau,
         badgeBestSeller: badges.bestSeller,
@@ -245,13 +243,13 @@ function AjouterProduit() {
         visibleCategory: visibility.category,
         pinnedInSubCategory: visibility.pinnedSub,
         metaTitle: metaTitle || null,
-        imageUrl: productImages.filter(Boolean)[0] || null,
-        images: productImages.filter(Boolean).join(',') || null,
+        ...serializeProductImages(productImages),
         origine: origine.trim() || null,
         usageInstructions: usageInstructions.trim() || null,
         precautions: precautions.trim() || null,
         inciComposition: inciComposition.trim() || null,
         certifications: certifications.trim() || null,
+        ...(clothes ? clothingPayload(clothing) : {}),
         upsellTags: upsellProducts.map(p => String(p.id)).join(',') || null,
         variants: variants.map((v) => ({
           label: v.label,
@@ -291,10 +289,11 @@ function AjouterProduit() {
                   <Input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Ex: Huile Essentielle de Lavande Vraie"
+                    placeholder={clothes ? 'Ex: Pull uni cachemire' : 'Ex: Huile Essentielle de Lavande Vraie'}
                   />
                 </div>
 
+                {!clothes && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <Label>Nom latin / INCI</Label>
@@ -313,7 +312,15 @@ function AjouterProduit() {
                     />
                   </div>
                 </div>
+                )}
+                {clothes && (
+                  <div>
+                    <Label>Référence (SKU)</Label>
+                    <Input value={sku} onChange={(e) => setSku(e.target.value)} placeholder="AT-PULL-01" />
+                  </div>
+                )}
 
+                {!clothes && (
                 <div className="flex items-center gap-3 p-4 bg-emerald-50/50 rounded-lg border border-emerald-100 cursor-pointer" onClick={() => setBio(!bio)}>
                   <input type="checkbox" checked={bio} onChange={() => setBio(!bio)} className="w-5 h-5 text-emerald-600 rounded focus:ring-emerald-500 cursor-pointer accent-emerald-600" />
                   <div>
@@ -321,6 +328,7 @@ function AjouterProduit() {
                     <p className="text-[10px] text-slate-400">Produit certifié agriculture biologique</p>
                   </div>
                 </div>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
@@ -362,7 +370,11 @@ function AjouterProduit() {
               </div>
             </Section>
 
-            {/* Fiche Cosmétique */}
+            {clothes ? (
+              <Section title="Fiche vêtement">
+                <ClothingFields value={clothing} onChange={setClothing} />
+              </Section>
+            ) : (
             <Section title="Fiche Cosmétique">
               <div className="space-y-6">
                 <div>
@@ -408,6 +420,7 @@ function AjouterProduit() {
                 </div>
               </div>
             </Section>
+            )}
 
             {/* Variantes */}
             <Section title="Variantes du produit">
@@ -416,7 +429,7 @@ function AjouterProduit() {
                   <table className="w-full">
                     <thead>
                       <tr className="text-left border-b border-slate-100">
-                        {['Contenance / Label', 'SKU', 'Stock', 'Action'].map((h, i) => (
+                        {(clothes ? ['Taille / Couleur', 'SKU', 'Stock', 'Action'] : ['Contenance / Label', 'SKU', 'Stock', 'Action']).map((h, i) => (
                           <th key={h} className={`pb-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 ${i === 3 ? 'text-right' : ''}`}>
                             {h}
                           </th>
@@ -486,30 +499,41 @@ function AjouterProduit() {
                     {[0, 1, 2, 3, 4].map((idx) => {
                       const img = productImages[idx]
                       const isUploading = uploadingIdx === idx
+                      const onPick = async (e) => {
+                        const file = e.target.files?.[0]
+                        e.target.value = ''
+                        if (!file) return
+                        setUploadingIdx(idx)
+                        try {
+                          const { url, local } = await applyProductImage(file)
+                          setProductImages((prev) => {
+                            const arr = [...prev]
+                            arr[idx] = url
+                            return arr
+                          })
+                          if (local) toast.info('Image ajoutée. Enregistrez le produit pour la garder.')
+                        } catch (err) {
+                          toast.error(err?.message || 'Erreur lors de l\'upload de l\'image.')
+                        } finally {
+                          setUploadingIdx(null)
+                        }
+                      }
                       return (
                         <div key={idx} className="relative group">
-                          {img ? (
-                            <div className="aspect-square rounded-lg border border-slate-200 overflow-hidden relative">
-                              <img src={resolveImgUrl(img)} alt="" className="w-full h-full object-cover" />
-                              <button
-                                type="button"
-                                onClick={() => setProductImages(prev => {
-                                  const arr = [...prev]
-                                  arr[idx] = null
-                                  return arr
-                                })}
-                                className="absolute top-1 right-1 w-6 h-6 bg-white shadow-sm rounded-full flex items-center justify-center text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
-                                <span className="material-symbols-outlined text-sm">close</span>
-                              </button>
-                              {idx === 0 && (
-                                <span className="absolute bottom-1 left-1 bg-brand text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
-                                  Principale
+                          <label className={`block ${isUploading ? '' : 'cursor-pointer'}`}>
+                            {img ? (
+                              <div className="aspect-square rounded-lg border border-slate-200 overflow-hidden relative">
+                                <img src={resolveImgUrl(img)} alt="" className="w-full h-full object-cover" />
+                                {idx === 0 && (
+                                  <span className="absolute bottom-1 left-1 bg-brand text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
+                                    Principale
+                                  </span>
+                                )}
+                                <span className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors flex items-center justify-center text-white text-[10px] font-bold opacity-0 group-hover:opacity-100">
+                                  Changer
                                 </span>
-                              )}
-                            </div>
-                          ) : (
-                            <label className={`block ${isUploading ? '' : 'cursor-pointer'}`}>
+                              </div>
+                            ) : (
                               <div className={`aspect-square rounded-lg border-2 border-dashed flex flex-col items-center justify-center transition-all ${
                                 isUploading ? 'border-brand bg-brand/5 text-brand' : 'border-slate-200 text-slate-300 hover:border-brand hover:text-brand'
                               }`}>
@@ -524,31 +548,23 @@ function AjouterProduit() {
                                   </>
                                 )}
                               </div>
-                              {!isUploading && (
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  className="hidden"
-                                  onChange={async (e) => {
-                                    const file = e.target.files[0]
-                                    if (!file) return
-                                    setUploadingIdx(idx)
-                                    try {
-                                      const { url } = await productApi.uploadImage(file)
-                                      setProductImages(prev => {
-                                        const arr = [...prev]
-                                        arr[idx] = url
-                                        return arr
-                                      })
-                                    } catch {
-                                      toast.error('Erreur lors de l\'upload de l\'image.')
-                                    } finally {
-                                      setUploadingIdx(null)
-                                    }
-                                  }}
-                                />
-                              )}
-                            </label>
+                            )}
+                            {!isUploading && (
+                              <input type="file" accept="image/*" className="hidden" onChange={onPick} />
+                            )}
+                          </label>
+                          {img && (
+                            <button
+                              type="button"
+                              onClick={() => setProductImages(prev => {
+                                const arr = [...prev]
+                                arr[idx] = null
+                                return arr
+                              })}
+                              className="absolute top-1 right-1 z-10 w-6 h-6 bg-white shadow-sm rounded-full flex items-center justify-center text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <span className="material-symbols-outlined text-sm">close</span>
+                            </button>
                           )}
                         </div>
                       )
@@ -632,6 +648,18 @@ function AjouterProduit() {
                   </div>
                 </div>
 
+                <div>
+                  <Label required>Stock (unités)</Label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={stock}
+                    onChange={(e) => setStock(e.target.value)}
+                    placeholder="100"
+                    className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm focus:ring-2 focus:ring-brand outline-none"
+                  />
+                </div>
 
                 {/* Promotion toggle */}
                 <button

@@ -54,6 +54,18 @@ public class ProductRequest {
     private String certifications;
     private String volumes;
 
+    // Clothing-specific
+    private String tissu;
+    private String couleur;
+    private String couleurHex;
+    private String coupe;
+    private String col;
+    private String manches;
+    private String entretien;
+    private String tailles;
+    private String saison;
+    private String genre;
+
     // Shipping
     private double weight;
     private double dimensionLength;

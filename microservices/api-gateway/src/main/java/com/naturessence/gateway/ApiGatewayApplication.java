@@ -37,6 +37,7 @@ public class ApiGatewayApplication {
                 r
                     .path(
                         "/api/v1/public/products/**",
+                        "/api/v1/public/tryon/**",
                         "/api/v1/public/categories/**",
                         "/api/v1/public/collections/**",
                         "/api/v1/public/reviews/**",
@@ -51,6 +52,7 @@ public class ApiGatewayApplication {
                         "/api/v1/admin/collections/**",
                         "/api/v1/admin/reviews",
                         "/api/v1/admin/reviews/**",
+                        "/api/v1/admin/upload",
                         "/api/v1/admin/upload/**",
                         "/uploads/**"
                     )
@@ -82,8 +84,12 @@ public class ApiGatewayApplication {
                     .path(
                         "/api/v1/public/banners/**",
                         "/api/v1/public/appearance/**",
+                        "/api/v1/public/store",
+                        "/api/v1/public/store/**",
                         "/api/v1/admin/banners/**",
                         "/api/v1/admin/appearance/**",
+                        "/api/v1/admin/store",
+                        "/api/v1/admin/store/**",
                         "/api/v1/admin/email/**"
                     )
                     .uri("http://localhost:8084")

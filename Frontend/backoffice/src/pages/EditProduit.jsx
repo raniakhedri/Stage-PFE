@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import CustomSelect from '../components/ui/CustomSelect'
 import PageHeader from '../components/ui/PageHeader'
-import { productApi } from '../api/productApi'
+import { applyProductImage, computeProductStock, parseProductImages, productApi, resolveImgUrl, serializeProductImages } from '../api/productApi'
 import { categoryApi } from '../api/categoryApi'
 // ── Toggle ─────────────────────────────────────────────────────────────────────
 function Toggle({ checked, onChange }) {
@@ -71,15 +71,6 @@ function Section({ title, children, rightSlot }) {
 }
 
 
-// ── Page ───────────────────────────────────────────────────────────────────────
-// Resolve image URL: /uploads/xxx → full backend URL, http(s) URLs → as-is
-const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') || 'http://localhost:8080'
-function resolveImgUrl(url) {
-  if (!url) return ''
-  if (url.startsWith('http://') || url.startsWith('https://')) return url
-  return `${API_BASE}${url.startsWith('/') ? '' : '/'}${url}`
-}
-
 function EditProduit() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -97,6 +88,7 @@ function EditProduit() {
   const [parentCategories, setParentCategories] = useState([])  // [{id, nom, children:[]}]
 
   const [salePrice, setSalePrice] = useState('')
+  const [stock, setStock] = useState('100')
   const [promoActive, setPromoActive] = useState(false)
   const [promoPrice, setPromoPrice] = useState('')
   const [promoStart, setPromoStart] = useState('')
@@ -138,6 +130,7 @@ function EditProduit() {
         setSubCategory(p.parentCategoryId ? String(p.categoryId) : '')
         setDescription(p.description || '')
         setSalePrice(String(p.salePrice || ''))
+        setStock(String(p.stock ?? 0))
         setPromoActive(Boolean(p.promoActive))
         setPromoPrice(p.promoPrice ? String(p.promoPrice) : '')
         setPromoStart(p.promoStart || '')
@@ -176,8 +169,7 @@ function EditProduit() {
             stock: v.stock || 0,
           }))
         )
-        // Load gallery: parse images field, fallback to imageUrl
-        const imgList = p.images ? p.images.split(',').filter(Boolean) : (p.imageUrl ? [p.imageUrl] : [])
+        const imgList = parseProductImages(p)
         const padded = [...imgList, null, null, null, null, null].slice(0, 5)
         setProductImages(padded)
         // Load upsell products
@@ -273,7 +265,7 @@ function EditProduit() {
         promoPrice: promoActive ? (parseFloat(promoPrice) || 0) : 0,
         promoStart: promoStart || null,
         promoEnd: promoEnd || null,
-        stock: variants.reduce((sum, v) => sum + (parseInt(v.stock) || 0), 0),
+        stock: computeProductStock(stock),
         statut: 'actif',
         badgeNouveau: badges.nouveau,
         badgeBestSeller: badges.bestSeller,
@@ -283,8 +275,7 @@ function EditProduit() {
         visibleCategory: visibility.category,
         pinnedInSubCategory: visibility.pinnedSub,
         metaTitle: metaTitle || null,
-        imageUrl: productImages.filter(Boolean)[0] || null,
-        images: productImages.filter(Boolean).join(',') || null,
+        ...serializeProductImages(productImages),
         origine: origine.trim() || null,
         usageInstructions: usageInstructions.trim() || null,
         precautions: precautions.trim() || null,
@@ -533,30 +524,41 @@ function EditProduit() {
                     {[0, 1, 2, 3, 4].map((idx) => {
                       const img = productImages[idx]
                       const isUploading = uploadingIdx === idx
+                      const onPick = async (e) => {
+                        const file = e.target.files?.[0]
+                        e.target.value = ''
+                        if (!file) return
+                        setUploadingIdx(idx)
+                        try {
+                          const { url, local } = await applyProductImage(file)
+                          setProductImages((prev) => {
+                            const arr = [...prev]
+                            arr[idx] = url
+                            return arr
+                          })
+                          if (local) toast.info('Image ajoutée. Enregistrez le produit pour la garder.')
+                        } catch (err) {
+                          toast.error(err?.message || 'Erreur lors de l\'upload de l\'image.')
+                        } finally {
+                          setUploadingIdx(null)
+                        }
+                      }
                       return (
                         <div key={idx} className="relative group">
-                          {img ? (
-                            <div className="aspect-square rounded-lg border border-slate-200 overflow-hidden relative">
-                              <img src={resolveImgUrl(img)} alt="" className="w-full h-full object-cover" />
-                              <button
-                                type="button"
-                                onClick={() => setProductImages(prev => {
-                                  const arr = [...prev]
-                                  arr[idx] = null
-                                  return arr
-                                })}
-                                className="absolute top-1 right-1 w-6 h-6 bg-white shadow-sm rounded-full flex items-center justify-center text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
-                                <span className="material-symbols-outlined text-sm">close</span>
-                              </button>
-                              {idx === 0 && (
-                                <span className="absolute bottom-1 left-1 bg-brand text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
-                                  Principale
+                          <label className={`block ${isUploading ? '' : 'cursor-pointer'}`}>
+                            {img ? (
+                              <div className="aspect-square rounded-lg border border-slate-200 overflow-hidden relative">
+                                <img src={resolveImgUrl(img)} alt="" className="w-full h-full object-cover" />
+                                {idx === 0 && (
+                                  <span className="absolute bottom-1 left-1 bg-brand text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
+                                    Principale
+                                  </span>
+                                )}
+                                <span className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors flex items-center justify-center text-white text-[10px] font-bold opacity-0 group-hover:opacity-100">
+                                  Changer
                                 </span>
-                              )}
-                            </div>
-                          ) : (
-                            <label className={`block ${isUploading ? '' : 'cursor-pointer'}`}>
+                              </div>
+                            ) : (
                               <div className={`aspect-square rounded-lg border-2 border-dashed flex flex-col items-center justify-center transition-all ${
                                 isUploading ? 'border-brand bg-brand/5 text-brand' : 'border-slate-200 text-slate-300 hover:border-brand hover:text-brand'
                               }`}>
@@ -571,31 +573,23 @@ function EditProduit() {
                                   </>
                                 )}
                               </div>
-                              {!isUploading && (
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  className="hidden"
-                                  onChange={async (e) => {
-                                    const file = e.target.files[0]
-                                    if (!file) return
-                                    setUploadingIdx(idx)
-                                    try {
-                                      const { url } = await productApi.uploadImage(file)
-                                      setProductImages(prev => {
-                                        const arr = [...prev]
-                                        arr[idx] = url
-                                        return arr
-                                      })
-                                    } catch {
-                                      toast.error('Erreur lors de l\'upload de l\'image.')
-                                    } finally {
-                                      setUploadingIdx(null)
-                                    }
-                                  }}
-                                />
-                              )}
-                            </label>
+                            )}
+                            {!isUploading && (
+                              <input type="file" accept="image/*" className="hidden" onChange={onPick} />
+                            )}
+                          </label>
+                          {img && (
+                            <button
+                              type="button"
+                              onClick={() => setProductImages(prev => {
+                                const arr = [...prev]
+                                arr[idx] = null
+                                return arr
+                              })}
+                              className="absolute top-1 right-1 z-10 w-6 h-6 bg-white shadow-sm rounded-full flex items-center justify-center text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <span className="material-symbols-outlined text-sm">close</span>
+                            </button>
                           )}
                         </div>
                       )
@@ -679,6 +673,18 @@ function EditProduit() {
                   </div>
                 </div>
 
+                <div>
+                  <Label required>Stock (unités)</Label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={stock}
+                    onChange={(e) => setStock(e.target.value)}
+                    placeholder="100"
+                    className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm focus:ring-2 focus:ring-brand outline-none"
+                  />
+                </div>
 
                 {/* Promotion toggle */}
                 <button

@@ -39,6 +39,8 @@ public class SecurityConfig {
                 auth
                     .requestMatchers(HttpMethod.GET, "/api/v1/public/**")
                     .permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/v1/public/tryon/**")
+                    .permitAll()
                     .requestMatchers(HttpMethod.GET, "/uploads/**")
                     .permitAll()
                     .requestMatchers("/api/v1/auth/**")

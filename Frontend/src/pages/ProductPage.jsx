@@ -7,6 +7,7 @@ import { getUser } from '../api/tokenStorage';
 import ProductCard from '../components/ProductCard';
 import { useShop } from '../context/ShopContext';
 import LoginPromptModal from '../components/LoginPromptModal';
+import { TryOnButton } from '../components/TryOnModal';
 
 // Star rating input component
 function StarInput({ value, onChange }) {
@@ -232,7 +233,9 @@ export default function ProductPage() {
             {product.certifications.map(cert => (
               <span key={cert} className="px-3 py-1 bg-surface-container-highest text-primary text-[10px] font-bold uppercase tracking-wider rounded-full flex items-center gap-1"><Award size={10} />{cert}</span>
             ))}
-            {!product.certifications.length && <span className="px-3 py-1 bg-primary/5 text-primary text-[10px] font-bold uppercase tracking-wider rounded-full">En stock</span>}
+            {product.stock > 0
+              ? <span className="px-3 py-1 bg-primary/5 text-primary text-[10px] font-bold uppercase tracking-wider rounded-full">En stock</span>
+              : <span className="px-3 py-1 bg-error/10 text-error text-[10px] font-bold uppercase tracking-wider rounded-full">Rupture</span>}
           </div>
 
           <h2 className="text-3xl md:text-4xl font-headline font-bold text-primary mb-1 leading-tight">{product.name}</h2>
@@ -273,12 +276,20 @@ export default function ProductPage() {
               <div className="flex items-center bg-surface-container-high rounded-full px-4 py-2">
                 <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="text-primary"><Minus size={16} /></button>
                 <span className="px-6 font-bold text-primary">{quantity}</span>
-                <button onClick={() => setQuantity(quantity + 1)} className="text-primary"><Plus size={16} /></button>
+                <button onClick={() => setQuantity(Math.min(product.stock || 1, quantity + 1))} className="text-primary" disabled={product.stock <= 0}><Plus size={16} /></button>
               </div>
-              <button className="btn-liquid flex-1 bg-primary text-white font-bold py-4 px-8 rounded-full shadow-lg shadow-primary/10 transition-all flex items-center justify-center gap-2"
-                onClick={() => addToCart(product, quantity)}>
+              <button
+                disabled={product.stock <= 0}
+                className={`btn-liquid flex-1 font-bold py-4 px-8 rounded-full shadow-lg transition-all flex items-center justify-center gap-2 ${
+                  product.stock > 0 ? 'bg-primary text-white shadow-primary/10' : 'bg-outline-variant text-on-surface-variant cursor-not-allowed'
+                }`}
+                onClick={() => product.stock > 0 && addToCart(product, quantity)}>
                 <ShoppingBag size={18} />Ajouter au panier
               </button>
+              <TryOnButton
+                product={product}
+                className="px-5 py-4 rounded-full border-2 border-primary text-primary font-bold flex items-center justify-center gap-2 hover:bg-primary hover:text-white transition-all"
+              />
               <button onClick={handleWishlist}
                 className={`p-4 rounded-full border transition-all ${isWishlisted(product.id) ? 'border-error text-error bg-error/5' : 'border-outline-variant text-secondary hover:text-error hover:border-error'}`}>
                 <Heart size={18} fill={isWishlisted(product.id) ? 'currentColor' : 'none'} />

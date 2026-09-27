@@ -23,6 +23,7 @@ const marketingItems = [
 
 const parametresItems = [
   { path: '/apparence', label: 'Apparence',           icon: 'palette',             moduleKey: 'APPARENCE' },
+  { path: '/configuration', label: 'Type de boutique', icon: 'storefront',         moduleKey: 'APPARENCE' },
   { path: '/roles',     label: 'Rôles & Permissions', icon: 'admin_panel_settings', moduleKey: 'ROLES_PERMISSIONS' },
   { path: '/compte',    label: 'Compte & Hébergement',icon: 'settings',            moduleKey: 'COMPTE_HEBERGEMENT' },
 ]
