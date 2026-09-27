@@ -12,7 +12,11 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     Optional<Product> findBySlug(String slug);
 
+    Optional<Product> findByShopIdAndSlug(Long shopId, String slug);
+
     boolean existsBySlug(String slug);
+
+    boolean existsByShopIdAndSlug(Long shopId, String slug);
 
     List<Product> findByStatutOrderByCreatedAtDesc(String statut);
 
@@ -38,11 +42,21 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     long countByStatut(String statut);
 
+    long countByShopId(Long shopId);
+
+    long countByShopIdAndStatut(Long shopId, String statut);
+
     @Query("SELECT COUNT(p) FROM Product p WHERE p.stock = 0")
     long countRupture();
 
+    @Query("SELECT COUNT(p) FROM Product p WHERE p.shopId = :shopId AND p.stock = 0")
+    long countRuptureByShopId(@Param("shopId") Long shopId);
+
     @Query("SELECT COUNT(p) FROM Product p WHERE p.promoActive = true AND p.statut = 'actif'")
     long countEnPromo();
+
+    @Query("SELECT COUNT(p) FROM Product p WHERE p.shopId = :shopId AND p.promoActive = true AND p.statut = 'actif'")
+    long countEnPromoByShopId(@Param("shopId") Long shopId);
 
     @Query("SELECT COUNT(p) FROM Product p WHERE p.statut IN ('actif', 'desactive')")
     long countNonArchived();

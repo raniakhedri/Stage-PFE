@@ -3,6 +3,7 @@ C:\Users\alloa\Desktop\Stage-PFE\microservices\auth-service\src\main\java\com\na
 C:\Users\alloa\Desktop\Stage-PFE\microservices\auth-service\src\main\java\com\naturessence\auth\controller\AdminLoyaltyController.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\auth-service\src\main\java\com\naturessence\auth\service\LoyaltyService.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\auth-service\src\main\java\com\naturessence\auth\AuthServiceApplication.java
+C:\Users\alloa\Desktop\Stage-PFE\microservices\auth-service\src\main\java\com\naturessence\auth\controller\PublicShopController.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\auth-service\src\main\java\com\naturessence\auth\service\RoleService.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\auth-service\src\main\java\com\naturessence\auth\config\SecurityConfig.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\auth-service\src\main\java\com\naturessence\auth\service\RefreshTokenService.java
@@ -10,6 +11,7 @@ C:\Users\alloa\Desktop\Stage-PFE\microservices\auth-service\src\main\java\com\na
 C:\Users\alloa\Desktop\Stage-PFE\microservices\auth-service\src\main\java\com\naturessence\auth\config\DataSeeder.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\auth-service\src\main\java\com\naturessence\auth\security\UserPrincipal.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\auth-service\src\main\java\com\naturessence\auth\service\SegmentService.java
+C:\Users\alloa\Desktop\Stage-PFE\microservices\auth-service\src\main\java\com\naturessence\auth\controller\PlatformController.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\auth-service\src\main\java\com\naturessence\auth\controller\ProfileController.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\auth-service\src\main\java\com\naturessence\auth\service\EmailService.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\auth-service\src\main\java\com\naturessence\auth\controller\AdminSegmentController.java

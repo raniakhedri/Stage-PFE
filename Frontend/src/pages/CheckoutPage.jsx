@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ChevronRight, Minus, Plus, Trash2, ShoppingBag, Truck, CreditCard, Banknote, Tag, X, CheckCircle, MapPin, Plus as PlusIcon } from 'lucide-react';
+import { lineKeyOf } from '../utils/cartLines';
 import { useShop } from '../context/ShopContext';
 import { loadStripe } from '@stripe/stripe-js';
 import { getUser } from '../api/tokenStorage';
@@ -14,13 +15,18 @@ const stripePromise = STRIPE_PK ? loadStripe(STRIPE_PK) : null;
 
 const API = 'http://localhost:8080/api/v1/public';
 
+function shopQuery() {
+  const slug = window.location.pathname.split('/').filter(Boolean)[0]
+  return slug ? `?shop=${encodeURIComponent(slug)}` : ''
+}
+
 async function fetchShippingZones() {
-  const res = await fetch(`${API}/checkout/shipping-zones`);
+  const res = await fetch(`${API}/checkout/shipping-zones${shopQuery()}`);
   return res.json();
 }
 
 async function fetchTvaConfig() {
-  const res = await fetch(`${API}/checkout/tva-config`);
+  const res = await fetch(`${API}/checkout/tva-config${shopQuery()}`);
   return res.json();
 }
 
@@ -286,6 +292,7 @@ export default function CheckoutPage() {
         const user = getUser();
         await placeOrder({
           ...form,
+          shopSlug: window.location.pathname.split('/').filter(Boolean)[0],
           paymentMethod: 'ESPECES_LIVRAISON',
           userId: user?.id || null,
           couponCode: appliedCoupon?.code || null,
@@ -294,7 +301,8 @@ export default function CheckoutPage() {
             productName: i.name,
             productSlug: i.slug,
             image: i.image,
-            size: i.volume || '',
+            size: i.size || i.volume || '',
+            color: i.couleur || '',
             unitPrice: i.price,
             quantity: i.qty,
           })),
@@ -314,6 +322,7 @@ export default function CheckoutPage() {
       const user = getUser();
       await placeOrder({
         ...form,
+        shopSlug: window.location.pathname.split('/').filter(Boolean)[0],
         paymentMethod: 'CARTE',
         userId: user?.id || null,
         couponCode: appliedCoupon?.code || null,
@@ -322,7 +331,8 @@ export default function CheckoutPage() {
           productName: i.name,
           productSlug: i.slug,
           image: i.image,
-          size: i.volume || '',
+          size: i.size || i.volume || '',
+            color: i.couleur || '',
           unitPrice: i.price,
           quantity: i.qty,
         })),
@@ -636,7 +646,7 @@ export default function CheckoutPage() {
             <h2 className="font-headline font-bold text-xl text-primary mb-5">Récapitulatif</h2>
             <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
               {items.map((item) => (
-                <div key={item.id} className="flex gap-3">
+                <div key={lineKeyOf(item)} className="flex gap-3">
                   <div className="relative shrink-0">
                     <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded-lg" />
                     <span className="absolute -top-1.5 -right-1.5 bg-primary text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold">
@@ -647,10 +657,10 @@ export default function CheckoutPage() {
                     <p className="text-sm font-bold text-primary truncate">{item.name}</p>
                     {item.volume && <p className="text-xs text-secondary">{item.volume}</p>}
                     <div className="flex items-center gap-2 mt-1">
-                      <button onClick={() => updateQty(item.id, item.qty - 1)} className="text-outline hover:text-primary"><Minus size={12} /></button>
+                      <button onClick={() => updateQty(lineKeyOf(item), item.qty - 1)} className="text-outline hover:text-primary"><Minus size={12} /></button>
                       <span className="text-xs font-bold text-primary">{item.qty}</span>
-                      <button onClick={() => updateQty(item.id, item.qty + 1)} className="text-outline hover:text-primary"><Plus size={12} /></button>
-                      <button onClick={() => removeFromCart(item.id)} className="text-outline hover:text-error ml-1"><Trash2 size={12} /></button>
+                      <button onClick={() => updateQty(lineKeyOf(item), item.qty + 1)} className="text-outline hover:text-primary"><Plus size={12} /></button>
+                      <button onClick={() => removeFromCart(lineKeyOf(item))} className="text-outline hover:text-error ml-1"><Trash2 size={12} /></button>
                     </div>
                   </div>
                   <p className="text-sm font-bold text-primary shrink-0">{(item.price * item.qty).toFixed(2)} TND</p>

@@ -3,8 +3,10 @@ package com.naturessence.catalog.service;
 import com.naturessence.shared.dto.request.CategoryRequest;
 import com.naturessence.shared.dto.response.CategoryResponse;
 import com.naturessence.shared.entity.Category;
+import com.naturessence.shared.entity.Shop;
 import com.naturessence.shared.repository.CategoryRepository;
 import com.naturessence.shared.repository.ProductRepository;
+import com.naturessence.shared.repository.ShopRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,19 +20,25 @@ public class CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
+    private final ShopRepository shopRepository;
 
     public CategoryService(
         CategoryRepository categoryRepository,
-        ProductRepository productRepository
+        ProductRepository productRepository,
+        ShopRepository shopRepository
     ) {
         this.categoryRepository = categoryRepository;
         this.productRepository = productRepository;
+        this.shopRepository = shopRepository;
     }
 
     // ── Admin: Get all categories (flat, ordered) ──────────────────────
     @Transactional(readOnly = true)
-    public List<CategoryResponse> getAllCategories() {
-        List<Category> all = categoryRepository.findAllOrdered();
+    public List<CategoryResponse> getAllCategories(String shopSlug) {
+        Long shopId = shopIdOf(shopSlug);
+        List<Category> all = categoryRepository.findAllOrdered().stream()
+                .filter(c -> inShop(c.getShopId(), shopId))
+                .toList();
         Map<Long, Long> counts = productCountsByCategory(all);
         return all.stream()
                 .map(c -> mapToResponse(c, counts.getOrDefault(c.getId(), 0L)))
@@ -72,6 +80,7 @@ public class CategoryService {
                 .badgePromo(request.isBadgePromo())
                 .metaTitle(request.getMetaTitle())
                 .metaDescription(request.getMetaDescription())
+                .shopId(resolveShopId(request.getShopSlug()))
                 .build();
 
         if (request.getParentId() != null) {
@@ -198,8 +207,11 @@ public class CategoryService {
 
     // ── Public: Get menu categories (tree) ─────────────────────────────
     @Transactional(readOnly = true)
-    public List<CategoryResponse> getMenuCategories() {
-        List<Category> menuCats = categoryRepository.findMenuCategories();
+    public List<CategoryResponse> getMenuCategories(String shopSlug) {
+        Long shopId = shopIdOf(shopSlug);
+        List<Category> menuCats = categoryRepository.findMenuCategories().stream()
+                .filter(c -> inShop(c.getShopId(), shopId))
+                .toList();
 
         // Build tree: only root categories, attach children
         List<Category> roots = menuCats.stream()
@@ -222,16 +234,20 @@ public class CategoryService {
 
     // ── Public: Get homepage categories ─────────────────────────────────
     @Transactional(readOnly = true)
-    public List<CategoryResponse> getHomepageCategories() {
+    public List<CategoryResponse> getHomepageCategories(String shopSlug) {
+        Long shopId = shopIdOf(shopSlug);
         return categoryRepository.findHomepageCategories().stream()
+                .filter(c -> inShop(c.getShopId(), shopId))
                 .map(this::mapToResponse)
                 .toList();
     }
 
     // ── Public: Get footer categories ──────────────────────────────────
     @Transactional(readOnly = true)
-    public List<CategoryResponse> getFooterCategories() {
+    public List<CategoryResponse> getFooterCategories(String shopSlug) {
+        Long shopId = shopIdOf(shopSlug);
         return categoryRepository.findFooterCategories().stream()
+                .filter(c -> inShop(c.getShopId(), shopId))
                 .map(this::mapToResponse)
                 .toList();
     }
@@ -244,6 +260,23 @@ public class CategoryService {
             cat.setMenuPosition(i + 1);
             categoryRepository.save(cat);
         }
+    }
+
+    private Long shopIdOf(String shopSlug) {
+        if (shopSlug == null || shopSlug.isBlank()) return null;
+        return shopRepository.findBySlug(shopSlug.trim().toLowerCase()).map(Shop::getId).orElse(-1L);
+    }
+
+    private Long resolveShopId(String shopSlug) {
+        if (shopSlug == null || shopSlug.isBlank()) return null;
+        return shopRepository.findBySlug(shopSlug.trim().toLowerCase())
+                .map(Shop::getId)
+                .orElseThrow(() -> new IllegalArgumentException("Boutique introuvable"));
+    }
+
+    private boolean inShop(Long entityShopId, Long shopId) {
+        if (shopId == null) return true;
+        return shopId.equals(entityShopId);
     }
 
     // ── Helpers ────────────────────────────────────────────────────────

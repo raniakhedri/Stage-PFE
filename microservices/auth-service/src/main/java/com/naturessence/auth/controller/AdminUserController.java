@@ -35,8 +35,9 @@ public class AdminUserController {
 
     @GetMapping
     public ResponseEntity<Page<UserResponse>> getAllUsers(
-            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(userService.getAllUsers(pageable));
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
+            @RequestParam(required = false) String shop) {
+        return ResponseEntity.ok(userService.getAllUsers(pageable, shop));
     }
 
     @GetMapping("/{id}")
@@ -79,8 +80,9 @@ public class AdminUserController {
     @GetMapping("/search")
     public ResponseEntity<Page<UserResponse>> searchUsers(
             @RequestParam String q,
-            @PageableDefault(size = 10) Pageable pageable) {
-        return ResponseEntity.ok(userService.searchUsers(q, pageable));
+            @PageableDefault(size = 10) Pageable pageable,
+            @RequestParam(required = false) String shop) {
+        return ResponseEntity.ok(userService.searchUsers(q, pageable, shop));
     }
 
     @GetMapping("/by-role/{roleName}")
@@ -93,19 +95,22 @@ public class AdminUserController {
     @GetMapping("/by-status/{status}")
     public ResponseEntity<Page<UserResponse>> getUsersByStatus(
             @PathVariable AccountStatus status,
-            @PageableDefault(size = 10) Pageable pageable) {
-        return ResponseEntity.ok(userService.getUsersByStatus(status, pageable));
+            @PageableDefault(size = 10) Pageable pageable,
+            @RequestParam(required = false) String shop) {
+        return ResponseEntity.ok(userService.getUsersByStatus(status, pageable, shop));
     }
 
     @GetMapping("/by-segment/{segmentName}")
     public ResponseEntity<Page<UserResponse>> getUsersBySegment(
             @PathVariable String segmentName,
-            @PageableDefault(size = 10) Pageable pageable) {
-        return ResponseEntity.ok(userService.getUsersBySegment(segmentName, pageable));
+            @PageableDefault(size = 10) Pageable pageable,
+            @RequestParam(required = false) String shop) {
+        return ResponseEntity.ok(userService.getUsersBySegment(segmentName, pageable, shop));
     }
 
     @GetMapping("/stats")
-    public ResponseEntity<DashboardStatsResponse> getDashboardStats() {
-        return ResponseEntity.ok(userService.getDashboardStats());
+    public ResponseEntity<DashboardStatsResponse> getDashboardStats(
+            @RequestParam(required = false) String shop) {
+        return ResponseEntity.ok(userService.getDashboardStats(shop));
     }
 }

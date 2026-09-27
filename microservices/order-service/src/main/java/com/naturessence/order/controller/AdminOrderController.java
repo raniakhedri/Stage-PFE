@@ -17,8 +17,8 @@ public class AdminOrderController {
     private final OrderService orderService;
 
     @GetMapping
-    public ResponseEntity<List<OrderResponse>> getAllOrders() {
-        return ResponseEntity.ok(orderService.getAllOrders());
+    public ResponseEntity<List<OrderResponse>> getAllOrders(@RequestParam(required = false) String shop) {
+        return ResponseEntity.ok(orderService.getAllOrders(shop));
     }
 
     @GetMapping("/user/{userId}")

@@ -22,6 +22,9 @@ public class Coupon {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "shop_id")
+    private Long shopId;
+
     @Column(nullable = false, unique = true)
     private String code;
 

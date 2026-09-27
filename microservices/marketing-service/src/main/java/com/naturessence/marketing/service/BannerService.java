@@ -3,10 +3,12 @@ package com.naturessence.marketing.service;
 import com.naturessence.shared.dto.request.BannerRequest;
 import com.naturessence.shared.dto.response.BannerResponse;
 import com.naturessence.shared.entity.Banner;
+import com.naturessence.shared.entity.Shop;
 import com.naturessence.shared.enums.BannerAudience;
 import com.naturessence.shared.enums.BannerPosition;
 import com.naturessence.shared.enums.BannerStatut;
 import com.naturessence.shared.repository.BannerRepository;
+import com.naturessence.shared.repository.ShopRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,12 +22,16 @@ import java.util.stream.Collectors;
 public class BannerService {
 
     private final BannerRepository bannerRepository;
+    private final ShopRepository shopRepository;
 
     // ── Admin: get all ────────────────────────────────────────────────────────
     @Transactional(readOnly = true)
-    public List<BannerResponse> getAll() {
+    public List<BannerResponse> getAll(String shopSlug) {
+        Long shopId = shopIdOf(shopSlug);
         return bannerRepository.findAllByOrderByOrdreAscPrioriteAsc()
-                .stream().map(this::toResponse).collect(Collectors.toList());
+                .stream()
+                .filter(banner -> shopId == null || shopId.equals(banner.getShopId()))
+                .map(this::toResponse).collect(Collectors.toList());
     }
 
     // ── Admin: get by id ──────────────────────────────────────────────────────
@@ -60,6 +66,7 @@ public class BannerService {
                 .visibleHomepage(req.isVisibleHomepage())
                 .visibleMobile(req.isVisibleMobile())
                 .visibleDesktop(req.isVisibleDesktop())
+                .shopId(resolveShopId(req.getShopSlug()))
                 .ordre(req.getOrdre())
                 .dureeSecondes(req.getDureeSecondes() > 0 ? req.getDureeSecondes() : 5)
                 .animation(req.getAnimation() != null ? req.getAnimation() : "fade")
@@ -131,6 +138,39 @@ public class BannerService {
             banners = bannerRepository.findPublicBannersForGuest(position, today);
         }
         return banners.stream().map(this::toResponse).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<BannerResponse> getPublicBanners(BannerPosition position, String segment, String shopSlug) {
+        Long shopId = shopIdOf(shopSlug);
+        LocalDate today = LocalDate.now();
+        List<Banner> banners;
+        if (segment != null && !segment.isBlank()) {
+            try {
+                BannerAudience audience = BannerAudience.valueOf(segment.toUpperCase());
+                banners = bannerRepository.findPublicBanners(position, audience, today);
+            } catch (IllegalArgumentException e) {
+                banners = bannerRepository.findPublicBannersForGuest(position, today);
+            }
+        } else {
+            banners = bannerRepository.findPublicBannersForGuest(position, today);
+        }
+        return banners.stream()
+                .filter(banner -> shopId == null || shopId.equals(banner.getShopId()))
+                .map(this::toResponse)
+                .toList();
+    }
+
+    private Long shopIdOf(String shopSlug) {
+        if (shopSlug == null || shopSlug.isBlank()) return null;
+        return shopRepository.findBySlug(shopSlug.trim().toLowerCase()).map(Shop::getId).orElse(-1L);
+    }
+
+    private Long resolveShopId(String shopSlug) {
+        if (shopSlug == null || shopSlug.isBlank()) return null;
+        return shopRepository.findBySlug(shopSlug.trim().toLowerCase())
+                .map(Shop::getId)
+                .orElseThrow(() -> new IllegalArgumentException("Boutique introuvable"));
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

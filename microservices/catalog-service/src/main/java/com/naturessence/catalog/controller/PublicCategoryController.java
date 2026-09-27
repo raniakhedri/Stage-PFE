@@ -16,22 +16,22 @@ public class PublicCategoryController {
     private final CategoryService categoryService;
 
     @GetMapping("/menu")
-    public ResponseEntity<List<CategoryResponse>> getMenuCategories() {
-        return ResponseEntity.ok(categoryService.getMenuCategories());
+    public ResponseEntity<List<CategoryResponse>> getMenuCategories(@RequestParam(required = false) String shop) {
+        return ResponseEntity.ok(categoryService.getMenuCategories(shop));
     }
 
     @GetMapping
-    public ResponseEntity<List<CategoryResponse>> getAllCategories() {
-        return ResponseEntity.ok(categoryService.getMenuCategories());
+    public ResponseEntity<List<CategoryResponse>> getAllCategories(@RequestParam(required = false) String shop) {
+        return ResponseEntity.ok(categoryService.getMenuCategories(shop));
     }
 
     @GetMapping("/homepage")
-    public ResponseEntity<List<CategoryResponse>> getHomepageCategories() {
-        return ResponseEntity.ok(categoryService.getHomepageCategories());
+    public ResponseEntity<List<CategoryResponse>> getHomepageCategories(@RequestParam(required = false) String shop) {
+        return ResponseEntity.ok(categoryService.getHomepageCategories(shop));
     }
 
     @GetMapping("/footer")
-    public ResponseEntity<List<CategoryResponse>> getFooterCategories() {
-        return ResponseEntity.ok(categoryService.getFooterCategories());
+    public ResponseEntity<List<CategoryResponse>> getFooterCategories(@RequestParam(required = false) String shop) {
+        return ResponseEntity.ok(categoryService.getFooterCategories(shop));
     }
 }

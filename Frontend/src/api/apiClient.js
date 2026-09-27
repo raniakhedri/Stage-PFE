@@ -3,8 +3,15 @@ import { getAccessToken } from './tokenStorage';
 const API_BASE = 'http://localhost:8080/api/v1/public';
 const API_PROFILE = 'http://localhost:8080/api/v1/profile';
 
+function withShop(path) {
+  const slug = window.location.pathname.split('/').filter(Boolean)[0]
+  if (!slug) return path
+  const join = path.includes('?') ? '&' : '?'
+  return `${path}${join}shop=${encodeURIComponent(slug)}`
+}
+
 async function request(path) {
-  const res = await fetch(`${API_BASE}${path}`);
+  const res = await fetch(`${API_BASE}${withShop(path)}`);
   if (!res.ok) throw new Error(`API error: ${res.status}`);
   if (res.status === 204) return null;
   return res.json();
@@ -123,10 +130,17 @@ export async function fetchFeaturedProducts() {
   return products.slice(0, 8).map(mapProduct);
 }
 
+export async function fetchAllProducts() {
+  const products = await request('/products');
+  return products.map(mapProduct);
+}
+
 export async function fetchHomepageBanners(segment, device = 'desktop') {
   const qs = new URLSearchParams({ position: 'HOMEPAGE_HERO' });
   if (segment) qs.append('segment', String(segment).toUpperCase());
 
+  const slug = window.location.pathname.split('/').filter(Boolean)[0]
+  if (slug) qs.append('shop', slug)
   const res = await fetch(`${API_BASE}/banners?${qs.toString()}`);
   if (!res.ok) throw new Error(`API error: ${res.status}`);
 
@@ -174,6 +188,16 @@ function firstProductImage(p) {
   return raw.split(',')[0]?.trim() || ''
 }
 
+/** "S,M,L" → ['S','M','L']. Older products typed sizes separated by spaces ("S M L XL"); split those too. */
+function parseSizes(raw) {
+  const list = String(raw || '').split(/[,;|]/).map((s) => s.trim()).filter(Boolean)
+  if (list.length === 1 && /\s/.test(list[0])) {
+    const parts = list[0].split(/\s+/)
+    if (parts.every((p) => /^(X{0,4}[SML]?|\d{1,3}|W\d{2})$/i.test(p))) return parts
+  }
+  return list
+}
+
 function mapProduct(p) {
   const badge = p.badgeNouveau ? 'Nouveau'
     : p.badgeBestSeller ? 'Best-Seller'
@@ -205,6 +229,16 @@ function mapProduct(p) {
     precautions: p.precautions || '',
     inciComposition: p.inciComposition || '',
     certifications: (p.certifications || '').split(',').map(s => s.trim()).filter(Boolean),
+    tissu: p.tissu || '',
+    couleur: p.couleur || '',
+    couleurHex: p.couleurHex || '',
+    coupe: p.coupe || '',
+    col: p.col || '',
+    manches: p.manches || '',
+    entretien: p.entretien || '',
+    tailles: parseSizes(p.tailles),
+    saison: p.saison || '',
+    genre: p.genre || '',
     variants: (p.variants || []).map((v) => ({
       id: v.id,
       label: v.label,

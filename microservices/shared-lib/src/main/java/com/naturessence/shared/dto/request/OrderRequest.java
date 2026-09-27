@@ -45,6 +45,8 @@ public class OrderRequest {
 
     private Long userId; // optional — set when user is logged in
 
+    private String shopSlug;
+
     @NotEmpty
     @Valid
     private List<OrderItemRequest> items;

@@ -1,6 +1,7 @@
 ﻿import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'react-toastify'
 import apiClient from '../api/apiClient'
+import { shopQuery } from '../lib/sellio'
 import PageHeader from '../components/ui/PageHeader'
 import KpiCard from '../components/ui/KpiCard'
 import CustomSelect from '../components/ui/CustomSelect'
@@ -158,9 +159,9 @@ export default function TvaLivraison() {
     setLoading(true)
     try {
       const [configRes, ratesRes, zonesRes] = await Promise.all([
-        apiClient.get('/admin/tva-shipping/config'),
-        apiClient.get('/admin/tva-shipping/rates'),
-        apiClient.get('/admin/tva-shipping/zones'),
+        apiClient.get(`/admin/tva-shipping/config${shopQuery()}`),
+        apiClient.get(`/admin/tva-shipping/rates${shopQuery()}`),
+        apiClient.get(`/admin/tva-shipping/zones${shopQuery()}`),
       ])
       const c = configRes.data
       setTvaActive(c.tvaActive)
@@ -187,7 +188,7 @@ export default function TvaLivraison() {
   const handleSave = async () => {
     setSaving(true)
     try {
-      await apiClient.put('/admin/tva-shipping/config', {
+      await apiClient.put(`/admin/tva-shipping/config${shopQuery()}`, {
         tvaActive,
         tauxDefaut: parseFloat(tauxDefaut) || 0,
         devise,
@@ -210,7 +211,7 @@ export default function TvaLivraison() {
   const handleAddTaux = async () => {
     if (!newTauxNom.trim() || !newTauxValeur) return toast.error('Veuillez remplir tous les champs.')
     try {
-      const res = await apiClient.post('/admin/tva-shipping/rates', {
+      const res = await apiClient.post(`/admin/tva-shipping/rates${shopQuery()}`, {
         nom: newTauxNom.trim(),
         valeur: parseFloat(newTauxValeur),
       })
@@ -227,7 +228,7 @@ export default function TvaLivraison() {
   const handleEditTaux = async () => {
     if (!editTauxNom.trim() || !editTauxValeur) return toast.error('Veuillez remplir tous les champs.')
     try {
-      const res = await apiClient.put(`/admin/tva-shipping/rates/${editTaux.id}`, {
+      const res = await apiClient.put(`/admin/tva-shipping/rates/${editTaux.id}${shopQuery()}`, {
         nom: editTauxNom.trim(),
         valeur: parseFloat(editTauxValeur),
       })
@@ -247,7 +248,7 @@ export default function TvaLivraison() {
 
   const toggleTauxStatut = async (id) => {
     try {
-      const res = await apiClient.patch(`/admin/tva-shipping/rates/${id}/toggle`)
+      const res = await apiClient.patch(`/admin/tva-shipping/rates/${id}/toggle${shopQuery()}`)
       setTaux(prev => prev.map(t => t.id === id ? res.data : t))
     } catch {
       toast.error('Erreur lors du changement de statut.')
@@ -256,7 +257,7 @@ export default function TvaLivraison() {
 
   const deleteTaux = async (id) => {
     try {
-      await apiClient.delete(`/admin/tva-shipping/rates/${id}`)
+      await apiClient.delete(`/admin/tva-shipping/rates/${id}${shopQuery()}`)
       setTaux(prev => prev.filter(t => t.id !== id))
       toast.success('Taux TVA supprimé.')
     } catch {
@@ -269,7 +270,7 @@ export default function TvaLivraison() {
     if (!newZone.regions.trim()) return toast.error('Veuillez sélectionner au moins une région.')
     const autoNom = newZone.regions.split(',').map(s => s.trim()).filter(Boolean).join(' / ')
     try {
-      const res = await apiClient.post('/admin/tva-shipping/zones', {
+      const res = await apiClient.post(`/admin/tva-shipping/zones${shopQuery()}`, {
         ...newZone,
         nom: autoNom,
         cout: parseFloat(newZone.cout) || 0,
@@ -292,7 +293,7 @@ export default function TvaLivraison() {
     if (!editZoneData.regions.trim()) return toast.error('Veuillez sélectionner au moins une région.')
     const autoNom = editZoneData.regions.split(',').map(s => s.trim()).filter(Boolean).join(' / ')
     try {
-      const res = await apiClient.put(`/admin/tva-shipping/zones/${editZone.id}`, {
+      const res = await apiClient.put(`/admin/tva-shipping/zones/${editZone.id}${shopQuery()}`, {
         ...editZoneData,
         nom: autoNom,
         cout: parseFloat(editZoneData.cout) || 0,
@@ -307,7 +308,7 @@ export default function TvaLivraison() {
 
   const deleteZone = async (id) => {
     try {
-      await apiClient.delete(`/admin/tva-shipping/zones/${id}`)
+      await apiClient.delete(`/admin/tva-shipping/zones/${id}${shopQuery()}`)
       setZones(prev => prev.filter(z => z.id !== id))
       toast.success('Zone supprimée.')
     } catch {

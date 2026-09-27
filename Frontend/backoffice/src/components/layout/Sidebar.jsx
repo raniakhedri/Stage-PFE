@@ -123,7 +123,7 @@ function Sidebar() {
     localStorage.removeItem('accessToken')
     localStorage.removeItem('refreshToken')
     localStorage.removeItem('user')
-    window.location.href = 'http://localhost:3001/login'
+    window.location.href = '/login'
   }
 
   return (
@@ -144,7 +144,9 @@ function Sidebar() {
               <span className="material-symbols-outlined text-white text-[18px]">shield</span>
             </div>
             <span className="ml-3 text-lg font-bold tracking-tight text-slate-800">
-              Nature<span className="text-sidebar">Essence</span>
+              {(() => {
+                try { return JSON.parse(localStorage.getItem('user') || '{}').shopName || 'Sellio' } catch { return 'Sellio' }
+              })()}
             </span>
           </>
         )}

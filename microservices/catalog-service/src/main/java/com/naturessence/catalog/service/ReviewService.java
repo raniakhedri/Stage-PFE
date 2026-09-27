@@ -8,6 +8,7 @@ import com.naturessence.shared.entity.User;
 import com.naturessence.shared.enums.OrderStatus;
 import com.naturessence.shared.repository.OrderRepository;
 import com.naturessence.shared.repository.ReviewRepository;
+import com.naturessence.shared.repository.ShopRepository;
 import com.naturessence.shared.repository.UserRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
+    private final ShopRepository shopRepository;
 
     @Transactional
     public ReviewResponse createReview(Long userId, ReviewRequest req) {
@@ -108,12 +110,14 @@ public class ReviewService {
     }
 
     @Transactional(readOnly = true)
-    public List<ReviewResponse> getAllReviews() {
-        return reviewRepository
-            .findAllByOrderByCreatedAtDesc()
-            .stream()
-            .map(this::mapToResponse)
-            .toList();
+    public List<ReviewResponse> getAllReviews(String shopSlug) {
+        Long shopId = shopIdOf(shopSlug);
+        List<Review> reviews = shopId == null
+            ? reviewRepository.findAllByOrderByCreatedAtDesc()
+            : shopId < 0
+                ? List.of()
+                : reviewRepository.findByOrderShopId(shopId);
+        return reviews.stream().map(this::mapToResponse).toList();
     }
 
     @Transactional(readOnly = true)
@@ -126,33 +130,41 @@ public class ReviewService {
     }
 
     @Transactional
-    public ReviewResponse updateStatut(Long reviewId, String statut) {
-        Review review = reviewRepository
-            .findById(reviewId)
-            .orElseThrow(() ->
-                new IllegalArgumentException("Avis introuvable")
-            );
+    public ReviewResponse updateStatut(Long reviewId, String statut, String shopSlug) {
+        Review review = findInShop(reviewId, shopSlug);
         review.setStatut(statut);
         return mapToResponse(reviewRepository.save(review));
     }
 
     @Transactional
-    public ReviewResponse replyToReview(Long reviewId, String reponse) {
-        Review review = reviewRepository
-            .findById(reviewId)
-            .orElseThrow(() ->
-                new IllegalArgumentException("Avis introuvable")
-            );
+    public ReviewResponse replyToReview(Long reviewId, String reponse, String shopSlug) {
+        Review review = findInShop(reviewId, shopSlug);
         review.setReponse(reponse);
         return mapToResponse(reviewRepository.save(review));
     }
 
     @Transactional
-    public void deleteReview(Long reviewId) {
-        if (!reviewRepository.existsById(reviewId)) {
+    public void deleteReview(Long reviewId, String shopSlug) {
+        Review review = findInShop(reviewId, shopSlug);
+        reviewRepository.delete(review);
+    }
+
+    private Review findInShop(Long reviewId, String shopSlug) {
+        Review review = reviewRepository
+            .findById(reviewId)
+            .orElseThrow(() -> new IllegalArgumentException("Avis introuvable"));
+        Long shopId = shopIdOf(shopSlug);
+        if (shopId == null) return review;
+        Long orderShop = review.getOrder() != null ? review.getOrder().getShopId() : null;
+        if (!shopId.equals(orderShop)) {
             throw new IllegalArgumentException("Avis introuvable");
         }
-        reviewRepository.deleteById(reviewId);
+        return review;
+    }
+
+    private Long shopIdOf(String shopSlug) {
+        if (shopSlug == null || shopSlug.isBlank()) return null;
+        return shopRepository.findBySlug(shopSlug.trim().toLowerCase()).map(shop -> shop.getId()).orElse(-1L);
     }
 
     @Transactional(readOnly = true)

@@ -26,12 +26,13 @@ public class PublicBannerController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<BannerResponse>>> getPublicBanners(
             @RequestParam(defaultValue = "HOMEPAGE_HERO") String position,
-            @RequestParam(required = false) String segment) {
+            @RequestParam(required = false) String segment,
+            @RequestParam(required = false) String shop) {
         try {
             BannerPosition pos = BannerPosition.valueOf(position.toUpperCase());
             return ResponseEntity.ok(ApiResponse.ok(
                     "Bannières publiques",
-                    bannerService.getPublicBanners(pos, segment)));
+                    bannerService.getPublicBanners(pos, segment, shop)));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error("Position invalide: " + position));
         }

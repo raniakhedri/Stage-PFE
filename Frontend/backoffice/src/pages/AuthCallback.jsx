@@ -1,9 +1,9 @@
 import { useEffect } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { scheduleAutoLogout } from '../api/apiClient'
+import { openMerchantHome } from '../lib/sellio'
 
 export default function AuthCallback() {
-  const navigate = useNavigate()
   const [params] = useSearchParams()
 
   useEffect(() => {
@@ -16,11 +16,13 @@ export default function AuthCallback() {
       localStorage.setItem('refreshToken', refreshToken)
       if (user) localStorage.setItem('user', user)
       scheduleAutoLogout()
-      navigate('/dashboard', { replace: true })
+      let parsed = {}
+      try { parsed = user ? JSON.parse(user) : {} } catch { parsed = {} }
+      openMerchantHome(parsed)
     } else {
-      window.location.href = 'http://localhost:3001/login?redirect=backoffice'
+      window.location.replace('/login')
     }
-  }, [params, navigate])
+  }, [params])
 
   return (
     <div className="min-h-screen flex items-center justify-center">

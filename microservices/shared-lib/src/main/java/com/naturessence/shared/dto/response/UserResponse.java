@@ -38,4 +38,9 @@ public class UserResponse {
     private LocalDateTime lastLogin;
     private LocalDateTime createdAt;
     private Map<String, Boolean> permissions;
+    private Long shopId;
+    private String shopSlug;
+    private String shopName;
+    private String businessType;
+    private String templateKey;
 }

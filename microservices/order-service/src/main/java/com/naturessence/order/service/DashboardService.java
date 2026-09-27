@@ -2,6 +2,7 @@ package com.naturessence.order.service;
 
 import com.naturessence.shared.dto.response.DashboardResponse;
 import com.naturessence.shared.entity.*;
+import com.naturessence.shared.repository.ShopRepository;
 import com.naturessence.shared.enums.AccountStatus;
 import com.naturessence.shared.enums.OrderStatus;
 import com.naturessence.shared.enums.ReturnStatus;
@@ -26,13 +27,28 @@ public class DashboardService {
     private final ReturnRequestRepository returnRequestRepository;
     private final ReviewRepository reviewRepository;
     private final CategoryRepository categoryRepository;
+    private final ShopRepository shopRepository;
 
     @Transactional(readOnly = true)
-    public DashboardResponse getDashboard() {
-        List<Order> allOrders = orderRepository.findAllByOrderByCreatedAtDesc();
-        List<Product> allProducts = productRepository.findAllByOrderByCreatedAtDesc();
-        List<ReturnRequest> allReturns = returnRequestRepository.findAllByOrderByCreatedAtDesc();
-        List<Review> allReviews = reviewRepository.findAllByOrderByCreatedAtDesc();
+    public DashboardResponse getDashboard(String shopSlug) {
+        Long shopId = shopIdOf(shopSlug);
+        List<Order> allOrders = orderRepository.findAllByOrderByCreatedAtDesc().stream()
+                .filter(order -> inShop(order.getShopId(), shopId))
+                .toList();
+        List<Product> allProducts = productRepository.findAllByOrderByCreatedAtDesc().stream()
+                .filter(product -> inShop(product.getShopId(), shopId))
+                .toList();
+        Set<Long> productIds = allProducts.stream().map(Product::getId).collect(Collectors.toSet());
+        List<ReturnRequest> allReturns = returnRequestRepository.findAllByOrderByCreatedAtDesc().stream()
+                .filter(request -> shopId == null || (request.getOrder() != null && shopId.equals(request.getOrder().getShopId())))
+                .toList();
+        List<Review> allReviews = reviewRepository.findAllByOrderByCreatedAtDesc().stream()
+                .filter(review -> shopId == null || productIds.contains(review.getProductId()))
+                .toList();
+        List<User> shopClients = userRepository.findAll().stream()
+                .filter(user -> inShop(user.getShopId(), shopId))
+                .filter(user -> user.getRole() != null && "CLIENT".equals(user.getRole().getName()))
+                .toList();
 
         // ── KPI ──
         // Only count non-cancelled orders for revenue
@@ -47,8 +63,11 @@ public class DashboardService {
 
         long commandesEnAttente = allOrders.stream().filter(o -> o.getStatus() == OrderStatus.EN_ATTENTE).count();
 
-        long clientsActifs = userRepository.countByStatus(AccountStatus.ACTIVE);
-        long nouveauxClients = userRepository.countNewClientsSince(LocalDateTime.now().minusDays(30));
+        long clientsActifs = shopClients.stream().filter(user -> user.getStatus() == AccountStatus.ACTIVE).count();
+        LocalDateTime since = LocalDateTime.now().minusDays(30);
+        long nouveauxClients = shopClients.stream()
+                .filter(user -> user.getCreatedAt() != null && user.getCreatedAt().isAfter(since))
+                .count();
 
         // Taux de retour = returns / delivered orders
         long ordersLivrees = allOrders.stream().filter(o -> o.getStatus() == OrderStatus.LIVREE).count();
@@ -176,9 +195,9 @@ public class DashboardService {
                 .toList();
 
         // ── Clients stats ──
-        long clientsFideles = userRepository.countBySegmentName("FIDELE");
-        long clientsVIP = userRepository.countBySegmentName("VIP");
-        long clientsInactifs = userRepository.countByStatus(AccountStatus.INACTIVE);
+        long clientsFideles = shopClients.stream().filter(user -> user.getSegment() != null && "FIDELE".equals(user.getSegment().getName())).count();
+        long clientsVIP = shopClients.stream().filter(user -> user.getSegment() != null && "VIP".equals(user.getSegment().getName())).count();
+        long clientsInactifs = shopClients.stream().filter(user -> user.getStatus() == AccountStatus.INACTIVE).count();
 
         // ── Tendances mensuelles (12 derniers mois) ──
         List<DashboardResponse.MonthlyData> tendances = new ArrayList<>();
@@ -245,5 +264,15 @@ public class DashboardService {
                 .clientsInactifs(clientsInactifs)
                 .tendancesMensuelles(tendances)
                 .build();
+    }
+
+    private Long shopIdOf(String shopSlug) {
+        if (shopSlug == null || shopSlug.isBlank()) return null;
+        return shopRepository.findBySlug(shopSlug.trim().toLowerCase()).map(Shop::getId).orElse(-1L);
+    }
+
+    private boolean inShop(Long entityShopId, Long shopId) {
+        if (shopId == null) return true;
+        return shopId.equals(entityShopId);
     }
 }

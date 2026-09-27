@@ -32,6 +32,7 @@ public class DataSeeder implements CommandLineRunner {
 	private final ShippingZoneRepository shippingZoneRepository;
 	private final CategoryRepository categoryRepository;
 	private final ProductRepository productRepository;
+	private final ShopRepository shopRepository;
 	private final JdbcTemplate jdbcTemplate;
 	private final LoyaltyConfigRepository loyaltyConfigRepository;
 
@@ -41,6 +42,12 @@ public class DataSeeder implements CommandLineRunner {
 	@Value("${app.seed.admin-password:Admin@123456}")
 	private String adminPassword;
 
+	@Value("${app.seed.sellio-email:admin@sellio.tn}")
+	private String sellioEmail;
+
+	@Value("${app.seed.sellio-password:Sellio@2026}")
+	private String sellioPassword;
+
 	@Override
 	@Transactional
 	public void run(String... args) {
@@ -49,10 +56,12 @@ public class DataSeeder implements CommandLineRunner {
 		seedRoles();
 		seedSegments();
 		seedSuperAdmin();
+		seedSellioAdmin();
 		seedTvaAndShipping();
 		seedLoyaltyConfig();
 		seedCategoriesAndProducts();
 		seedTryOnPull();
+		seedNaturEssenceShop();
 		log.info("✅ Database initialization completed!");
 	}
 
@@ -229,6 +238,29 @@ public class DataSeeder implements CommandLineRunner {
 		log.info("✓ 4 segments created: NOUVEAU, FIDELE, VIP, INACTIF");
 	}
 
+	private void seedNaturEssenceShop() {
+		Shop shop = shopRepository.findBySlug("naturessence").orElseGet(() ->
+				shopRepository.save(Shop.builder()
+						.name("NaturEssence")
+						.slug("naturessence")
+						.businessType("COSMETICS")
+						.templateKey("botanique")
+						.build()));
+		for (Product product : productRepository.findAll()) {
+			if (product.getShopId() == null) {
+				product.setShopId(shop.getId());
+				productRepository.save(product);
+			}
+		}
+		for (User user : userRepository.findAll()) {
+			if (user.getShopId() == null && user.getRole() != null && "CLIENT".equals(user.getRole().getName())) {
+				user.setShopId(shop.getId());
+				userRepository.save(user);
+			}
+		}
+		log.info("🏪 NaturEssence shop ready (slug naturessence)");
+	}
+
 	private void seedSuperAdmin() {
 		log.info("👨‍💼 Seeding super admin user...");
 		if (userRepository.existsByEmailIgnoreCase(adminEmail)) {
@@ -254,6 +286,36 @@ public class DataSeeder implements CommandLineRunner {
 
 		userRepository.save(superAdmin);
 		log.info("✓ Super Admin created: {}", adminEmail);
+	}
+
+	/** Platform account that opens the Sellio console (/sellio) and sees every shop. */
+	private void seedSellioAdmin() {
+		String email = sellioEmail.toLowerCase().trim();
+		Role superAdminRole = roleRepository.findByName("SUPER_ADMIN")
+				.orElseThrow(() -> new RuntimeException("Rôle SUPER_ADMIN non trouvé"));
+		User existing = userRepository.findByEmailIgnoreCase(email).orElse(null);
+		if (existing != null) {
+			// Keep it a platform account even if it was created through the merchant sign-up.
+			if (!"SUPER_ADMIN".equals(existing.getRole().getName()) || existing.getShopId() != null) {
+				existing.setRole(superAdminRole);
+				existing.setShopId(null);
+				userRepository.save(existing);
+			}
+			log.info("✓ Sellio admin already exists: {}", email);
+			return;
+		}
+		Segment defaultSegment = segmentRepository.findByName("NOUVEAU")
+				.orElseThrow(() -> new RuntimeException("Segment NOUVEAU non trouvé"));
+		userRepository.save(User.builder()
+				.firstName("Sellio")
+				.lastName("Admin")
+				.email(email)
+				.password(passwordEncoder.encode(sellioPassword))
+				.role(superAdminRole)
+				.segment(defaultSegment)
+				.status(AccountStatus.ACTIVE)
+				.build());
+		log.info("✓ Sellio admin created: {}", email);
 	}
 
 	private void seedTvaAndShipping() {

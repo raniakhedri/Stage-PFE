@@ -24,6 +24,9 @@ public class Banner {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "shop_id")
+    private Long shopId;
+
     @Column(nullable = false)
     private String titre;
 

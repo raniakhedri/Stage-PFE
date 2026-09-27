@@ -21,6 +21,10 @@ public class ApiGatewayApplication {
                 r
                     .path(
                         "/api/v1/auth/**",
+                        "/api/v1/public/shops",
+                        "/api/v1/public/shops/**",
+                        "/api/v1/admin/platform",
+                        "/api/v1/admin/platform/**",
                         "/api/v1/profile",
                         "/api/v1/profile/loyalty",
                         "/api/v1/profile/loyalty/**",

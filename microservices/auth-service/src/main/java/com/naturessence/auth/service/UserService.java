@@ -16,7 +16,9 @@ import com.naturessence.shared.repository.PointsTransactionRepository;
 import com.naturessence.shared.repository.RefreshTokenRepository;
 import com.naturessence.shared.repository.ReviewRepository;
 import com.naturessence.shared.repository.RoleRepository;
+import com.naturessence.shared.entity.Shop;
 import com.naturessence.shared.repository.SegmentRepository;
+import com.naturessence.shared.repository.ShopRepository;
 import com.naturessence.shared.repository.UserRepository;
 
 import java.util.List;
@@ -34,6 +36,7 @@ import java.time.LocalDateTime;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final ShopRepository shopRepository;
     private final RoleRepository roleRepository;
     private final SegmentRepository segmentRepository;
     private final PasswordEncoder passwordEncoder;
@@ -189,13 +192,33 @@ public class UserService {
     // ── Admin: List all users with pagination ─────────────────────────────────
     @Transactional(readOnly = true)
     public Page<UserResponse> getAllUsers(Pageable pageable) {
-        return userRepository.findAll(pageable).map(authService::mapToUserResponse);
+        return getAllUsers(pageable, null);
+    }
+
+    public Page<UserResponse> getAllUsers(Pageable pageable, String shopSlug) {
+        Long shopId = shopIdOf(shopSlug);
+        Page<User> page = shopId == null
+                ? userRepository.findAll(pageable)
+                : shopId < 0
+                    ? Page.empty(pageable)
+                    : userRepository.findClientsByShopId(shopId, pageable);
+        return page.map(authService::mapToUserResponse);
     }
 
     // ── Admin: Search users ───────────────────────────────────────────────────
     @Transactional(readOnly = true)
     public Page<UserResponse> searchUsers(String query, Pageable pageable) {
-        return userRepository.search(query, pageable).map(authService::mapToUserResponse);
+        return searchUsers(query, pageable, null);
+    }
+
+    public Page<UserResponse> searchUsers(String query, Pageable pageable, String shopSlug) {
+        Long shopId = shopIdOf(shopSlug);
+        Page<User> page = shopId == null
+                ? userRepository.search(query, pageable)
+                : shopId < 0
+                    ? Page.empty(pageable)
+                    : userRepository.searchInShop(shopId, query, pageable);
+        return page.map(authService::mapToUserResponse);
     }
 
     // ── Admin: Filter by role ─────────────────────────────────────────────────
@@ -207,27 +230,68 @@ public class UserService {
     // ── Admin: Filter by status ───────────────────────────────────────────────
     @Transactional(readOnly = true)
     public Page<UserResponse> getUsersByStatus(AccountStatus status, Pageable pageable) {
-        return userRepository.findByStatus(status, pageable).map(authService::mapToUserResponse);
+        return getUsersByStatus(status, pageable, null);
+    }
+
+    public Page<UserResponse> getUsersByStatus(AccountStatus status, Pageable pageable, String shopSlug) {
+        Long shopId = shopIdOf(shopSlug);
+        Page<User> page = shopId == null
+                ? userRepository.findByStatus(status, pageable)
+                : shopId < 0
+                    ? Page.empty(pageable)
+                    : userRepository.findClientsByShopIdAndStatus(shopId, status, pageable);
+        return page.map(authService::mapToUserResponse);
     }
 
     // ── Admin: Filter by segment ──────────────────────────────────────────────
     @Transactional(readOnly = true)
     public Page<UserResponse> getUsersBySegment(String segmentName, Pageable pageable) {
-        return userRepository.findBySegmentName(segmentName, pageable).map(authService::mapToUserResponse);
+        return getUsersBySegment(segmentName, pageable, null);
+    }
+
+    public Page<UserResponse> getUsersBySegment(String segmentName, Pageable pageable, String shopSlug) {
+        Long shopId = shopIdOf(shopSlug);
+        Page<User> page = shopId == null
+                ? userRepository.findBySegmentName(segmentName, pageable)
+                : shopId < 0
+                    ? Page.empty(pageable)
+                    : userRepository.findByShopIdAndSegmentName(shopId, segmentName, pageable);
+        return page.map(authService::mapToUserResponse);
+    }
+
+    private Long shopIdOf(String shopSlug) {
+        if (shopSlug == null || shopSlug.isBlank()) return null;
+        return shopRepository.findBySlug(shopSlug.trim().toLowerCase()).map(Shop::getId).orElse(-1L);
     }
 
     // ── Admin: Dashboard stats ────────────────────────────────────────────────
     @Transactional(readOnly = true)
-    public DashboardStatsResponse getDashboardStats() {
-        long totalClients = userRepository.countByRoleName("CLIENT");
-        long activeClients = userRepository.countByStatus(AccountStatus.ACTIVE);
+    public DashboardStatsResponse getDashboardStats(String shopSlug) {
+        Long shopId = shopIdOf(shopSlug);
         long totalAdmins = userRepository.countByRoleName("ADMIN")
                 + userRepository.countByRoleName("SUPER_ADMIN");
         long rolesCount = roleRepository.count();
-
         LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
-        long newClientsLast30Days = userRepository.countNewClientsSince(thirtyDaysAgo);
-        long fideleClients = userRepository.countBySegmentName("FIDELE");
+        long totalClients;
+        long activeClients;
+        long newClientsLast30Days;
+        long fideleClients;
+        if (shopId != null && shopId < 0) {
+            totalClients = 0;
+            activeClients = 0;
+            newClientsLast30Days = 0;
+            fideleClients = 0;
+        } else if (shopId != null) {
+            totalClients = userRepository.countClientsByShop(shopId);
+            activeClients = userRepository.countClientsByShopAndStatus(shopId, AccountStatus.ACTIVE);
+            newClientsLast30Days = userRepository.countNewClientsByShopSince(shopId, thirtyDaysAgo);
+            fideleClients = userRepository.countClientsByShopAndSegment(shopId, "FIDELE");
+        } else {
+            totalClients = userRepository.countByRoleName("CLIENT");
+            activeClients = userRepository.countByStatus(AccountStatus.ACTIVE);
+            newClientsLast30Days = userRepository.countNewClientsSince(thirtyDaysAgo);
+            fideleClients = userRepository.countBySegmentName("FIDELE");
+        }
 
         return DashboardStatsResponse.builder()
                 .totalClients(totalClients)

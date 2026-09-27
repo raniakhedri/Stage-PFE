@@ -67,4 +67,6 @@ public class BannerRequest {
 
     /** Type d'animation: fade, slide, zoom. Défaut: fade */
     private String animation = "fade";
+
+    private String shopSlug;
 }

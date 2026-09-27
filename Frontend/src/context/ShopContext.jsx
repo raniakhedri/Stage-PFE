@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef } f
 import { getUser, getAccessToken } from '../api/tokenStorage';
 import { fetchServerCart, saveServerCart } from '../api/apiClient';
 import { useToast } from './ToastContext';
+import { lineKeyOf } from '../utils/cartLines';
 
 const ShopContext = createContext(null);
 
@@ -40,7 +41,7 @@ export function ShopProvider({ children }) {
         setCart((local) => {
           const merged = [...serverItems];
           local.forEach((localItem) => {
-            if (!merged.find((s) => s.id === localItem.id)) {
+            if (!merged.find((s) => lineKeyOf(s) === lineKeyOf(localItem))) {
               merged.push(localItem);
             }
           });
@@ -63,25 +64,28 @@ export function ShopProvider({ children }) {
     return () => clearTimeout(saveTimer.current);
   }, [cart]);
 
-  const addToCart = useCallback((product, qty = 1) => {
+  const addToCart = useCallback((product, qty = 1, size = '') => {
+    const chosen = size || product.size || '';
+    const line = { ...product, size: chosen, volume: chosen || product.volume, lineKey: `${product.id}::${chosen}` };
     setCart(prev => {
-      const existing = prev.find(i => i.id === product.id);
+      const existing = prev.find(i => lineKeyOf(i) === line.lineKey);
+      const label = chosen ? `${product.name} (${chosen})` : product.name;
       if (existing) {
-        showToast(`Quantité mise à jour — ${product.name}`, 'cart');
-        return prev.map(i => i.id === product.id ? { ...i, qty: i.qty + qty } : i);
+        showToast(`Quantité mise à jour — ${label}`, 'cart');
+        return prev.map(i => lineKeyOf(i) === line.lineKey ? { ...i, qty: i.qty + qty } : i);
       }
-      showToast(`${product.name} ajouté au panier`, 'cart');
-      return [...prev, { ...product, qty }];
+      showToast(`${label} ajouté au panier`, 'cart');
+      return [...prev, { ...line, qty }];
     });
   }, [showToast]);
 
-  const removeFromCart = useCallback((productId) => {
-    setCart(prev => prev.filter(i => i.id !== productId));
+  const removeFromCart = useCallback((key) => {
+    setCart(prev => prev.filter(i => lineKeyOf(i) !== String(key)));
   }, []);
 
-  const updateQty = useCallback((productId, qty) => {
-    if (qty < 1) { removeFromCart(productId); return; }
-    setCart(prev => prev.map(i => i.id === productId ? { ...i, qty } : i));
+  const updateQty = useCallback((key, qty) => {
+    if (qty < 1) { removeFromCart(key); return; }
+    setCart(prev => prev.map(i => lineKeyOf(i) === String(key) ? { ...i, qty } : i));
   }, [removeFromCart]);
 
   /**

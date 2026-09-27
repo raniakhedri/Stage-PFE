@@ -23,8 +23,9 @@ public class PublicCheckoutController {
     private final OrderService orderService;
 
     @GetMapping("/shipping-zones")
-    public ResponseEntity<List<ShippingZoneResponse>> getOpenShippingZones() {
-        List<ShippingZoneResponse> all = tvaShippingService.getAllZones();
+    public ResponseEntity<List<ShippingZoneResponse>> getOpenShippingZones(
+            @RequestParam(required = false) String shop) {
+        List<ShippingZoneResponse> all = tvaShippingService.getAllZones(shop);
         List<ShippingZoneResponse> open = all.stream()
                 .filter(z -> "Ouverte".equals(z.getStatut()))
                 .toList();
@@ -32,8 +33,8 @@ public class PublicCheckoutController {
     }
 
     @GetMapping("/tva-config")
-    public ResponseEntity<TvaConfigResponse> getTvaConfig() {
-        return ResponseEntity.ok(tvaShippingService.getConfig());
+    public ResponseEntity<TvaConfigResponse> getTvaConfig(@RequestParam(required = false) String shop) {
+        return ResponseEntity.ok(tvaShippingService.getConfig(shop));
     }
 
     @PostMapping("/orders")

@@ -19,27 +19,32 @@ public class AdminReviewController {
     private final ReviewService reviewService;
 
     @GetMapping
-    public ResponseEntity<List<ReviewResponse>> getAllReviews() {
-        return ResponseEntity.ok(reviewService.getAllReviews());
+    public ResponseEntity<List<ReviewResponse>> getAllReviews(
+            @RequestParam(required = false) String shop) {
+        return ResponseEntity.ok(reviewService.getAllReviews(shop));
     }
 
     @PatchMapping("/{id}/statut")
     public ResponseEntity<ReviewResponse> updateStatut(
             @PathVariable Long id,
+            @RequestParam(required = false) String shop,
             @RequestBody Map<String, String> body) {
-        return ResponseEntity.ok(reviewService.updateStatut(id, body.get("statut")));
+        return ResponseEntity.ok(reviewService.updateStatut(id, body.get("statut"), shop));
     }
 
     @PatchMapping("/{id}/reponse")
     public ResponseEntity<ReviewResponse> replyToReview(
             @PathVariable Long id,
+            @RequestParam(required = false) String shop,
             @RequestBody Map<String, String> body) {
-        return ResponseEntity.ok(reviewService.replyToReview(id, body.get("reponse")));
+        return ResponseEntity.ok(reviewService.replyToReview(id, body.get("reponse"), shop));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteReview(@PathVariable Long id) {
-        reviewService.deleteReview(id);
+    public ResponseEntity<Void> deleteReview(
+            @PathVariable Long id,
+            @RequestParam(required = false) String shop) {
+        reviewService.deleteReview(id, shop);
         return ResponseEntity.noContent().build();
     }
 }

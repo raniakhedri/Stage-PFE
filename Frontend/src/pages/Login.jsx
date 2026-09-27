@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Leaf, Eye, EyeOff } from 'lucide-react';
 import { setTokens, scheduleAutoLogout } from '../api/tokenStorage';
+import { useStore } from '../context/StoreContext';
 
 export default function Login() {
-  const navigate = useNavigate();
+  const { storeName } = useStore();
+  const shopSlug = window.location.pathname.split('/').filter(Boolean)[0];
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -30,13 +32,18 @@ export default function Login() {
       // regular users respect the "Se souvenir de moi" choice.
       const role = data.user?.roleName;
       const isAdmin = role === 'SUPER_ADMIN' || role === 'ADMIN';
-      setTokens(data.accessToken, data.refreshToken, data.user, isAdmin ? true : rememberMe);
-      if (!isAdmin) scheduleAutoLogout();
       if (isAdmin) {
-        // Redirect to backoffice — it has its own login, pass token via URL
-        window.location.replace('http://localhost:3000/auth-callback?accessToken=' + encodeURIComponent(data.accessToken) + '&refreshToken=' + encodeURIComponent(data.refreshToken) + '&user=' + encodeURIComponent(JSON.stringify(data.user)));
+        setError('Les marchands se connectent sur Sellio.');
+        setLoading(false);
         return;
       }
+      if (data.user?.shopSlug && data.user.shopSlug !== shopSlug) {
+        setError('Ce compte appartient à une autre boutique.');
+        setLoading(false);
+        return;
+      }
+      setTokens(data.accessToken, data.refreshToken, data.user, rememberMe);
+      scheduleAutoLogout();
       window.location.replace('/');
     } catch (err) {
       setError(err.message || 'E-mail ou mot de passe incorrect.');
@@ -45,10 +52,10 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex font-body" style={{ backgroundColor: '#fef8f3' }}>
+    <div className="min-h-screen flex font-body" style={{ backgroundColor: 'rgb(var(--rgb-surface))' }}>
       {/* Left — Decorative panel */}
       <div className="hidden sm:flex sm:w-2/5 relative overflow-hidden items-center justify-center"
-           style={{ background: 'linear-gradient(135deg, #163328 0%, #2D4A3E 50%, #546349 100%)' }}>
+           style={{ background: 'rgb(var(--rgb-primary))' }}>
         {/* Organic shapes */}
         <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full opacity-10"
              style={{ background: 'radial-gradient(circle, #99b9a9, transparent)' }} />
@@ -62,10 +69,10 @@ export default function Login() {
             <Leaf size={40} className="text-white/90" />
           </div>
           <h1 className="text-3xl font-headline font-bold text-white mb-4 tracking-tight">
-            NATUR<span style={{ color: '#d8e8c7' }}>ESSENCE</span>
+            {storeName || 'Boutique'}
           </h1>
           <p className="text-white/70 text-sm leading-relaxed">
-            L'éveil botanique — Découvrez notre univers d'huiles essentielles, beurres végétaux et actifs cosmétiques naturels.
+            Espace client de {storeName || 'cette boutique'}.
           </p>
           <div className="mt-10 flex items-center justify-center gap-6 text-white/40 text-xs uppercase tracking-widest">
             <span>Bio</span>
@@ -88,7 +95,7 @@ export default function Login() {
             </div>
             <span className="text-xl font-headline font-bold tracking-tight"
                   style={{ color: '#1d1b19' }}>
-              NATUR<span style={{ color: '#163328' }}>ESSENCE</span>
+              {storeName || 'Boutique'}
             </span>
           </div>
 
@@ -216,6 +223,9 @@ export default function Login() {
             <Link to="/" className="text-xs hover:underline" style={{ color: '#727974' }}>
               ← Retour à la boutique
             </Link>
+            <a href="http://localhost:3000/login" className="block mt-2 text-xs hover:underline" style={{ color: '#727974' }}>
+              Marchand ? Ouvrir Sellio
+            </a>
           </div>
         </div>
       </div>

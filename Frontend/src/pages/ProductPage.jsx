@@ -5,9 +5,11 @@ import { ChevronRight, Heart, ShoppingBag, Truck, ShieldCheck, Star, Minus, Plus
 import { fetchProductBySlug, fetchProductsByCategory, fetchReviewsByProduct, submitReview, fetchMyOrders, fetchSimilarProducts } from '../api/apiClient';
 import { getUser } from '../api/tokenStorage';
 import ProductCard from '../components/ProductCard';
+import { sizeOptions, needsSizeChoice } from '../utils/cartLines';
 import { useShop } from '../context/ShopContext';
 import LoginPromptModal from '../components/LoginPromptModal';
 import { TryOnButton } from '../components/TryOnModal';
+import { useStore } from '../context/StoreContext';
 
 // Star rating input component
 function StarInput({ value, onChange }) {
@@ -124,9 +126,11 @@ export default function ProductPage() {
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('description');
   const [selectedSize, setSelectedSize] = useState(null);
+  const [sizeError, setSizeError] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const { addToCart, toggleWishlist, isWishlisted } = useShop();
+  const { isClothes } = useStore();
 
   const handleWishlist = () => {
     const result = toggleWishlist(product);
@@ -142,7 +146,10 @@ export default function ProductPage() {
     fetchProductBySlug(slug)
       .then((p) => {
         setProduct(p);
-        setSelectedSize(p.volume || (p.variants?.[0]?.label) || '');
+        // Several sizes: the customer must pick one. A single option is chosen for them.
+        const opts = sizeOptions(p, isClothes);
+        setSelectedSize(opts.length === 1 ? opts[0] : null);
+        setSizeError(false);
         // Load similar/upsell products if defined, otherwise fall back to category
         if (p.upsellTags) {
           const ids = p.upsellTags.split(',').map(s => s.trim()).filter(Boolean);
@@ -190,8 +197,9 @@ export default function ProductPage() {
 
   const tabs = [
     { id: 'description', label: 'Description' },
-    ...(product.usageInstructions || product.precautions ? [{ id: 'usage', label: "Conseils d'utilisation" }] : []),
-    ...(product.inciComposition ? [{ id: 'composition', label: 'Composition / INCI' }] : []),
+    ...(isClothes && product.entretien ? [{ id: 'entretien', label: 'Entretien' }] : []),
+    ...(!isClothes && (product.usageInstructions || product.precautions) ? [{ id: 'usage', label: "Conseils d'utilisation" }] : []),
+    ...(!isClothes && product.inciComposition ? [{ id: 'composition', label: 'Composition / INCI' }] : []),
     { id: 'reviews', label: `Avis clients${reviews.length ? ` (${reviews.length})` : ''}` },
   ];
 
@@ -229,8 +237,15 @@ export default function ProductPage() {
         <div className="md:col-span-5 flex flex-col">
           {/* Badges: bio + certifications */}
           <div className="flex flex-wrap gap-2 mb-4">
-            {product.bio && <span className="px-3 py-1 bg-secondary-container text-on-secondary-container text-[10px] font-bold uppercase tracking-wider rounded-full flex items-center gap-1"><Leaf size={10} />Bio</span>}
-            {product.certifications.map(cert => (
+            {isClothes && product.couleur && (
+              <span className="px-3 py-1 bg-surface-container-highest text-primary text-[10px] font-bold uppercase tracking-wider rounded-full flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full border border-black/10" style={{ background: product.couleurHex || '#111' }} />
+                {product.couleur}
+              </span>
+            )}
+            {isClothes && product.tissu && <span className="px-3 py-1 bg-primary/5 text-primary text-[10px] font-bold uppercase tracking-wider rounded-full">{product.tissu}</span>}
+            {!isClothes && product.bio && <span className="px-3 py-1 bg-secondary-container text-on-secondary-container text-[10px] font-bold uppercase tracking-wider rounded-full flex items-center gap-1"><Leaf size={10} />Bio</span>}
+            {!isClothes && product.certifications.map(cert => (
               <span key={cert} className="px-3 py-1 bg-surface-container-highest text-primary text-[10px] font-bold uppercase tracking-wider rounded-full flex items-center gap-1"><Award size={10} />{cert}</span>
             ))}
             {product.stock > 0
@@ -239,7 +254,10 @@ export default function ProductPage() {
           </div>
 
           <h2 className="text-3xl md:text-4xl font-headline font-bold text-primary mb-1 leading-tight">{product.name}</h2>
-          {product.latin && <p className="text-secondary font-medium italic mb-4">{product.latin}</p>}
+          {!isClothes && product.latin && <p className="text-secondary font-medium italic mb-4">{product.latin}</p>}
+          {isClothes && (product.coupe || product.genre) && (
+            <p className="text-secondary font-medium mb-4">{[product.genre, product.coupe, product.saison].filter(Boolean).join(' · ')}</p>
+          )}
 
           {/* Live rating */}
           {avgRating && (
@@ -259,13 +277,19 @@ export default function ProductPage() {
 
           {/* Size */}
           <div className="space-y-6 mb-8">
-            {(product.variants?.length > 0 || product.volume) && (
+            {sizeOptions(product, isClothes).length > 0 && (
               <div>
-                <span className="block text-xs font-bold text-primary uppercase tracking-widest mb-3">Contenance</span>
-                <div className="flex flex-wrap gap-3">
-                  {(product.variants?.length > 0 ? product.variants.map(v => v.label) : [product.volume]).map(size => (
-                    <button key={size} onClick={() => setSelectedSize(size)}
-                      className={`px-5 py-2 rounded-full border-2 font-medium text-sm transition-all ${selectedSize === size ? 'border-primary bg-primary text-white' : 'border-outline-variant text-secondary hover:border-primary'}`}>
+                <div className="flex items-baseline justify-between mb-3">
+                  <span className="block text-xs font-bold text-primary uppercase tracking-widest">
+                    {isClothes ? 'Taille' : 'Contenance'}
+                    {selectedSize && <span className="ml-2 normal-case tracking-normal font-medium text-secondary">: {selectedSize}</span>}
+                  </span>
+                  {sizeError && <span className="text-xs font-semibold text-red-600">Choisissez {isClothes ? 'une taille' : 'une contenance'}</span>}
+                </div>
+                <div className={`flex flex-wrap gap-3 rounded-2xl transition-all ${sizeError ? 'p-2 -m-2 ring-2 ring-red-400 size-shake' : ''}`}>
+                  {sizeOptions(product, isClothes).map(size => (
+                    <button key={size} onClick={() => { setSelectedSize(size); setSizeError(false); }}
+                      className={`min-w-[52px] px-5 py-2 rounded-full border-2 font-medium text-sm transition-all ${selectedSize === size ? 'border-primary bg-primary text-white' : 'border-outline-variant text-secondary hover:border-primary'}`}>
                       {size}
                     </button>
                   ))}
@@ -280,16 +304,22 @@ export default function ProductPage() {
               </div>
               <button
                 disabled={product.stock <= 0}
-                className={`btn-liquid flex-1 font-bold py-4 px-8 rounded-full shadow-lg transition-all flex items-center justify-center gap-2 ${
+                className={`btn-liquid flex-1 whitespace-nowrap font-bold py-4 px-6 rounded-full shadow-lg transition-all flex items-center justify-center gap-2 ${
                   product.stock > 0 ? 'bg-primary text-white shadow-primary/10' : 'bg-outline-variant text-on-surface-variant cursor-not-allowed'
                 }`}
-                onClick={() => product.stock > 0 && addToCart(product, quantity)}>
-                <ShoppingBag size={18} />Ajouter au panier
+                onClick={() => {
+                  if (product.stock <= 0) return;
+                  if (needsSizeChoice(product, isClothes) && !selectedSize) { setSizeError(true); return; }
+                  addToCart(product, quantity, selectedSize || '');
+                }}>
+                <ShoppingBag size={18} />{needsSizeChoice(product, isClothes) && !selectedSize ? (isClothes ? 'Choisir une taille' : 'Choisir une contenance') : 'Ajouter au panier'}
               </button>
+              {isClothes && (
               <TryOnButton
                 product={product}
                 className="px-5 py-4 rounded-full border-2 border-primary text-primary font-bold flex items-center justify-center gap-2 hover:bg-primary hover:text-white transition-all"
               />
+              )}
               <button onClick={handleWishlist}
                 className={`p-4 rounded-full border transition-all ${isWishlisted(product.id) ? 'border-error text-error bg-error/5' : 'border-outline-variant text-secondary hover:text-error hover:border-error'}`}>
                 <Heart size={18} fill={isWishlisted(product.id) ? 'currentColor' : 'none'} />
@@ -322,6 +352,26 @@ export default function ProductPage() {
               <h3 className="text-2xl font-headline font-bold text-primary">A propos de ce produit</h3>
               {product.description && <p className="text-on-surface-variant leading-relaxed">{product.description}</p>}
               <ul className="space-y-4">
+                {isClothes ? (
+                  <>
+                    {[
+                      ['Tissu', product.tissu],
+                      ['Couleur', product.couleur],
+                      ['Coupe', product.coupe],
+                      ['Col', product.col],
+                      ['Manches', product.manches],
+                      ['Genre', product.genre],
+                      ['Saison', product.saison],
+                    ].filter(([, value]) => value).map(([label, value]) => (
+                      <li key={label} className="flex items-center gap-4 text-sm">
+                        <span className="w-2 h-2 rounded-full bg-gold shrink-0" />
+                        <span className="font-bold text-primary w-36 shrink-0">{label}</span>
+                        <span className="text-on-surface-variant">{value}</span>
+                      </li>
+                    ))}
+                  </>
+                ) : (
+                  <>
                 {product.latin && (
                   <li className="flex items-center gap-4 text-sm">
                     <span className="w-2 h-2 rounded-full bg-gold shrink-0" />
@@ -341,6 +391,8 @@ export default function ProductPage() {
                   <span className="font-bold text-primary w-36 shrink-0">Culture :</span>
                   <span className="text-on-surface-variant">{product.bio ? 'Biologique certifiee' : 'Conventionnelle controlee'}</span>
                 </li>
+                  </>
+                )}
               </ul>
             </div>
             {product.usageInstructions && (
@@ -394,6 +446,13 @@ export default function ProductPage() {
             ) : (
               <p className="text-on-surface-variant">Aucun conseil disponible pour ce produit.</p>
             )}
+          </div>
+        )}
+
+        {activeTab === 'entretien' && (
+          <div className="max-w-2xl">
+            <h3 className="text-2xl font-headline font-bold text-primary mb-4">Entretien</h3>
+            <p className="text-on-surface-variant leading-relaxed whitespace-pre-wrap">{product.entretien}</p>
           </div>
         )}
 

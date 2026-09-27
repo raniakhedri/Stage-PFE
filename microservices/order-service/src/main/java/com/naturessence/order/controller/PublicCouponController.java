@@ -30,8 +30,8 @@ public class PublicCouponController {
      * Responds 204 when no active coupon is available.
      */
     @GetMapping("/announcement")
-    public ResponseEntity<CouponResponse> getAnnouncementCoupon() {
-        return couponService.getTopAnnouncementCoupon()
+    public ResponseEntity<CouponResponse> getAnnouncementCoupon(@RequestParam(required = false) String shop) {
+        return couponService.getTopAnnouncementCoupon(shop)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NO_CONTENT).build());
     }

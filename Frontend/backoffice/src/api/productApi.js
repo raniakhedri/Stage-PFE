@@ -36,11 +36,26 @@ export function computeProductStock(productStock) {
   return Math.max(0, parseInt(productStock, 10) || 0)
 }
 
+function currentShopSlug() {
+  const first = window.location.pathname.split('/').filter(Boolean)[0]
+  const reserved = new Set(['login', 'inscription', 'auth-callback', 'nouvelle-boutique', 'sellio'])
+  if (!first || reserved.has(first)) return ''
+  return first
+}
+
 export const productApi = {
-  getAll:           ()        => apiClient.get(BASE).then(r => r.data),
-  getStats:         ()        => apiClient.get(`${BASE}/stats`).then(r => r.data),
+  getAll:           ()        => {
+    const slug = currentShopSlug()
+    const q = slug ? `?shop=${encodeURIComponent(slug)}` : ''
+    return apiClient.get(`${BASE}${q}`).then(r => r.data)
+  },
+  getStats:         ()        => {
+    const slug = currentShopSlug()
+    const q = slug ? `?shop=${encodeURIComponent(slug)}` : ''
+    return apiClient.get(`${BASE}/stats${q}`).then(r => r.data)
+  },
   getById:          (id)      => apiClient.get(`${BASE}/${id}`).then(r => r.data),
-  create:           (data)    => apiClient.post(BASE, data).then(r => r.data),
+  create:           (data)    => apiClient.post(BASE, { ...data, shopSlug: currentShopSlug() || data.shopSlug }).then(r => r.data),
   update:           (id, data)=> apiClient.put(`${BASE}/${id}`, data).then(r => r.data),
   delete:           (id)      => apiClient.delete(`${BASE}/${id}`).then(r => r.data),
   toggleArchive:    (id)      => apiClient.patch(`${BASE}/${id}/archive`).then(r => r.data),

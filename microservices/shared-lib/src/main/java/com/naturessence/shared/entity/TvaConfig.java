@@ -22,6 +22,9 @@ public class TvaConfig {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "shop_id")
+    private Long shopId;
+
     /** Global toggle for TVA */
     @Builder.Default
     private Boolean tvaActive = true;

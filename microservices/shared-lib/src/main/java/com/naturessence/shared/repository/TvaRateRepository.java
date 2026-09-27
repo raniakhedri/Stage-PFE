@@ -8,5 +8,7 @@ import java.util.List;
 public interface TvaRateRepository extends JpaRepository<TvaRate, Long> {
     List<TvaRate> findAllByOrderByIdAsc();
 
+    List<TvaRate> findByShopIdOrderByIdAsc(Long shopId);
+
     long countByActifTrue();
 }

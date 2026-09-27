@@ -1,5 +1,6 @@
 ﻿import { X, Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { lineKeyOf } from '../utils/cartLines';
 import { useShop } from '../context/ShopContext';
 
 export default function CartDrawer({ open, onClose }) {
@@ -49,7 +50,7 @@ export default function CartDrawer({ open, onClose }) {
             </div>
           ) : (
             items.map((item) => (
-              <div key={item.id} className="flex gap-4 p-3 rounded-xl bg-surface-container-low">
+              <div key={lineKeyOf(item)} className="flex gap-4 p-3 rounded-xl bg-surface-container-low">
                 <img
                   src={item.image}
                   alt={item.name}
@@ -64,21 +65,21 @@ export default function CartDrawer({ open, onClose }) {
                   <div className="flex items-center gap-3 mt-2">
                     <div className="flex items-center bg-white rounded-full border border-outline-variant/20 px-2 py-1 gap-2">
                       <button
-                        onClick={() => updateQty(item.id, item.qty - 1)}
+                        onClick={() => updateQty(lineKeyOf(item), item.qty - 1)}
                         className="text-primary hover:text-secondary"
                       >
                         <Minus size={13} />
                       </button>
                       <span className="text-sm font-bold text-primary w-5 text-center">{item.qty}</span>
                       <button
-                        onClick={() => updateQty(item.id, item.qty + 1)}
+                        onClick={() => updateQty(lineKeyOf(item), item.qty + 1)}
                         className="text-primary hover:text-secondary"
                       >
                         <Plus size={13} />
                       </button>
                     </div>
                     <button
-                      onClick={() => removeFromCart(item.id)}
+                      onClick={() => removeFromCart(lineKeyOf(item))}
                       className="text-outline hover:text-error transition-colors"
                     >
                       <Trash2 size={15} />

@@ -31,8 +31,8 @@ public class AdminPromotionController {
     // ════════════════════════════════════════════════════════════════
 
     @GetMapping("/stats")
-    public ResponseEntity<PromotionStatsResponse> getStats() {
-        return ResponseEntity.ok(couponService.getStats());
+    public ResponseEntity<PromotionStatsResponse> getStats(@RequestParam(required = false) String shop) {
+        return ResponseEntity.ok(couponService.getStats(shop));
     }
 
     // ════════════════════════════════════════════════════════════════
@@ -40,8 +40,8 @@ public class AdminPromotionController {
     // ════════════════════════════════════════════════════════════════
 
     @GetMapping("/coupons")
-    public ResponseEntity<List<CouponResponse>> getAllCoupons() {
-        return ResponseEntity.ok(couponService.getAllCoupons());
+    public ResponseEntity<List<CouponResponse>> getAllCoupons(@RequestParam(required = false) String shop) {
+        return ResponseEntity.ok(couponService.getAllCoupons(shop));
     }
 
     @GetMapping("/coupons/{id}")

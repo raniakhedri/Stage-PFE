@@ -1,11 +1,14 @@
 package com.naturessence.auth.controller;
 
 import com.naturessence.auth.service.AuthService;
+import com.naturessence.shared.dto.request.CreateShopRequest;
 import com.naturessence.shared.dto.request.LoginRequest;
 import com.naturessence.shared.dto.request.RefreshTokenRequest;
 import com.naturessence.shared.dto.request.RegisterRequest;
 import com.naturessence.shared.dto.response.AuthResponse;
 import com.naturessence.shared.dto.response.MessageResponse;
+import com.naturessence.shared.dto.response.ShopPublicResponse;
+import com.naturessence.shared.dto.response.UserResponse;
 import com.naturessence.shared.repository.UserRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +28,43 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(request));
+    }
+
+    @PostMapping("/register-merchant")
+    public ResponseEntity<AuthResponse> registerMerchant(@Valid @RequestBody RegisterRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(authService.registerMerchant(request));
+    }
+
+    @PostMapping("/my-shop")
+    public ResponseEntity<UserResponse> createShop(Authentication authentication,
+                                                    @Valid @RequestBody CreateShopRequest request) {
+        if (authentication == null || !authentication.isAuthenticated()
+                || authentication.getName() == null
+                || "anonymousUser".equals(authentication.getName())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.status(HttpStatus.CREATED).body(authService.createShop(authentication.getName(), request));
+    }
+
+    @GetMapping("/my-shop")
+    public ResponseEntity<ShopPublicResponse> myShop(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()
+                || authentication.getName() == null
+                || "anonymousUser".equals(authentication.getName())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(PublicShopController.toResponse(authService.myShop(authentication.getName())));
+    }
+
+    @PatchMapping("/my-shop")
+    public ResponseEntity<UserResponse> updateShop(Authentication authentication,
+                                                    @RequestBody CreateShopRequest request) {
+        if (authentication == null || !authentication.isAuthenticated()
+                || authentication.getName() == null
+                || "anonymousUser".equals(authentication.getName())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(authService.updateShop(authentication.getName(), request));
     }
 
     @PostMapping("/login")

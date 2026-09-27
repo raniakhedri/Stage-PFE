@@ -1,9 +1,12 @@
 import { Link } from 'react-router-dom';
 import { Heart, ShoppingBag, Trash2, ArrowRight } from 'lucide-react';
 import { useShop } from '../context/ShopContext';
+import { useStore } from '../context/StoreContext';
+import { sizeOptions, needsSizeChoice } from '../utils/cartLines';
 
 export default function FavorisPage() {
   const { wishlist, removeFromWishlist, addToCart } = useShop();
+  const { isClothes } = useStore();
 
   return (
     <div className="max-w-6xl mx-auto px-4 md:px-8 py-10">
@@ -73,13 +76,23 @@ export default function FavorisPage() {
                 <p className="font-headline font-bold text-lg text-primary">{product.price?.toFixed(2)} TND</p>
 
                 <div className="flex gap-2">
-                  <button
-                    onClick={() => addToCart(product, 1)}
-                    className="flex-1 flex items-center justify-center gap-2 bg-primary text-white py-2.5 rounded-xl font-medium text-sm hover:bg-primary/90 transition-colors"
-                  >
-                    <ShoppingBag size={15} />
-                    Ajouter au panier
-                  </button>
+                  {needsSizeChoice(product, isClothes) ? (
+                    <Link
+                      to={`/produits/${product.slug}`}
+                      className="flex-1 flex items-center justify-center gap-2 bg-primary text-white py-2.5 rounded-xl font-medium text-sm hover:bg-primary/90 transition-colors"
+                    >
+                      <ShoppingBag size={15} />
+                      {isClothes ? 'Choisir une taille' : 'Choisir une contenance'}
+                    </Link>
+                  ) : (
+                    <button
+                      onClick={() => addToCart(product, 1, sizeOptions(product, isClothes)[0] || '')}
+                      className="flex-1 flex items-center justify-center gap-2 bg-primary text-white py-2.5 rounded-xl font-medium text-sm hover:bg-primary/90 transition-colors"
+                    >
+                      <ShoppingBag size={15} />
+                      Ajouter au panier
+                    </button>
+                  )}
                   <button
                     onClick={() => removeFromWishlist(product.id)}
                     className="w-10 h-10 flex items-center justify-center rounded-xl border border-outline-variant/20 text-outline hover:text-error hover:border-error transition-colors"

@@ -11,7 +11,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "products")
+@Table(
+    name = "products",
+    uniqueConstraints = @UniqueConstraint(name = "uk_product_shop_slug", columnNames = {"shop_id", "slug"})
+)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -23,10 +26,14 @@ public class Product {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /** Shop that owns this product. */
+    @Column(name = "shop_id")
+    private Long shopId;
+
     @Column(nullable = false)
     private String nom;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String slug;
 
     private String sku;

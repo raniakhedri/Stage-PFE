@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate, Outlet } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { ToastContainer } from 'react-toastify'
 import { useEffect } from 'react'
 import 'react-toastify/dist/ReactToastify.css'
@@ -34,28 +34,13 @@ import Fidelite from './pages/Fidelite'
 import EmailMarketing from './pages/EmailMarketing'
 import NotFound from './pages/NotFound'
 import ConfigurationBoutique from './pages/ConfigurationBoutique'
-import { storeApi } from './api/storeApi'
+import SellioLogin from './pages/SellioLogin'
+import SellioInscription from './pages/SellioInscription'
+import NouvelleBoutique from './pages/NouvelleBoutique'
+import SellioConsole from './pages/SellioConsole'
+import SellioHome from './pages/SellioHome'
 
-function StoreSetupGate() {
-  const navigate = useNavigate()
-  const location = useLocation()
-  useEffect(() => {
-    if (location.pathname.startsWith('/configuration')) return
-    storeApi.get()
-      .then((store) => {
-        if (store && store.onboarded === false) navigate('/configuration', { replace: true })
-      })
-      .catch(() => {})
-  }, [location.pathname, navigate])
-  return <Outlet />
-}
-
-function ExternalLoginRedirect() {
-  useEffect(() => {
-    window.location.replace('http://localhost:3001/login')
-  }, [])
-  return null
-}
+const RESERVED = new Set(['login', 'inscription', 'auth-callback', 'nouvelle-boutique', 'sellio'])
 
 function App() {
   useEffect(() => {
@@ -78,24 +63,24 @@ function App() {
       .catch(() => {})
   }, [])
 
+  const first = window.location.pathname.split('/').filter(Boolean)[0]
+  const basename = first && !RESERVED.has(first) ? `/${first}` : ''
+
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={basename}>
       <ToastContainer position="top-right" autoClose={3000} />
       <Routes>
-        {/* Auth callback pour recevoir les tokens depuis le Front Office */}
         <Route path="/auth-callback" element={<AuthCallback />} />
+        <Route path="/login" element={<SellioLogin />} />
+        <Route path="/inscription" element={<SellioInscription />} />
+        {/* Port 3000 root: the public Sellio home page (sign in / sign up live at /login and /inscription). */}
+        <Route path="/" element={basename ? <Navigate to="/dashboard" replace /> : <SellioHome />} />
 
-        {/* Redirige vers la page de connexion unique du front office */}
-        <Route path="/login" element={<ExternalLoginRedirect />} />
-
-        {/* Redirection de la racine vers le dashboard */}
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-
-        {/* Routes protégées avec Layout */}
         <Route element={<RequireAuth />}>
-          <Route element={<StoreSetupGate />}>
+          <Route path="/nouvelle-boutique" element={<NouvelleBoutique />} />
+          <Route path="/sellio" element={<SellioConsole />} />
+          <Route element={<Layout />}>
             <Route path="/configuration" element={<ConfigurationBoutique />} />
-            <Route element={<Layout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/produits" element={<Produits />} />
             <Route path="/produits/nouveau" element={<AjouterProduit />} />
@@ -122,7 +107,6 @@ function App() {
             <Route path="/promotions" element={<Promotions />} />
             <Route path="/fidelite" element={<Fidelite />} />
             <Route path="/email-marketing" element={<EmailMarketing />} />
-          </Route>
           </Route>
         </Route>
 

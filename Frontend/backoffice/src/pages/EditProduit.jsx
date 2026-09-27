@@ -5,6 +5,9 @@ import CustomSelect from '../components/ui/CustomSelect'
 import PageHeader from '../components/ui/PageHeader'
 import { applyProductImage, computeProductStock, parseProductImages, productApi, resolveImgUrl, serializeProductImages } from '../api/productApi'
 import { categoryApi } from '../api/categoryApi'
+import ClothingFields, { clothingPayload, emptyClothing } from '../components/ClothingFields'
+import { OptionSelect, MultiOptionSelect } from '../components/ui/OptionPickers'
+import { splitList } from '../data/catalogOptions'
 // ── Toggle ─────────────────────────────────────────────────────────────────────
 function Toggle({ checked, onChange }) {
   return (
@@ -60,7 +63,7 @@ function Select({ value, onChange, children }) {
 
 function Section({ title, children, rightSlot }) {
   return (
-    <div className="bg-white rounded-custom border border-slate-200 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-custom border border-slate-200 shadow-sm">
       <div className="px-8 py-5 border-b border-slate-100 bg-slate-50/30 flex justify-between items-center">
         <h3 className="font-bold text-slate-800">{title}</h3>
         {rightSlot}
@@ -106,6 +109,8 @@ function EditProduit() {
   const [precautions, setPrecautions] = useState('')
   const [inciComposition, setInciComposition] = useState('')
   const [certifications, setCertifications] = useState('')
+  const [clothes, setClothes] = useState(false)
+  const [clothing, setClothing] = useState(emptyClothing)
 
   // Variants / volumes
   const [variants, setVariants] = useState([])
@@ -154,6 +159,18 @@ function EditProduit() {
         setPrecautions(p.precautions || '')
         setInciComposition(p.inciComposition || '')
         setCertifications(p.certifications || '')
+        setClothing({
+          tissu: p.tissu || '',
+          couleur: p.couleur || '',
+          couleurHex: p.couleurHex || '',
+          coupe: p.coupe || '',
+          col: p.col || '',
+          manches: p.manches || '',
+          entretien: p.entretien || '',
+          tailles: p.tailles || '',
+          saison: p.saison || '',
+          genre: p.genre || '',
+        })
         const rawVolumes = (p.volumes || '').split(',').map((s) => s.trim()).filter(Boolean)
         setSelectedVolumes(rawVolumes)
         if (rawVolumes.length > 0) {
@@ -196,6 +213,9 @@ function EditProduit() {
       setParentCategories(parents)
     }).catch(() => {})
     productApi.getAll().then(setAllProducts).catch(() => {})
+    try {
+      setClothes(JSON.parse(localStorage.getItem('user') || '{}').businessType === 'CLOTHES')
+    } catch { setClothes(false) }
   }, [])
 
   const updateVariant = (vid, field, value) =>
@@ -281,6 +301,7 @@ function EditProduit() {
         precautions: precautions.trim() || null,
         inciComposition: inciComposition.trim() || null,
         certifications: certifications.trim() || null,
+        ...(clothes ? clothingPayload(clothing) : {}),
         upsellTags: upsellProducts.map(p => String(p.id)).join(',') || null,
         variants: variants.map((v) => ({
           id: v.id,
@@ -332,6 +353,7 @@ function EditProduit() {
                   <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Huile Essentielle de Lavande Vraie" />
                 </div>
 
+                {!clothes && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <Label>Nom latin / INCI</Label>
@@ -342,7 +364,15 @@ function EditProduit() {
                     <Input value={sku} onChange={(e) => setSku(e.target.value)} placeholder="NE-LAV-10" />
                   </div>
                 </div>
+                )}
+                {clothes && (
+                  <div>
+                    <Label>Référence (SKU)</Label>
+                    <Input value={sku} onChange={(e) => setSku(e.target.value)} placeholder="AT-PULL-01" />
+                  </div>
+                )}
 
+                {!clothes && (
                 <div className="flex items-center gap-3 p-4 bg-emerald-50/50 rounded-lg border border-emerald-100 cursor-pointer" onClick={() => setBio(!bio)}>
                   <input type="checkbox" checked={bio} onChange={() => setBio(!bio)} className="w-5 h-5 text-emerald-600 rounded focus:ring-emerald-500 cursor-pointer accent-emerald-600" />
                   <div>
@@ -350,6 +380,7 @@ function EditProduit() {
                     <p className="text-[10px] text-slate-400">Produit certifié agriculture biologique</p>
                   </div>
                 </div>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
@@ -391,17 +422,20 @@ function EditProduit() {
               </div>
             </Section>
 
-            {/* Fiche Cosmétique */}
+            {clothes ? (
+              <Section title="Fiche vêtement">
+                <ClothingFields value={clothing} onChange={setClothing} />
+              </Section>
+            ) : (
             <Section title="Fiche Cosmétique">
               <div className="space-y-6">
                 <div>
                   <Label>Origine / Provenance</Label>
-                  <Input value={origine} onChange={(e) => setOrigine(e.target.value)} placeholder="Ex: France / Méditerranée" />
+                  <OptionSelect optionKey="origine" value={origine} onChange={setOrigine} placeholder="Choisir une origine" />
                 </div>
                 <div>
                   <Label>Certifications</Label>
-                  <Input value={certifications} onChange={(e) => setCertifications(e.target.value)} placeholder="Ex: Écocert,Cosmos Natural,USDA Organic" />
-                  <p className="text-[10px] text-slate-400 mt-1">Séparez plusieurs certifications par des virgules.</p>
+                  <MultiOptionSelect optionKey="certifications" value={certifications} onChange={setCertifications} placeholder="Ajouter une certification…" />
                 </div>
                 <div>
                   <Label>Composition INCI</Label>
@@ -437,15 +471,16 @@ function EditProduit() {
                 </div>
               </div>
             </Section>
+            )}
 
             {/* Variantes */}
             <Section title="Variantes du produit">
               <div className="space-y-4">
-                <div className="overflow-x-auto">
+                <div className="overflow-visible">
                   <table className="w-full">
                     <thead>
                       <tr className="text-left border-b border-slate-100">
-                        {['Contenance / Label', 'SKU', 'Stock', 'Action'].map((h, i) => (
+                        {(clothes ? ['Taille', 'SKU', 'Stock', 'Action'] : ['Contenance / Label', 'SKU', 'Stock', 'Action']).map((h, i) => (
                           <th
                             key={h}
                             className={`pb-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 ${i === 3 ? 'text-right' : ''}`}
@@ -459,12 +494,13 @@ function EditProduit() {
                       {variants.map((v) => (
                         <tr key={v.id} className="group hover:bg-slate-50/50">
                           <td className="py-3 px-2">
-                            <input
-                              type="text"
+                            <OptionSelect
+                              optionKey={clothes ? 'tailles' : 'volume'}
+                              options={clothes && splitList(clothing.tailles).length ? splitList(clothing.tailles) : undefined}
+                              allowAdd={!(clothes && splitList(clothing.tailles).length)}
                               value={v.label}
-                              onChange={(e) => updateVariant(v.id, 'label', e.target.value)}
-                              placeholder="Ex: 50g, 100ml…"
-                              className="w-full bg-white border border-slate-200 rounded text-xs py-1.5 px-2 focus:ring-1 focus:ring-brand outline-none"
+                              onChange={(val) => updateVariant(v.id, 'label', val)}
+                              placeholder={clothes ? 'Taille' : 'Contenance'}
                             />
                           </td>
                           <td className="py-3 px-2">
@@ -653,7 +689,7 @@ function EditProduit() {
             </Section>
 
             {/* Tarification */}
-            <div className="bg-white rounded-custom border border-slate-200 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-custom border border-slate-200 shadow-sm">
               <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/30">
                 <h3 className="font-bold text-slate-800">Tarification</h3>
               </div>
@@ -762,7 +798,7 @@ function EditProduit() {
             </div>
 
             {/* Étiquettes marketing */}
-            <div className="bg-white rounded-custom border border-slate-200 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-custom border border-slate-200 shadow-sm">
               <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/30">
                 <h3 className="font-bold text-slate-800">Étiquettes de marketing</h3>
               </div>
@@ -792,7 +828,7 @@ function EditProduit() {
             </div>
 
             {/* Visibilité & SEO */}
-            <div className="bg-white rounded-custom border border-slate-200 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-custom border border-slate-200 shadow-sm">
               <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/30">
                 <h3 className="font-bold text-slate-800">Visibilité &amp; SEO</h3>
               </div>
@@ -820,7 +856,7 @@ function EditProduit() {
           <div className="col-span-12 lg:col-span-4 lg:sticky lg:top-[88px] lg:self-start space-y-6">
 
             {/* ── Aperçu Front Office ── */}
-            <div className="bg-white rounded-custom border border-slate-200 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-custom border border-slate-200 shadow-sm">
               <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
                 <span className="material-symbols-outlined text-brand text-lg">storefront</span>
                 <h2 className="text-sm font-bold text-slate-700">Aperçu Front Office</h2>

@@ -2,12 +2,220 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --rgb-primary: 22 51 40;
+  --rgb-secondary: 84 99 73;
+  --rgb-sage: 124 139 111;
+  --rgb-gold: 196 165 90;
+  --rgb-surface: 254 248 243;
+  --rgb-surface-low: 248 243 238;
+}
+
+[data-template="atelier"] {
+  --rgb-primary: 92 58 33;
+  --rgb-secondary: 122 90 61;
+  --rgb-sage: 166 132 92;
+  --rgb-gold: 196 165 116;
+  --rgb-surface: 250 246 239;
+  --rgb-surface-low: 244 236 224;
+}
+[data-template="atelier"] .font-headline {
+  font-family: "Libre Baskerville", Georgia, serif;
+}
+
+[data-template="noir"] {
+  --rgb-primary: 17 17 17;
+  --rgb-secondary: 68 68 68;
+  --rgb-sage: 110 110 110;
+  --rgb-gold: 180 180 180;
+  --rgb-surface: 244 244 244;
+  --rgb-surface-low: 232 232 232;
+}
+
+[data-template="nude"] {
+  --rgb-primary: 141 83 72;
+  --rgb-secondary: 166 122 112;
+  --rgb-sage: 196 160 148;
+  --rgb-gold: 214 176 154;
+  --rgb-surface: 255 247 244;
+  --rgb-surface-low: 248 236 231;
+  --btn-radius: 999px;
+}
+
+[data-template="lin"] {
+  --rgb-primary: 107 83 68;
+  --rgb-secondary: 140 116 98;
+  --rgb-sage: 203 184 154;
+  --rgb-gold: 184 154 116;
+  --rgb-surface: 246 241 232;
+  --rgb-surface-low: 236 228 214;
+  --btn-radius: 999px;
+}
+[data-template="lin"] .font-headline {
+  font-family: Fraunces, Georgia, serif;
+}
+
+[data-template="marin"] {
+  --rgb-primary: 27 58 75;
+  --rgb-secondary: 61 92 110;
+  --rgb-sage: 122 146 158;
+  --rgb-gold: 196 107 74;
+  --rgb-surface: 243 239 230;
+  --rgb-surface-low: 232 226 214;
+  --btn-radius: 4px;
+}
+[data-template="marin"] .font-headline {
+  font-family: Outfit, "DM Sans", sans-serif;
+  letter-spacing: 0.04em;
+}
+
+[data-template="apothicaire"] {
+  --rgb-primary: 26 46 36;
+  --rgb-secondary: 74 90 70;
+  --rgb-sage: 138 122 90;
+  --rgb-gold: 184 149 106;
+  --rgb-surface: 246 241 231;
+  --rgb-surface-low: 236 228 212;
+  --btn-radius: 999px;
+}
+[data-template="apothicaire"] .font-headline {
+  font-family: "Libre Baskerville", Georgia, serif;
+  letter-spacing: 0.04em;
+}
+
+[data-template="mineral"] {
+  --rgb-primary: 61 74 82;
+  --rgb-secondary: 90 104 112;
+  --rgb-sage: 122 150 163;
+  --rgb-gold: 154 170 178;
+  --rgb-surface: 242 244 245;
+  --rgb-surface-low: 230 234 236;
+  --btn-radius: 2px;
+}
+[data-template="mineral"] .font-headline {
+  font-family: Outfit, Inter, sans-serif;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+:root {
+  --rgb-button: var(--rgb-primary);
+  --rgb-button-text: 255 255 255;
+  --btn-radius: 999px;
+}
+[data-template="atelier"] { --btn-radius: 999px; }
+[data-template="noir"] { --btn-radius: 0px; }
+[data-template="noir"] .font-headline {
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+[data-template="botanique"] { --btn-radius: 999px; }
+
+button.bg-primary,
+a.bg-primary {
+  background-color: rgb(var(--rgb-button));
+  color: rgb(var(--rgb-button-text));
+  border-radius: var(--btn-radius);
+}
+
+[data-layout="minimal"] {
+  --rgb-ink: 23 23 23;
+  --rgb-accent: 115 115 115;
+  --rgb-primary: 17 17 17;
+  --rgb-secondary: 82 82 82;
+  --rgb-sage: 168 162 158;
+  --rgb-gold: 120 113 108;
+  --rgb-surface: 255 255 255;
+  --rgb-surface-low: 250 250 249;
+  --btn-radius: 4px;
+}
+[data-layout="minimal"] .font-headline {
+  font-family: Inter, sans-serif;
+  letter-spacing: -0.02em;
+  text-transform: none;
+}
+
+[data-layout="bold"] {
+  --rgb-ink: 10 10 10;
+  --rgb-accent: 10 10 10;
+  --rgb-primary: 10 10 10;
+  --rgb-secondary: 39 39 42;
+  --rgb-sage: 161 161 170;
+  --rgb-gold: 255 255 255;
+  --rgb-surface: 244 244 245;
+  --rgb-surface-low: 228 228 231;
+  --btn-radius: 0px;
+}
+[data-layout="bold"] .font-headline {
+  font-family: Anton, "Outfit", Impact, sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.005em;
+  text-transform: uppercase;
+}
+
+[data-layout="luxury"] {
+  --rgb-ink: 28 25 23;
+  --rgb-accent: 154 123 79;
+  --rgb-primary: 28 25 23;
+  --rgb-secondary: 87 83 78;
+  --rgb-sage: 168 162 158;
+  --rgb-gold: 184 149 106;
+  --rgb-surface: 246 241 234;
+  --rgb-surface-low: 237 230 220;
+  --btn-radius: 0px;
+}
+[data-layout="luxury"] .font-headline {
+  font-family: "Cormorant Garamond", "Libre Baskerville", Georgia, serif;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+
 body {
   font-family: 'Inter', sans-serif;
-  background-color: #fef8f3;
-  color: #1d1b19;
+  background-color: rgb(var(--rgb-surface));
+  color: rgb(var(--rgb-ink, 29 27 25));
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Template helpers */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.marquee-track { animation: marquee 40s linear infinite; }
+.marquee-slow { animation-duration: 60s; }
+.marquee-track:hover { animation-play-state: paused; }
+
+.text-outline {
+  color: transparent;
+  -webkit-text-stroke: 1.5px currentColor;
+  -webkit-text-stroke-color: #fff;
+}
+.text-outline-light {
+  color: transparent;
+  -webkit-text-stroke: 2px #fff;
+}
+
+@keyframes scrollCue {
+  0% { transform: scaleY(0); transform-origin: top; }
+  50% { transform: scaleY(1); transform-origin: top; }
+  51% { transform: scaleY(1); transform-origin: bottom; }
+  100% { transform: scaleY(0); transform-origin: bottom; }
+}
+.scroll-cue { animation: scrollCue 2.2s ease-in-out infinite; }
+
+@keyframes sizeShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-5px); }
+  40%, 80% { transform: translateX(5px); }
+}
+.size-shake { animation: sizeShake 0.4s ease; }
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track, .scroll-cue, .hero-anim-ken-burns { animation: none; }
 }
 
 .hide-scrollbar::-webkit-scrollbar { display: none; }

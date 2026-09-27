@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Leaf, Eye, EyeOff } from 'lucide-react';
+import { useStore } from '../context/StoreContext';
 
 export default function Inscription() {
   const navigate = useNavigate();
+  const { storeName } = useStore();
+  const shopSlug = window.location.pathname.split('/').filter(Boolean)[0];
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -54,6 +57,7 @@ export default function Inscription() {
           lastName: formData.lastName,
           email: formData.email,
           password: formData.password,
+          shopSlug,
         }),
       });
 
@@ -88,7 +92,7 @@ export default function Inscription() {
             <Leaf size={40} className="text-white/90" />
           </div>
           <h1 className="text-3xl font-headline font-bold text-white mb-4 tracking-tight">
-            NATUR<span style={{ color: '#d8e8c7' }}>ESSENCE</span>
+            {storeName || 'Boutique'}
           </h1>
           <p className="text-white/70 text-sm leading-relaxed">
             L'éveil botanique — Découvrez notre univers d'huiles essentielles, beurres végétaux et actifs cosmétiques naturels.
@@ -114,7 +118,7 @@ export default function Inscription() {
             </div>
             <span className="text-xl font-headline font-bold tracking-tight"
                   style={{ color: '#1d1b19' }}>
-              NATUR<span style={{ color: '#163328' }}>ESSENCE</span>
+              {storeName || 'Boutique'}
             </span>
           </div>
 

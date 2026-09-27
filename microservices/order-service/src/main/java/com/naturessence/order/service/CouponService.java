@@ -5,8 +5,10 @@ import com.naturessence.shared.dto.response.CouponResponse;
 import com.naturessence.shared.dto.response.PromotionStatsResponse;
 import com.naturessence.shared.entity.Coupon;
 import com.naturessence.shared.entity.CouponUsage;
+import com.naturessence.shared.entity.Shop;
 import com.naturessence.shared.entity.User;
 import com.naturessence.shared.repository.CouponRepository;
+import com.naturessence.shared.repository.ShopRepository;
 import com.naturessence.shared.repository.CouponUsageRepository;
 import com.naturessence.shared.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,13 +25,16 @@ import java.util.stream.Collectors;
 public class CouponService {
 
     private final CouponRepository couponRepository;
+    private final ShopRepository shopRepository;
     private final CouponUsageRepository couponUsageRepository;
     private final UserRepository userRepository;
 
     // ── Get all coupons ────────────────────────────────────────────
     @Transactional(readOnly = true)
-    public List<CouponResponse> getAllCoupons() {
+    public List<CouponResponse> getAllCoupons(String shopSlug) {
+        Long shopId = shopIdOf(shopSlug);
         return couponRepository.findAllOrderByCreatedAtDesc().stream()
+                .filter(coupon -> shopId == null || shopId.equals(coupon.getShopId()))
                 .map(this::mapToResponse)
                 .toList();
     }
@@ -68,6 +73,7 @@ public class CouponService {
                 .produits(joinList(request.getProduits()))
                 .auto(request.isAuto())
                 .autoTrigger(request.getAutoTrigger())
+                .shopId(resolveShopId(request.getShopSlug()))
                 .build();
 
         coupon = couponRepository.save(coupon);
@@ -172,15 +178,29 @@ public class CouponService {
 
     // ── Public: top announcement coupon for frontoffice ─────────────────────
     @Transactional(readOnly = true)
-    public Optional<CouponResponse> getTopAnnouncementCoupon() {
+    public Optional<CouponResponse> getTopAnnouncementCoupon(String shopSlug) {
         LocalDate today = LocalDate.now();
         LocalTime now = LocalTime.now();
+        Long shopId = shopIdOf(shopSlug);
 
         return couponRepository.findActiveValidCouponsForDate(today)
                 .stream()
                 .filter(coupon -> isWithinTimeWindow(coupon, now))
+                .filter(coupon -> shopId == null || shopId.equals(coupon.getShopId()))
                 .findFirst()
                 .map(this::mapToResponse);
+    }
+
+    private Long shopIdOf(String shopSlug) {
+        if (shopSlug == null || shopSlug.isBlank()) return null;
+        return shopRepository.findBySlug(shopSlug.trim().toLowerCase()).map(Shop::getId).orElse(-1L);
+    }
+
+    private Long resolveShopId(String shopSlug) {
+        if (shopSlug == null || shopSlug.isBlank()) return null;
+        return shopRepository.findBySlug(shopSlug.trim().toLowerCase())
+                .map(Shop::getId)
+                .orElseThrow(() -> new IllegalArgumentException("Boutique introuvable"));
     }
 
     // ── Use coupon (record usage) ──────────────────────────────────
@@ -219,14 +239,19 @@ public class CouponService {
 
     // ── Stats / KPIs ───────────────────────────────────────────────
     @Transactional(readOnly = true)
-    public PromotionStatsResponse getStats() {
-        long actifs = couponRepository.countByStatut("actif");
-        long total = couponRepository.count();
-        Double revenus = couponRepository.sumRevenus();
-        Long utilisations = couponRepository.sumUtilisations();
-        Double avgConv = couponRepository.avgConversion();
-
-        List<Coupon> allCoupons = couponRepository.findAll();
+    public PromotionStatsResponse getStats(String shopSlug) {
+        Long shopId = shopIdOf(shopSlug);
+        List<Coupon> allCoupons = couponRepository.findAll().stream()
+                .filter(coupon -> shopId == null || (shopId > 0 && shopId.equals(coupon.getShopId())))
+                .toList();
+        if (shopId != null && shopId < 0) {
+            allCoupons = List.of();
+        }
+        long actifs = allCoupons.stream().filter(coupon -> "actif".equals(coupon.getStatut())).count();
+        long total = allCoupons.size();
+        double revenus = allCoupons.stream().mapToDouble(Coupon::getRevenus).sum();
+        long utilisations = allCoupons.stream().mapToLong(Coupon::getUtilisations).sum();
+        double avgConv = allCoupons.stream().filter(coupon -> coupon.getConversion() > 0).mapToDouble(Coupon::getConversion).average().orElse(0);
         Coupon best = allCoupons.stream()
                 .filter(c -> c.getConversion() > 0)
                 .max(Comparator.comparingDouble(Coupon::getConversion))
@@ -240,9 +265,9 @@ public class CouponService {
         return PromotionStatsResponse.builder()
                 .couponsActifs(actifs)
                 .totalCoupons(total)
-                .totalRevenus(revenus != null ? revenus : 0)
-                .totalUtilisations(utilisations != null ? utilisations : 0)
-                .avgConversion(avgConv != null ? avgConv : 0)
+                .totalRevenus(revenus)
+                .totalUtilisations(utilisations)
+                .avgConversion(avgConv)
                 .bestCouponCode(best != null ? best.getCode() : null)
                 .bestCouponConversion(best != null ? best.getConversion() : 0)
                 .bestCouponRevenus(best != null ? best.getRevenus() : 0)

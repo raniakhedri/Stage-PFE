@@ -27,7 +27,7 @@ function performLogout() {
   // If we are on the auth-callback route, new tokens are about to be written
   // from the URL — don't navigate away; AuthCallback will redirect to /dashboard.
   if (!window.location.pathname.includes('auth-callback')) {
-    window.location.href = 'http://localhost:3001/login?redirect=backoffice'
+    window.location.href = '/login'
   }
 }
 

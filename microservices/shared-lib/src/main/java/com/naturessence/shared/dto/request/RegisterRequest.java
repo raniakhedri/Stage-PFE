@@ -32,4 +32,7 @@ public class RegisterRequest {
     private LocalDate dateOfBirth;
 
     private Gender gender;
+
+    /** Storefront signup: the shop prefix this customer belongs to. */
+    private String shopSlug;
 }

@@ -1,11 +1,13 @@
 ﻿import { useState, useEffect, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { ChevronRight, Grid3X3, List, ChevronDown, SlidersHorizontal, X } from 'lucide-react';
 import { fetchCategoryBySlug, fetchProductsByCategory } from '../api/apiClient';
 import ProductCard from '../components/ProductCard';
 
 export default function CategoryPage() {
   const { slug } = useParams();
+  const [searchParams] = useSearchParams();
+  const subParam = searchParams.get('sub') || 'Tout voir';
   const [category, setCategory] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,7 +32,7 @@ export default function CategoryPage() {
     ]).then(([cat, prods]) => {
       setCategory(cat);
       setProducts(prods);
-      setActiveSub('Tout voir');
+      setActiveSub(subParam);
       setFilterBio(false);
       setFilterBadges([]);
       setFilterSizes([]);
@@ -41,7 +43,7 @@ export default function CategoryPage() {
         setSliderVal(max);
       }
     }).catch(() => {}).finally(() => setLoading(false));
-  }, [slug]);
+  }, [slug, subParam]);
 
   const allSizes = useMemo(() => {
     const s = new Set(products.map(p => p.volume).filter(Boolean));

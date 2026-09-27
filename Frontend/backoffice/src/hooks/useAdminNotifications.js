@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import apiClient from '../api/apiClient';
+import { shopQuery } from '../lib/sellio';
 
 const POLL_MS = 60_000; // 1 minute
 
@@ -38,10 +39,10 @@ export function useAdminNotifications() {
     const results = [];
 
     const [products, returns, orders, reviews] = await Promise.all([
-      safeGet('/admin/products'),
+      safeGet(`/admin/products${window.location.pathname.split('/').filter(Boolean)[0] ? `?shop=${encodeURIComponent(window.location.pathname.split('/').filter(Boolean)[0])}` : ''}`),
       safeGet('/admin/returns'),
-      safeGet('/admin/orders'),
-      safeGet('/admin/reviews'),
+      safeGet(`/admin/orders${window.location.pathname.split('/').filter(Boolean)[0] ? `?shop=${encodeURIComponent(window.location.pathname.split('/').filter(Boolean)[0])}` : ''}`),
+      safeGet(`/admin/reviews${shopQuery()}`),
     ]);
 
     products

@@ -13,39 +13,51 @@ export const BUSINESSES = [
 
 export const TEMPLATES = [
   {
-    id: 'atelier',
-    business: 'CLOTHES',
-    title: 'Atelier',
-    text: 'Beige, serif, magazine de mode.',
-    swatch: ['#5c3a21', '#faf6ef', '#c4a574'],
+    id: 'minimal',
+    title: 'Minimal',
+    text: 'Beaucoup de blanc, comme une vitrine Shopify. Logo à gauche, menu au centre, icônes à droite.',
+    swatch: ['#111111', '#ffffff', '#e7e5e4'],
+    font: 'Inter, sans-serif',
+    radius: '6px',
+    tracking: '0.01em',
+    upper: false,
+    colors: { primary: '#111111', surface: '#ffffff', button: '#111111', buttonText: '#ffffff', muted: '#e7e5e4' },
   },
   {
-    id: 'noir',
-    business: 'CLOTHES',
-    title: 'Noir',
-    text: 'Noir et blanc, boutique minimaliste.',
-    swatch: ['#111111', '#f4f4f4', '#8a8a8a'],
+    id: 'bold',
+    title: 'Bold',
+    text: 'Grande typographie et images fortes. Le menu s’ouvre en plein écran.',
+    swatch: ['#0a0a0a', '#f4f4f5', '#ffffff'],
+    font: 'Outfit, sans-serif',
+    radius: '0px',
+    tracking: '-0.03em',
+    upper: true,
+    colors: { primary: '#0a0a0a', surface: '#f4f4f5', button: '#0a0a0a', buttonText: '#ffffff', muted: '#d4d4d8' },
   },
   {
-    id: 'botanique',
-    business: 'COSMETICS',
-    title: 'Botanique',
-    text: 'Vert profond et crème, l’identité actuelle.',
-    swatch: ['#163328', '#fef8f3', '#7c8b6f'],
-  },
-  {
-    id: 'nude',
-    business: 'COSMETICS',
-    title: 'Nude',
-    text: 'Rose poudré, institut et spa.',
-    swatch: ['#8d5348', '#fff7f4', '#c4a094'],
+    id: 'luxury',
+    title: 'Luxury',
+    text: 'Éditorial et premium. Logo centré, menu en dessous, en-tête transparent.',
+    swatch: ['#1c1917', '#f6f1ea', '#a8a29e'],
+    font: '"Libre Baskerville", Georgia, serif',
+    radius: '0px',
+    tracking: '0.16em',
+    upper: true,
+    colors: { primary: '#1c1917', surface: '#f6f1ea', button: '#1c1917', buttonText: '#f6f1ea', muted: '#d6d3d1' },
   },
 ]
 
-export function templatesFor(business) {
-  return TEMPLATES.filter((item) => item.business === business)
+export function templatesFor() {
+  return TEMPLATES
 }
 
-export function defaultTemplate(business) {
-  return business === 'CLOTHES' ? 'atelier' : 'botanique'
+export function defaultTemplate() {
+  return 'minimal'
+}
+
+export function layoutOf(templateKey) {
+  const key = String(templateKey || '').toLowerCase()
+  if (key === 'bold' || key === 'noir' || key === 'marin') return 'bold'
+  if (key === 'luxury' || key === 'atelier' || key === 'apothicaire' || key === 'botanique') return 'luxury'
+  return 'minimal'
 }

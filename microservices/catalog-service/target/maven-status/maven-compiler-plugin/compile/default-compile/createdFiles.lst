@@ -1,3 +1,4 @@
+com\naturessence\catalog\config\NaturEssenceCatalogBinder.class
 com\naturessence\catalog\service\LoyaltyService.class
 com\naturessence\catalog\controller\AdminCategoryController.class
 com\naturessence\catalog\service\ProductService.class

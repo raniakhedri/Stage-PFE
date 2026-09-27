@@ -23,13 +23,13 @@ public class AdminProductController {
     private final ProductService productService;
 
     @GetMapping
-    public ResponseEntity<List<ProductResponse>> getAllProducts() {
-        return ResponseEntity.ok(productService.getAllProducts());
+    public ResponseEntity<List<ProductResponse>> getAllProducts(@RequestParam(required = false) String shop) {
+        return ResponseEntity.ok(productService.getAllProducts(shop));
     }
 
     @GetMapping("/stats")
-    public ResponseEntity<ProductStatsResponse> getStats() {
-        return ResponseEntity.ok(productService.getStats());
+    public ResponseEntity<ProductStatsResponse> getStats(@RequestParam(required = false) String shop) {
+        return ResponseEntity.ok(productService.getStats(shop));
     }
 
     @GetMapping("/{id}")

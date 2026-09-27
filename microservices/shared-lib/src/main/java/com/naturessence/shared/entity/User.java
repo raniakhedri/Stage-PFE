@@ -72,6 +72,10 @@ public class User {
     @Builder.Default
     private Integer loyaltyPoints = 0;
 
+    /** Shop this account belongs to. One shop per merchant. Customers belong to one shop. */
+    @Column(name = "shop_id")
+    private Long shopId;
+
     private LocalDateTime lastLogin;
 
     @CreationTimestamp

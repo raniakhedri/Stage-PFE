@@ -22,8 +22,8 @@ public class AdminCategoryController {
     private final CategoryService categoryService;
 
     @GetMapping
-    public ResponseEntity<List<CategoryResponse>> getAllCategories() {
-        return ResponseEntity.ok(categoryService.getAllCategories());
+    public ResponseEntity<List<CategoryResponse>> getAllCategories(@RequestParam(required = false) String shop) {
+        return ResponseEntity.ok(categoryService.getAllCategories(shop));
     }
 
     @GetMapping("/{id}")

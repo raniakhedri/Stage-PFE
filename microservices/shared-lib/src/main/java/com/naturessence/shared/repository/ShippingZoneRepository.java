@@ -8,5 +8,7 @@ import java.util.List;
 public interface ShippingZoneRepository extends JpaRepository<ShippingZone, Long> {
     List<ShippingZone> findAllByOrderByIdAsc();
 
+    List<ShippingZone> findByShopIdOrderByIdAsc(Long shopId);
+
     long countByStatut(String statut);
 }

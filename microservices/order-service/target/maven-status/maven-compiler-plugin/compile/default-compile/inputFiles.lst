@@ -10,6 +10,7 @@ C:\Users\alloa\Desktop\Stage-PFE\microservices\order-service\src\main\java\com\n
 C:\Users\alloa\Desktop\Stage-PFE\microservices\order-service\src\main\java\com\naturessence\order\service\LoyaltyService.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\order-service\src\main\java\com\naturessence\order\service\ReturnService.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\order-service\src\main\java\com\naturessence\order\service\TvaShippingService.java
+C:\Users\alloa\Desktop\Stage-PFE\microservices\order-service\src\main\java\com\naturessence\order\config\NaturEssenceOrderBinder.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\order-service\src\main\java\com\naturessence\order\config\SecurityConfig.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\order-service\src\main\java\com\naturessence\order\config\AsyncConfig.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\order-service\src\main\java\com\naturessence\order\controller\AdminOrderController.java

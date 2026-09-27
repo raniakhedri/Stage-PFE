@@ -7,12 +7,15 @@ com\naturessence\auth\service\EmailService.class
 com\naturessence\auth\config\AsyncConfig.class
 com\naturessence\auth\controller\AdminSegmentController.class
 com\naturessence\auth\service\UserService.class
+com\naturessence\auth\controller\PlatformController.class
 com\naturessence\auth\controller\AuthController.class
 com\naturessence\auth\config\SecurityConfig.class
 com\naturessence\auth\controller\AdminUserController.class
+com\naturessence\auth\controller\PublicShopController.class
 com\naturessence\auth\service\RefreshTokenService.class
 com\naturessence\auth\service\CustomUserDetailsService.class
 com\naturessence\auth\controller\AdminRoleController.class
+com\naturessence\auth\controller\PlatformController$OrderStats.class
 com\naturessence\auth\security\UserPrincipal.class
 com\naturessence\auth\service\SegmentService.class
 com\naturessence\auth\service\AuthService.class

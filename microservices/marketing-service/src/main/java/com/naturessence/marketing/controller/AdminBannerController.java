@@ -21,8 +21,8 @@ public class AdminBannerController {
     private final BannerService bannerService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<BannerResponse>>> getAll() {
-        return ResponseEntity.ok(ApiResponse.ok("Liste des bannières", bannerService.getAll()));
+    public ResponseEntity<ApiResponse<List<BannerResponse>>> getAll(@RequestParam(required = false) String shop) {
+        return ResponseEntity.ok(ApiResponse.ok("Liste des bannières", bannerService.getAll(shop)));
     }
 
     @GetMapping("/{id}")

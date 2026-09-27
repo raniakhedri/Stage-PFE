@@ -27,65 +27,79 @@ public class AdminTvaShippingController {
 
     // ── Global config ──────────────────────────────────────
     @GetMapping("/config")
-    public ResponseEntity<TvaConfigResponse> getConfig() {
-        return ResponseEntity.ok(service.getConfig());
+    public ResponseEntity<TvaConfigResponse> getConfig(@RequestParam(required = false) String shop) {
+        return ResponseEntity.ok(service.getConfig(shop));
     }
 
     @PutMapping("/config")
-    public ResponseEntity<TvaConfigResponse> updateConfig(@RequestBody TvaConfigRequest request) {
-        return ResponseEntity.ok(service.updateConfig(request));
+    public ResponseEntity<TvaConfigResponse> updateConfig(
+            @RequestParam(required = false) String shop,
+            @RequestBody TvaConfigRequest request) {
+        return ResponseEntity.ok(service.updateConfig(shop, request));
     }
 
     // ── TVA rates ──────────────────────────────────────────
     @GetMapping("/rates")
-    public ResponseEntity<List<TvaRateResponse>> getAllRates() {
-        return ResponseEntity.ok(service.getAllRates());
+    public ResponseEntity<List<TvaRateResponse>> getAllRates(@RequestParam(required = false) String shop) {
+        return ResponseEntity.ok(service.getAllRates(shop));
     }
 
     @PostMapping("/rates")
-    public ResponseEntity<TvaRateResponse> createRate(@Valid @RequestBody TvaRateRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.createRate(request));
+    public ResponseEntity<TvaRateResponse> createRate(
+            @RequestParam(required = false) String shop,
+            @Valid @RequestBody TvaRateRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.createRate(shop, request));
     }
 
     @PutMapping("/rates/{id}")
     public ResponseEntity<TvaRateResponse> updateRate(
             @PathVariable Long id,
+            @RequestParam(required = false) String shop,
             @Valid @RequestBody TvaRateRequest request) {
-        return ResponseEntity.ok(service.updateRate(id, request));
+        return ResponseEntity.ok(service.updateRate(id, shop, request));
     }
 
     @PatchMapping("/rates/{id}/toggle")
-    public ResponseEntity<TvaRateResponse> toggleRate(@PathVariable Long id) {
-        return ResponseEntity.ok(service.toggleRate(id));
+    public ResponseEntity<TvaRateResponse> toggleRate(
+            @PathVariable Long id,
+            @RequestParam(required = false) String shop) {
+        return ResponseEntity.ok(service.toggleRate(id, shop));
     }
 
     @DeleteMapping("/rates/{id}")
-    public ResponseEntity<MessageResponse> deleteRate(@PathVariable Long id) {
-        service.deleteRate(id);
+    public ResponseEntity<MessageResponse> deleteRate(
+            @PathVariable Long id,
+            @RequestParam(required = false) String shop) {
+        service.deleteRate(id, shop);
         return ResponseEntity.ok(new MessageResponse("Taux TVA supprimé avec succès"));
     }
 
     // ── Shipping zones ─────────────────────────────────────
     @GetMapping("/zones")
-    public ResponseEntity<List<ShippingZoneResponse>> getAllZones() {
-        return ResponseEntity.ok(service.getAllZones());
+    public ResponseEntity<List<ShippingZoneResponse>> getAllZones(@RequestParam(required = false) String shop) {
+        return ResponseEntity.ok(service.getAllZones(shop));
     }
 
     @PostMapping("/zones")
-    public ResponseEntity<ShippingZoneResponse> createZone(@Valid @RequestBody ShippingZoneRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.createZone(request));
+    public ResponseEntity<ShippingZoneResponse> createZone(
+            @RequestParam(required = false) String shop,
+            @Valid @RequestBody ShippingZoneRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.createZone(shop, request));
     }
 
     @PutMapping("/zones/{id}")
     public ResponseEntity<ShippingZoneResponse> updateZone(
             @PathVariable Long id,
+            @RequestParam(required = false) String shop,
             @Valid @RequestBody ShippingZoneRequest request) {
-        return ResponseEntity.ok(service.updateZone(id, request));
+        return ResponseEntity.ok(service.updateZone(id, shop, request));
     }
 
     @DeleteMapping("/zones/{id}")
-    public ResponseEntity<MessageResponse> deleteZone(@PathVariable Long id) {
-        service.deleteZone(id);
+    public ResponseEntity<MessageResponse> deleteZone(
+            @PathVariable Long id,
+            @RequestParam(required = false) String shop) {
+        service.deleteZone(id, shop);
         return ResponseEntity.ok(new MessageResponse("Zone de livraison supprimée avec succès"));
     }
 }

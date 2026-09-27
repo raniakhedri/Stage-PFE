@@ -5,6 +5,7 @@ import KpiCard from '../components/ui/KpiCard'
 import PageHeader from '../components/ui/PageHeader'
 import CustomSelect from '../components/ui/CustomSelect'
 import apiClient from '../api/apiClient'
+import { shopQuery } from '../lib/sellio'
 
 const STATUS_LABELS = {
   EN_ATTENTE: 'En attente',
@@ -117,7 +118,7 @@ export default function Commandes() {
   const fetchOrders = async () => {
     try {
       setLoading(true)
-      const { data } = await apiClient.get('/admin/orders')
+      const { data } = await apiClient.get(`/admin/orders${shopQuery()}`)
       setOrders(Array.isArray(data) ? data : (data?.content || []))
     } catch (err) {
       toast.error('Erreur lors du chargement des commandes')

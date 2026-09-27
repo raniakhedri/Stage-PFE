@@ -86,6 +86,9 @@ public class ProductRequest {
     // Variant rows
     private List<ProductVariantRequest> variants;
 
+    /** Shop URL prefix. The catalog resolves it to shopId on create. */
+    private String shopSlug;
+
     @Data
     public static class ProductVariantRequest {
         private Long id;

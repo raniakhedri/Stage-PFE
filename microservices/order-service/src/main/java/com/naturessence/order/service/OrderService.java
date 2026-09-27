@@ -12,8 +12,10 @@ import com.naturessence.shared.entity.TvaConfig;
 import com.naturessence.shared.entity.User;
 import com.naturessence.shared.enums.OrderStatus;
 import com.naturessence.shared.enums.PaymentMethod;
+import com.naturessence.shared.entity.Shop;
 import com.naturessence.shared.repository.CouponRepository;
 import com.naturessence.shared.repository.OrderRepository;
+import com.naturessence.shared.repository.ShopRepository;
 import com.naturessence.shared.repository.ProductRepository;
 import com.naturessence.shared.repository.ShippingZoneRepository;
 import com.naturessence.shared.repository.TvaConfigRepository;
@@ -33,6 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class OrderService {
 
     private final OrderRepository orderRepository;
+    private final ShopRepository shopRepository;
     private final ShippingZoneRepository shippingZoneRepository;
     private final TvaConfigRepository tvaConfigRepository;
     private final CouponRepository couponRepository;
@@ -103,6 +106,7 @@ public class OrderService {
             .paymentMethod(paymentMethod)
             .tvaRate(tvaRate)
             .status(OrderStatus.EN_ATTENTE)
+            .shopId(resolveShopId(req.getShopSlug()))
             .build();
 
         // Link user if logged in
@@ -210,10 +214,12 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
-    public List<OrderResponse> getAllOrders() {
+    public List<OrderResponse> getAllOrders(String shopSlug) {
+        Long shopId = shopIdOf(shopSlug);
         return orderRepository
             .findAllByOrderByCreatedAtDesc()
             .stream()
+            .filter(order -> shopId == null || shopId.equals(order.getShopId()))
             .map(this::mapToResponse)
             .toList();
     }
@@ -335,6 +341,18 @@ public class OrderService {
     }
 
     // ── Helpers ──
+
+    private Long shopIdOf(String shopSlug) {
+        if (shopSlug == null || shopSlug.isBlank()) return null;
+        return shopRepository.findBySlug(shopSlug.trim().toLowerCase()).map(Shop::getId).orElse(-1L);
+    }
+
+    private Long resolveShopId(String shopSlug) {
+        if (shopSlug == null || shopSlug.isBlank()) return null;
+        return shopRepository.findBySlug(shopSlug.trim().toLowerCase())
+                .map(Shop::getId)
+                .orElseThrow(() -> new IllegalArgumentException("Boutique introuvable"));
+    }
 
     private String generateReference() {
         String ts = LocalDateTime.now().format(

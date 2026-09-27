@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'react-toastify'
 import apiClient from '../api/apiClient'
+import { shopQuery } from '../lib/sellio'
 import PageHeader from '../components/ui/PageHeader'
 import KpiCard from '../components/ui/KpiCard'
 import CustomSelect from '../components/ui/CustomSelect'
@@ -52,7 +53,7 @@ export default function Avis() {
   const fetchAvis = async () => {
     try {
       setLoading(true)
-      const { data } = await apiClient.get('/admin/reviews')
+      const { data } = await apiClient.get(`/admin/reviews${shopQuery()}`)
       setAvis(data.map(r => ({
         id: r.id,
         client: r.clientName || 'Client',
@@ -97,7 +98,7 @@ export default function Avis() {
   // ── Actions ──
   const approuver = async (id) => {
     try {
-      await apiClient.patch(`/admin/reviews/${id}/statut`, { statut: 'Approuvé' })
+      await apiClient.patch(`/admin/reviews/${id}/statut${shopQuery()}`, { statut: 'Approuvé' })
       setAvis(prev => prev.map(a => a.id === id ? { ...a, statut: 'Approuvé' } : a))
       toast.success('Avis approuvé.')
     } catch { toast.error('Erreur') }
@@ -105,7 +106,7 @@ export default function Avis() {
 
   const marquerSpam = async (id) => {
     try {
-      await apiClient.patch(`/admin/reviews/${id}/statut`, { statut: 'Spam' })
+      await apiClient.patch(`/admin/reviews/${id}/statut${shopQuery()}`, { statut: 'Spam' })
       setAvis(prev => prev.map(a => a.id === id ? { ...a, statut: 'Spam' } : a))
       toast.success('Avis marqué comme spam.')
     } catch { toast.error('Erreur') }
@@ -113,7 +114,7 @@ export default function Avis() {
 
   const supprimer = async (id) => {
     try {
-      await apiClient.delete(`/admin/reviews/${id}`)
+      await apiClient.delete(`/admin/reviews/${id}${shopQuery()}`)
       setAvis(prev => prev.filter(a => a.id !== id))
       toast.success('Avis supprimé.')
     } catch { toast.error('Erreur') }
@@ -127,7 +128,7 @@ export default function Avis() {
   const submitReply = async () => {
     if (!replyText.trim()) return toast.error('Veuillez écrire une réponse.')
     try {
-      await apiClient.patch(`/admin/reviews/${replyAvis.id}/reponse`, { reponse: replyText.trim() })
+      await apiClient.patch(`/admin/reviews/${replyAvis.id}/reponse${shopQuery()}`, { reponse: replyText.trim() })
       setAvis(prev => prev.map(a => a.id === replyAvis.id ? { ...a, reponse: replyText.trim() } : a))
       setReplyAvis(null)
       toast.success('Réponse enregistrée.')

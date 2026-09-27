@@ -41,4 +41,6 @@ public class CategoryRequest {
     // SEO
     private String metaTitle;
     private String metaDescription;
+
+    private String shopSlug;
 }

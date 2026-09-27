@@ -5,6 +5,8 @@ import com.naturessence.shared.dto.response.ProductResponse;
 import com.naturessence.shared.dto.response.ProductStatsResponse;
 import com.naturessence.shared.entity.Category;
 import com.naturessence.shared.entity.Product;
+import com.naturessence.shared.entity.Shop;
+import com.naturessence.shared.repository.ShopRepository;
 import com.naturessence.shared.entity.ProductVariant;
 import com.naturessence.shared.repository.CategoryRepository;
 import com.naturessence.shared.repository.CollectionRepository;
@@ -23,15 +25,18 @@ import java.util.List;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final ShopRepository shopRepository;
     private final ProductVariantRepository variantRepository;
     private final CategoryRepository categoryRepository;
     private final CollectionRepository collectionRepository;
 
     // ── Get all products ───────────────────────────────────────────
     @Transactional(readOnly = true)
-    public List<ProductResponse> getAllProducts() {
+    public List<ProductResponse> getAllProducts(String shopSlug) {
+        Long shopId = shopIdOf(shopSlug);
         return productRepository.findAllByOrderByCreatedAtDesc()
                 .stream()
+                .filter(p -> inShop(p, shopId))
                 .map(this::mapToResponse)
                 .toList();
     }
@@ -44,43 +49,55 @@ public class ProductService {
 
     // ── Get product by slug (public) ───────────────────────────────
     @Transactional(readOnly = true)
-    public ProductResponse getProductBySlug(String slug) {
-        Product product = productRepository.findBySlug(slug)
-                .orElseThrow(() -> new IllegalArgumentException("Produit introuvable: " + slug));
+    public ProductResponse getProductBySlug(String slug, String shopSlug) {
+        Long shopId = shopIdOf(shopSlug);
+        Product product = (shopId != null && shopId > 0)
+                ? productRepository.findByShopIdAndSlug(shopId, slug)
+                    .orElseThrow(() -> new IllegalArgumentException("Produit introuvable: " + slug))
+                : productRepository.findBySlug(slug)
+                    .orElseThrow(() -> new IllegalArgumentException("Produit introuvable: " + slug));
         return mapToResponse(product);
     }
 
     // ── Get public products ────────────────────────────────────────
     @Transactional(readOnly = true)
-    public List<ProductResponse> getPublicProducts() {
+    public List<ProductResponse> getPublicProducts(String shopSlug) {
+        Long shopId = shopIdOf(shopSlug);
         return productRepository.findPublicProducts()
                 .stream()
+                .filter(p -> inShop(p, shopId))
                 .map(this::mapToResponse)
                 .toList();
     }
 
     // ── Get public products by category ───────────────────────────
     @Transactional(readOnly = true)
-    public List<ProductResponse> getPublicProductsByCategory(Long categoryId) {
+    public List<ProductResponse> getPublicProductsByCategory(Long categoryId, String shopSlug) {
+        Long shopId = shopIdOf(shopSlug);
         return productRepository.findPublicProductsByCategory(categoryId)
                 .stream()
+                .filter(p -> inShop(p, shopId))
                 .map(this::mapToResponse)
                 .toList();
     }
 
     // ── Get public products by parent category (includes children) ─
     @Transactional(readOnly = true)
-    public List<ProductResponse> getPublicProductsByParentCategory(Long parentId) {
+    public List<ProductResponse> getPublicProductsByParentCategory(Long parentId, String shopSlug) {
+        Long shopId = shopIdOf(shopSlug);
         return productRepository.findPublicProductsByParentCategory(parentId)
                 .stream()
+                .filter(p -> inShop(p, shopId))
                 .map(this::mapToResponse)
                 .toList();
     }
 
     // ── Get public products by collection name ────────────────────
     @Transactional(readOnly = true)
-    public List<ProductResponse> getPublicProductsByCollectionName(String collectionName) {
+    public List<ProductResponse> getPublicProductsByCollectionName(String collectionName, String shopSlug) {
+        Long shopId = shopIdOf(shopSlug);
         return productRepository.findPublicProducts().stream()
+                .filter(p -> inShop(p, shopId))
                 .filter(p -> {
                     String cols = p.getCollections();
                     if (cols == null || cols.isBlank()) return false;
@@ -95,31 +112,47 @@ public class ProductService {
 
     // ── Get public products by collection slug ────────────────────
     @Transactional(readOnly = true)
-    public List<ProductResponse> getPublicProductsByCollectionSlug(String slug) {
+    public List<ProductResponse> getPublicProductsByCollectionSlug(String slug, String shopSlug) {
         var collection = collectionRepository.findBySlug(slug)
                 .orElseThrow(() -> new IllegalArgumentException("Collection introuvable: " + slug));
-        return getPublicProductsByCollectionName(collection.getNom());
+        return getPublicProductsByCollectionName(collection.getNom(), shopSlug);
     }
 
     // ── Get public products by IDs (for upsell/similar) ──────────
     @Transactional(readOnly = true)
-    public List<ProductResponse> getPublicProductsByIds(List<Long> ids) {
+    public List<ProductResponse> getPublicProductsByIds(List<Long> ids, String shopSlug) {
+        Long shopId = shopIdOf(shopSlug);
         return productRepository.findAllById(ids).stream()
                 .filter(p -> "actif".equals(p.getStatut()) && p.isVisibleSite())
+                .filter(p -> inShop(p, shopId))
                 .map(this::mapToResponse)
                 .toList();
     }
 
     // ── Stats ──────────────────────────────────────────────────────
     @Transactional(readOnly = true)
-    public ProductStatsResponse getStats() {
+    public ProductStatsResponse getStats(String shopSlug) {
+        Long shopId = shopIdOf(shopSlug);
+        if (shopId == null) {
+            return ProductStatsResponse.builder()
+                    .total(productRepository.count())
+                    .actifs(productRepository.countByStatut("actif"))
+                    .archives(productRepository.countByStatut("archive"))
+                    .desactives(productRepository.countByStatut("desactive"))
+                    .rupture(productRepository.countRupture())
+                    .enPromo(productRepository.countEnPromo())
+                    .build();
+        }
+        if (shopId < 0) {
+            return ProductStatsResponse.builder().build();
+        }
         return ProductStatsResponse.builder()
-                .total(productRepository.count())
-                .actifs(productRepository.countByStatut("actif"))
-                .archives(productRepository.countByStatut("archive"))
-                .desactives(productRepository.countByStatut("desactive"))
-                .rupture(productRepository.countRupture())
-                .enPromo(productRepository.countEnPromo())
+                .total(productRepository.countByShopId(shopId))
+                .actifs(productRepository.countByShopIdAndStatut(shopId, "actif"))
+                .archives(productRepository.countByShopIdAndStatut(shopId, "archive"))
+                .desactives(productRepository.countByShopIdAndStatut(shopId, "desactive"))
+                .rupture(productRepository.countRuptureByShopId(shopId))
+                .enPromo(productRepository.countEnPromoByShopId(shopId))
                 .build();
     }
 
@@ -127,8 +160,9 @@ public class ProductService {
     @Transactional
     public ProductResponse createProduct(ProductRequest request) {
         String slug = generateSlug(request.getSlug(), request.getNom());
-        if (productRepository.existsBySlug(slug)) {
-            throw new IllegalArgumentException("Un produit avec ce slug existe déjà: " + slug);
+        Long shopId = resolveShopId(request.getShopSlug());
+        if (shopId != null && productRepository.existsByShopIdAndSlug(shopId, slug)) {
+            throw new IllegalArgumentException("Cette boutique a déjà un produit avec ce nom.");
         }
 
         Product product = Product.builder()
@@ -177,6 +211,7 @@ public class ProductService {
                 .saison(request.getSaison())
                 .genre(request.getGenre())
                 .performance(request.getPerformance())
+                .shopId(shopId)
                 .imageUrl(request.getImageUrl())
                 .images(request.getImages())
                 .upsellTags(request.getUpsellTags())
@@ -207,8 +242,10 @@ public class ProductService {
         Product product = findOrThrow(id);
 
         String slug = generateSlug(request.getSlug(), request.getNom());
-        if (!product.getSlug().equals(slug) && productRepository.existsBySlug(slug)) {
-            throw new IllegalArgumentException("Un produit avec ce slug existe déjà: " + slug);
+        if (!product.getSlug().equals(slug)
+                && product.getShopId() != null
+                && productRepository.existsByShopIdAndSlug(product.getShopId(), slug)) {
+            throw new IllegalArgumentException("Cette boutique a déjà un produit avec ce nom.");
         }
 
         product.setNom(request.getNom().trim());
@@ -313,6 +350,23 @@ public class ProductService {
     }
 
     // ── Helpers ────────────────────────────────────────────────────
+    private Long shopIdOf(String shopSlug) {
+        if (shopSlug == null || shopSlug.isBlank()) return null;
+        return shopRepository.findBySlug(shopSlug.trim().toLowerCase()).map(Shop::getId).orElse(-1L);
+    }
+
+    private Long resolveShopId(String shopSlug) {
+        if (shopSlug == null || shopSlug.isBlank()) return null;
+        return shopRepository.findBySlug(shopSlug.trim().toLowerCase())
+                .map(Shop::getId)
+                .orElseThrow(() -> new IllegalArgumentException("Boutique introuvable"));
+    }
+
+    private boolean inShop(Product product, Long shopId) {
+        if (shopId == null) return true;
+        return shopId.equals(product.getShopId());
+    }
+
     private Product findOrThrow(Long id) {
         return productRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Produit introuvable avec l'ID: " + id));

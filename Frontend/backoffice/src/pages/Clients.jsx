@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import apiClient from '../api/apiClient'
+import { shopQuery } from '../lib/sellio'
 import { churnApi } from '../api/churnApi'
 import KpiCard from '../components/ui/KpiCard'
 import PageHeader from '../components/ui/PageHeader'
@@ -151,7 +152,9 @@ export default function Clients() {
     setLoading(true)
     try {
       let res
-      const params = { page: currentPage, size: parseInt(perPage) }
+      const shop = window.location.pathname.split('/').filter(Boolean)[0]
+      const reserved = ['login', 'inscription', 'auth-callback', 'nouvelle-boutique', 'sellio']
+      const params = { page: currentPage, size: parseInt(perPage), ...(shop && !reserved.includes(shop) ? { shop } : {}) }
 
       if (search.trim()) {
         res = await apiClient.get('/admin/users/search', { params: { ...params, q: search.trim() } })
@@ -185,7 +188,7 @@ export default function Clients() {
     const fetchInitial = async () => {
       try {
         const [statsRes, segmentsRes] = await Promise.all([
-          apiClient.get('/admin/users/stats'),
+          apiClient.get(`/admin/users/stats${shopQuery()}`),
           apiClient.get('/admin/segments'),
         ])
         setStats(statsRes.data)
@@ -237,7 +240,7 @@ export default function Clients() {
       toast.success(`Compte "${client.firstName} ${client.lastName}" ${newStatus === 'ACTIVE' ? 'activé' : 'désactivé'}.`)
       fetchClients()
       // Refresh stats too
-      const statsRes = await apiClient.get('/admin/users/stats')
+      const statsRes = await apiClient.get(`/admin/users/stats${shopQuery()}`)
       setStats(statsRes.data)
     } catch (err) {
       const msg = err.response?.data?.error || err.response?.data?.message || 'Erreur lors de la mise à jour du statut'

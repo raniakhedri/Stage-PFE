@@ -40,4 +40,6 @@ public class CouponRequest {
 
     private boolean auto;
     private String autoTrigger;
+
+    private String shopSlug;
 }

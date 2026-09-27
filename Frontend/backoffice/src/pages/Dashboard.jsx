@@ -143,7 +143,10 @@ export default function Dashboard() {
   useEffect(() => {
     ;(async () => {
       try {
-        const { data } = await apiClient.get('/admin/dashboard')
+        const shop = window.location.pathname.split('/').filter(Boolean)[0]
+        const reserved = ['login', 'inscription', 'auth-callback', 'nouvelle-boutique', 'sellio']
+        const query = shop && !reserved.includes(shop) ? `?shop=${encodeURIComponent(shop)}` : ''
+        const { data } = await apiClient.get(`/admin/dashboard${query}`)
         setD(data)
       } catch {
         toast.error('Erreur lors du chargement du tableau de bord')

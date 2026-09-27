@@ -5,8 +5,9 @@ import CustomSelect from '../components/ui/CustomSelect'
 import PageHeader from '../components/ui/PageHeader'
 import { applyProductImage, computeProductStock, productApi, resolveImgUrl, serializeProductImages } from '../api/productApi'
 import { categoryApi } from '../api/categoryApi'
-import { storeApi } from '../api/storeApi'
 import ClothingFields, { clothingPayload, emptyClothing } from '../components/ClothingFields'
+import { OptionSelect, MultiOptionSelect } from '../components/ui/OptionPickers'
+import { splitList } from '../data/catalogOptions'
 
 // ── Toggle component ───────────────────────────────────────────────────────────
 function Toggle({ checked, onChange }) {
@@ -66,7 +67,7 @@ function Select({ value, onChange, children }) {
 // ── Section wrapper ────────────────────────────────────────────────────────────
 function Section({ title, children, rightSlot }) {
   return (
-    <div className="bg-white rounded-custom border border-slate-200 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-custom border border-slate-200 shadow-sm">
       <div className="px-8 py-5 border-b border-slate-100 bg-slate-50/30 flex justify-between items-center">
         <h3 className="font-bold text-slate-800">{title}</h3>
         {rightSlot}
@@ -102,7 +103,9 @@ function AjouterProduit() {
       }
     }).catch(() => {})
     productApi.getAll().then(setAllProducts).catch(() => {})
-    storeApi.get().then((store) => setClothes(store?.businessType === 'CLOTHES')).catch(() => {})
+    try {
+      setClothes(JSON.parse(localStorage.getItem('user') || '{}').businessType === 'CLOTHES')
+    } catch { setClothes(false) }
   }, [])
 
   // Pricing
@@ -262,7 +265,7 @@ function AjouterProduit() {
       toast.success('Produit créé avec succès !')
       navigate('/produits')
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Erreur lors de la création.')
+      toast.error(err?.response?.data?.error || err?.response?.data?.message || 'Erreur lors de la création.')
     } finally {
       setSubmitting(false)
     }
@@ -340,7 +343,7 @@ function AjouterProduit() {
                         ))}
                       </Select>
                     ) : (
-                      <p className="text-xs text-slate-400 italic py-2.5">Chargement...</p>
+                      <p className="text-xs text-slate-400 italic py-2.5">Aucune catégorie. Ajoutez-en une dans Catégories.</p>
                     )}
                   </div>
                   <div>
@@ -379,12 +382,11 @@ function AjouterProduit() {
               <div className="space-y-6">
                 <div>
                   <Label>Origine / Provenance</Label>
-                  <Input value={origine} onChange={(e) => setOrigine(e.target.value)} placeholder="Ex: France / Méditerranée" />
+                  <OptionSelect optionKey="origine" value={origine} onChange={setOrigine} placeholder="Choisir une origine" />
                 </div>
                 <div>
                   <Label>Certifications</Label>
-                  <Input value={certifications} onChange={(e) => setCertifications(e.target.value)} placeholder="Ex: Écocert,Cosmos Natural,USDA Organic" />
-                  <p className="text-[10px] text-slate-400 mt-1">Séparez plusieurs certifications par des virgules.</p>
+                  <MultiOptionSelect optionKey="certifications" value={certifications} onChange={setCertifications} placeholder="Ajouter une certification…" />
                 </div>
                 <div>
                   <Label>Composition INCI</Label>
@@ -425,11 +427,11 @@ function AjouterProduit() {
             {/* Variantes */}
             <Section title="Variantes du produit">
               <div className="space-y-4">
-                <div className="overflow-x-auto">
+                <div className="overflow-visible">
                   <table className="w-full">
                     <thead>
                       <tr className="text-left border-b border-slate-100">
-                        {(clothes ? ['Taille / Couleur', 'SKU', 'Stock', 'Action'] : ['Contenance / Label', 'SKU', 'Stock', 'Action']).map((h, i) => (
+                        {(clothes ? ['Taille', 'SKU', 'Stock', 'Action'] : ['Contenance / Label', 'SKU', 'Stock', 'Action']).map((h, i) => (
                           <th key={h} className={`pb-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 ${i === 3 ? 'text-right' : ''}`}>
                             {h}
                           </th>
@@ -440,12 +442,13 @@ function AjouterProduit() {
                       {variants.map((v) => (
                         <tr key={v.id} className="group hover:bg-slate-50/50">
                           <td className="py-3 px-2">
-                            <input
-                              type="text"
+                            <OptionSelect
+                              optionKey={clothes ? 'tailles' : 'volume'}
+                              options={clothes && splitList(clothing.tailles).length ? splitList(clothing.tailles) : undefined}
+                              allowAdd={!(clothes && splitList(clothing.tailles).length)}
                               value={v.label}
-                              onChange={(e) => updateVariant(v.id, 'label', e.target.value)}
-                              placeholder="Ex: 50g, 100ml…"
-                              className="w-full bg-white border border-slate-200 rounded text-xs py-1.5 px-2 focus:ring-1 focus:ring-brand outline-none"
+                              onChange={(val) => updateVariant(v.id, 'label', val)}
+                              placeholder={clothes ? 'Taille' : 'Contenance'}
                             />
                           </td>
                           <td className="py-3 px-2">
@@ -628,7 +631,7 @@ function AjouterProduit() {
             </Section>
 
             {/* Tarification */}
-            <div className="bg-white rounded-custom border border-slate-200 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-custom border border-slate-200 shadow-sm">
               <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/30">
                 <h3 className="font-bold text-slate-800">Tarification</h3>
               </div>
@@ -737,7 +740,7 @@ function AjouterProduit() {
             </div>
 
             {/* Étiquettes marketing */}
-            <div className="bg-white rounded-custom border border-slate-200 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-custom border border-slate-200 shadow-sm">
               <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/30">
                 <h3 className="font-bold text-slate-800">Étiquettes de marketing</h3>
               </div>
@@ -767,7 +770,7 @@ function AjouterProduit() {
             </div>
 
             {/* Visibilité & SEO */}
-            <div className="bg-white rounded-custom border border-slate-200 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-custom border border-slate-200 shadow-sm">
               <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/30">
                 <h3 className="font-bold text-slate-800">Visibilité &amp; SEO</h3>
               </div>
@@ -799,7 +802,7 @@ function AjouterProduit() {
           <div className="col-span-12 lg:col-span-4 lg:sticky lg:top-[88px] lg:self-start space-y-6">
 
             {/* ── Aperçu Front Office ── */}
-            <div className="bg-white rounded-custom border border-slate-200 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-custom border border-slate-200 shadow-sm">
               <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
                 <span className="material-symbols-outlined text-brand text-lg">storefront</span>
                 <h2 className="text-sm font-bold text-slate-700">Aperçu Front Office</h2>
@@ -818,7 +821,7 @@ function AjouterProduit() {
                       <div className="w-2 h-2 rounded-full bg-green-400" />
                     </div>
                     <div className="flex-1 bg-white rounded px-2 py-0.5">
-                      <span className="text-[9px] text-slate-400">localhost:3001/produits/{name ? name.toLowerCase().replace(/\s+/g, '-').slice(0, 20) : '…'}</span>
+                      <span className="text-[9px] text-slate-400">localhost:3001/{window.location.pathname.split('/').filter(Boolean)[0] || 'boutique'}/produits/{name ? name.toLowerCase().replace(/\s+/g, '-').slice(0, 20) : '…'}</span>
                     </div>
                   </div>
                   {/* Product card preview */}
