@@ -105,6 +105,18 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.FORBIDDEN, "Accès refusé");
     }
 
+    /** Keeps the status chosen by the code (404, 403…) instead of turning it into a 500. */
+    @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
+    public ResponseEntity<Map<String, Object>> handleResponseStatus(
+        org.springframework.web.server.ResponseStatusException ex
+    ) {
+        HttpStatus status = HttpStatus.resolve(ex.getStatusCode().value());
+        return buildResponse(
+            status != null ? status : HttpStatus.INTERNAL_SERVER_ERROR,
+            ex.getReason() != null ? ex.getReason() : String.valueOf(status)
+        );
+    }
+
     // ── 500 ──────────────────────────────────────────────────────────────────
 
     @ExceptionHandler(Exception.class)

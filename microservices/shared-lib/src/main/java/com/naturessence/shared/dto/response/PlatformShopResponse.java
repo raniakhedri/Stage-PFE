@@ -23,6 +23,7 @@ public class PlatformShopResponse {
     private String accentColor;
     private String backgroundColor;
     private LocalDateTime createdAt;
+    private String status;
 
     private Long ownerId;
     private String ownerEmail;

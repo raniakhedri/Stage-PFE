@@ -29,4 +29,14 @@ public class StripeController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+
+    /** Card check for merchant sign-up: the card is saved by Stripe, no charge is made. */
+    @PostMapping("/setup-intent")
+    public ResponseEntity<?> createSetupIntent() {
+        try {
+            return ResponseEntity.ok(Map.of("clientSecret", stripeService.createSetupIntent()));
+        } catch (StripeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 }

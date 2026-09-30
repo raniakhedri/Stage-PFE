@@ -25,7 +25,16 @@ export function openMerchantHome(user) {
     window.location.replace('/nouvelle-boutique')
     return
   }
+  if (!shopIsActive(user)) {
+    window.location.replace('/verification')
+    return
+  }
   window.location.replace(`/${user.shopSlug}/dashboard`)
+}
+
+/** Shops created before verification existed have no status and are live. */
+export function shopIsActive(user) {
+  return !user?.shopStatus || user.shopStatus === 'ACTIVE'
 }
 
 export function shopQuery() {
@@ -35,7 +44,7 @@ export function shopQuery() {
 
 export function currentShopSlug() {
   const first = window.location.pathname.split('/').filter(Boolean)[0]
-  const reserved = new Set(['login', 'inscription', 'auth-callback', 'nouvelle-boutique', 'sellio'])
+  const reserved = new Set(['login', 'inscription', 'auth-callback', 'nouvelle-boutique', 'verification', 'sellio'])
   if (!first || reserved.has(first)) return ''
   return first
 }

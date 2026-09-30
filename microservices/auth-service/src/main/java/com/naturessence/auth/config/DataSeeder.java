@@ -239,6 +239,12 @@ public class DataSeeder implements CommandLineRunner {
 	}
 
 	private void seedNaturEssenceShop() {
+		// Shops created before merchant verification existed are already live.
+		try {
+			jdbcTemplate.execute("UPDATE shops SET status = 'ACTIVE' WHERE status IS NULL");
+		} catch (Exception e) {
+			log.debug("Shop status migration notice: {}", e.getMessage());
+		}
 		Shop shop = shopRepository.findBySlug("naturessence").orElseGet(() ->
 				shopRepository.save(Shop.builder()
 						.name("NaturEssence")

@@ -35,35 +35,35 @@ export default function LuxuryHeader() {
     <>
       <div className={`${isHome ? 'fixed' : 'sticky'} top-0 inset-x-0 z-[100]`} onMouseLeave={() => setOpenSlug(null)}>
         {announcement && (
-          <div className={`${small} !tracking-[0.2em] text-center py-2.5 px-4 transition-colors duration-500 ${transparent ? 'text-white/80 border-b border-white/15' : 'bg-primary text-[#f6f1ea]'}`}>
+          <div className={`t-announce ${small} !tracking-[0.2em] text-center py-2.5 px-4 transition-colors duration-500 ${transparent ? 'text-white/80 border-b border-white/15' : 'bg-primary text-[#f6f1ea]'}`}>
             {announcement}
           </div>
         )}
-        <header className={`transition-colors duration-500 ${transparent ? 'bg-transparent' : 'bg-surface border-b border-ink/10'} ${tone}`}>
+        <header className={`transition-colors duration-500 ${transparent ? 'bg-transparent' : 't-nav bg-surface border-b border-ink/10'} ${tone}`}>
           <div className="h-[72px] md:h-20 px-5 md:px-12 grid grid-cols-[1fr_auto_1fr] items-center">
             <div className="flex items-center gap-6">
               <button onClick={() => setDrawer(true)} aria-label="Menu" className="lg:hidden"><Menu size={22} strokeWidth={1.25} /></button>
-              <button onClick={() => setSearch(true)} className={`${small} hidden lg:flex items-center gap-2 hover:opacity-60 transition-opacity`}>
+              <button onClick={() => setSearch(true)} className={`${small} hidden lg:flex items-center gap-2 t-nav-link hover:opacity-60 transition-opacity`}>
                 <Search size={15} strokeWidth={1.25} /> Rechercher
               </button>
               <button onClick={() => setSearch(true)} aria-label="Rechercher" className="lg:hidden"><Search size={20} strokeWidth={1.25} /></button>
             </div>
 
-            <Logo className="font-headline text-2xl md:text-[30px] tracking-[0.18em] uppercase leading-none" imgClassName="h-9 md:h-11" />
+            <Logo className="t-nav-link font-headline text-2xl md:text-[30px] tracking-[0.18em] uppercase leading-none" imgClassName="h-9 md:h-11" />
 
             <div className="flex items-center justify-end gap-5 md:gap-6">
               <div className="hidden sm:block"><NotificationBell /></div>
               <div className="relative" ref={accountRef}>
-                <button onClick={() => setAccount((v) => !v)} aria-label="Compte" className="hover:opacity-60 transition-opacity flex">
+                <button onClick={() => setAccount((v) => !v)} aria-label="Compte" className="t-nav-link hover:opacity-60 transition-opacity flex">
                   <User size={20} strokeWidth={1.25} />
                 </button>
                 {account && <AccountMenu user={user} onLogout={logout} onClose={() => setAccount(false)} panelClassName="!rounded-none" />}
               </div>
-              <Link to="/favoris" aria-label="Favoris" className="relative hidden sm:flex hover:opacity-60 transition-opacity">
+              <Link to="/favoris" aria-label="Favoris" className="relative hidden sm:flex t-nav-link hover:opacity-60 transition-opacity">
                 <Heart size={20} strokeWidth={1.25} />
                 {wishlistCount > 0 && <span className="absolute -top-1 -right-1.5 w-1.5 h-1.5 rounded-full bg-current" />}
               </Link>
-              <button onClick={() => setCart(true)} className={`${small} hover:opacity-60 transition-opacity`}>
+              <button onClick={() => setCart(true)} className={`${small} t-nav-link hover:opacity-60 transition-opacity`}>
                 <span className="hidden md:inline">Panier </span>({cartCount})
               </button>
             </div>
@@ -75,7 +75,7 @@ export default function LuxuryHeader() {
                 key={c.slug}
                 to={`/categories/${c.slug}`}
                 onMouseEnter={() => setOpenSlug(c.slug)}
-                className={`${small} relative py-1 after:absolute after:left-0 after:-bottom-0.5 after:h-px after:bg-current after:transition-all after:duration-500 ${
+                className={`t-nav-link ${small} relative py-1 after:absolute after:left-0 after:-bottom-0.5 after:h-px after:bg-current after:transition-all after:duration-500 ${
                   openSlug === c.slug || pathname === `/categories/${c.slug}` ? 'after:w-full' : 'after:w-0 hover:after:w-full'
                 }`}
               >

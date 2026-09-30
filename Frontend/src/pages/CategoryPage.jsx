@@ -3,6 +3,7 @@ import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { ChevronRight, Grid3X3, List, ChevronDown, SlidersHorizontal, X } from 'lucide-react';
 import { fetchCategoryBySlug, fetchProductsByCategory } from '../api/apiClient';
 import ProductCard from '../components/ProductCard';
+import { track } from '../tracking/tracker';
 
 export default function CategoryPage() {
   const { slug } = useParams();
@@ -23,6 +24,10 @@ export default function CategoryPage() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [sliderMax, setSliderMax] = useState(200);
   const [sliderVal, setSliderVal] = useState(200);
+
+  useEffect(() => {
+    track('VIEW_CATEGORY', { categorySlug: slug });
+  }, [slug]);
 
   useEffect(() => {
     setLoading(true);

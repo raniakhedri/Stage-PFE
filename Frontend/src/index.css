@@ -218,6 +218,33 @@ body {
   .marquee-track, .scroll-cue, .hero-anim-ken-burns { animation: none; }
 }
 
+/* ── Merchant theme (Votre boutique → Personnalisation) ─────────────────────
+   StoreContext sets --t-* variables plus a data-t-* flag on <html> for each colour
+   the merchant chose. Rules only apply when the flag exists, so every template keeps
+   its own look for anything left on "par défaut". */
+[data-t-announce-bg] .t-announce { background-color: var(--t-announce-bg) !important; border-color: transparent !important; }
+[data-t-announce-text] .t-announce { color: var(--t-announce-text) !important; }
+[data-t-nav-bg] .t-nav { background-color: var(--t-nav-bg) !important; }
+[data-t-nav-text] .t-nav, [data-t-nav-text] .t-nav .t-nav-link { color: var(--t-nav-text) !important; }
+[data-t-nav-hover] .t-nav .t-nav-link:hover { color: var(--t-nav-hover) !important; opacity: 1 !important; }
+[data-t-heading-color] .t-heading { color: var(--t-heading-color) !important; }
+[data-t-button] .t-btn { background-color: rgb(var(--rgb-button)) !important; color: rgb(var(--rgb-button-text)) !important; border-color: transparent !important; }
+[data-t-button-hover-bg] .t-btn:hover,
+[data-t-button-hover-bg] button.bg-primary:hover,
+[data-t-button-hover-bg] a.bg-primary:hover { background-color: var(--t-button-hover-bg) !important; }
+[data-t-button-hover-text] .t-btn:hover,
+[data-t-button-hover-text] button.bg-primary:hover,
+[data-t-button-hover-text] a.bg-primary:hover { color: var(--t-button-hover-text) !important; }
+[data-t-price-color] .t-price { color: var(--t-price-color) !important; }
+[data-t-sale-color] .t-sale { color: var(--t-sale-color) !important; }
+[data-t-badge-bg] .t-badge { background-color: var(--t-badge-bg) !important; }
+[data-t-badge-text] .t-badge { color: var(--t-badge-text) !important; }
+[data-t-footer-bg] .t-footer { background-color: var(--t-footer-bg) !important; }
+[data-t-footer-text] .t-footer,
+[data-t-footer-text] .t-footer :where(a, p, li, span, button, dt, dd, h4) { color: var(--t-footer-text) !important; }
+[data-t-footer-text] .t-footer :where(p, li, span) { opacity: 0.85; }
+[data-t-footer-text] .t-footer :where(.border-white\/15, .border-neutral-200) { border-color: color-mix(in srgb, var(--t-footer-text) 20%, transparent) !important; }
+
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 

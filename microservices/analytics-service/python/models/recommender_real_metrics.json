@@ -1,0 +1,269 @@
+{
+  "source": "UCI Online Retail II (nettoyé) — https://archive.ics.uci.edu/dataset/502/online+retail+ii",
+  "task": "prédire les NOUVEAUX produits achetés dans les 90 jours (top 10)",
+  "validation": {
+    "date": "2011-06-01",
+    "products": 3304,
+    "customers_with_history": 4890,
+    "cases": 1485,
+    "interactions": 522701,
+    "grid": [
+      {
+        "n_factors": 32,
+        "shrinkage": 30,
+        "hit_rate@10": 0.2108,
+        "precision@10": 0.0286,
+        "recall@10": 0.0273,
+        "ndcg@10": 0.0354,
+        "coverage": 0.1834,
+        "cases": 1485
+      },
+      {
+        "n_factors": 32,
+        "shrinkage": 100,
+        "hit_rate@10": 0.2545,
+        "precision@10": 0.0351,
+        "recall@10": 0.0313,
+        "ndcg@10": 0.0413,
+        "coverage": 0.1783,
+        "cases": 1485
+      },
+      {
+        "n_factors": 32,
+        "shrinkage": 300,
+        "hit_rate@10": 0.2943,
+        "precision@10": 0.0417,
+        "recall@10": 0.0365,
+        "ndcg@10": 0.051,
+        "coverage": 0.2094,
+        "cases": 1485
+      },
+      {
+        "n_factors": 32,
+        "shrinkage": 1000,
+        "hit_rate@10": 0.3239,
+        "precision@10": 0.0465,
+        "recall@10": 0.0403,
+        "ndcg@10": 0.0586,
+        "coverage": 0.2915,
+        "cases": 1485
+      },
+      {
+        "n_factors": 32,
+        "shrinkage": 3000,
+        "hit_rate@10": 0.2963,
+        "precision@10": 0.0431,
+        "recall@10": 0.0411,
+        "ndcg@10": 0.0575,
+        "coverage": 0.3938,
+        "cases": 1485
+      },
+      {
+        "n_factors": 64,
+        "shrinkage": 30,
+        "hit_rate@10": 0.237,
+        "precision@10": 0.0331,
+        "recall@10": 0.0337,
+        "ndcg@10": 0.0415,
+        "coverage": 0.2007,
+        "cases": 1485
+      },
+      {
+        "n_factors": 64,
+        "shrinkage": 100,
+        "hit_rate@10": 0.2889,
+        "precision@10": 0.0406,
+        "recall@10": 0.0393,
+        "ndcg@10": 0.0502,
+        "coverage": 0.2058,
+        "cases": 1485
+      },
+      {
+        "n_factors": 64,
+        "shrinkage": 300,
+        "hit_rate@10": 0.3333,
+        "precision@10": 0.0482,
+        "recall@10": 0.0435,
+        "ndcg@10": 0.0608,
+        "coverage": 0.2385,
+        "cases": 1485
+      },
+      {
+        "n_factors": 64,
+        "shrinkage": 1000,
+        "hit_rate@10": 0.3333,
+        "precision@10": 0.05,
+        "recall@10": 0.0435,
+        "ndcg@10": 0.0644,
+        "coverage": 0.3335,
+        "cases": 1485
+      },
+      {
+        "n_factors": 64,
+        "shrinkage": 3000,
+        "hit_rate@10": 0.2896,
+        "precision@10": 0.0433,
+        "recall@10": 0.0401,
+        "ndcg@10": 0.0583,
+        "coverage": 0.4189,
+        "cases": 1485
+      },
+      {
+        "n_factors": 128,
+        "shrinkage": 30,
+        "hit_rate@10": 0.237,
+        "precision@10": 0.0344,
+        "recall@10": 0.0357,
+        "ndcg@10": 0.0438,
+        "coverage": 0.214,
+        "cases": 1485
+      },
+      {
+        "n_factors": 128,
+        "shrinkage": 100,
+        "hit_rate@10": 0.2963,
+        "precision@10": 0.0431,
+        "recall@10": 0.0404,
+        "ndcg@10": 0.0542,
+        "coverage": 0.227,
+        "cases": 1485
+      },
+      {
+        "n_factors": 128,
+        "shrinkage": 300,
+        "hit_rate@10": 0.3428,
+        "precision@10": 0.0521,
+        "recall@10": 0.0469,
+        "ndcg@10": 0.0665,
+        "coverage": 0.2745,
+        "cases": 1485
+      },
+      {
+        "n_factors": 128,
+        "shrinkage": 1000,
+        "hit_rate@10": 0.3333,
+        "precision@10": 0.051,
+        "recall@10": 0.0445,
+        "ndcg@10": 0.0672,
+        "coverage": 0.3738,
+        "cases": 1485,
+        "alpha": 0.4
+      },
+      {
+        "n_factors": 128,
+        "shrinkage": 3000,
+        "hit_rate@10": 0.2909,
+        "precision@10": 0.0439,
+        "recall@10": 0.0395,
+        "ndcg@10": 0.0579,
+        "coverage": 0.4367,
+        "cases": 1485
+      }
+    ],
+    "alpha_grid": {
+      "0.0": {
+        "hit_rate@10": 0.3333,
+        "precision@10": 0.051,
+        "recall@10": 0.0445,
+        "ndcg@10": 0.0672,
+        "coverage": 0.3738,
+        "cases": 1485
+      },
+      "0.2": {
+        "hit_rate@10": 0.3603,
+        "precision@10": 0.0578,
+        "recall@10": 0.0479,
+        "ndcg@10": 0.0742,
+        "coverage": 0.3332,
+        "cases": 1485
+      },
+      "0.4": {
+        "hit_rate@10": 0.402,
+        "precision@10": 0.065,
+        "recall@10": 0.0521,
+        "ndcg@10": 0.0772,
+        "coverage": 0.2334,
+        "cases": 1485
+      },
+      "0.6": {
+        "hit_rate@10": 0.402,
+        "precision@10": 0.0619,
+        "recall@10": 0.0496,
+        "ndcg@10": 0.0705,
+        "coverage": 0.0866,
+        "cases": 1485
+      },
+      "0.8": {
+        "hit_rate@10": 0.4121,
+        "precision@10": 0.064,
+        "recall@10": 0.0478,
+        "ndcg@10": 0.0693,
+        "coverage": 0.0233,
+        "cases": 1485
+      }
+    }
+  },
+  "best_params": {
+    "n_factors": 128,
+    "shrinkage": 1000,
+    "alpha": 0.4
+  },
+  "test": {
+    "date": "2011-09-10",
+    "products": 3541,
+    "customers_with_history": 5238,
+    "cases": 1500,
+    "interactions": 612241,
+    "density": 0.02086,
+    "results": {
+      "popularite (baseline)": {
+        "hit_rate@10": 0.308,
+        "precision@10": 0.0499,
+        "recall@10": 0.0246,
+        "ndcg@10": 0.0517,
+        "coverage": 0.0175,
+        "cases": 1500
+      },
+      "contenu seul (TF-IDF)": {
+        "hit_rate@10": 0.2587,
+        "precision@10": 0.0369,
+        "recall@10": 0.0222,
+        "ndcg@10": 0.0435,
+        "coverage": 0.4713,
+        "cases": 1500
+      },
+      "filtrage collaboratif seul (SVD)": {
+        "hit_rate@10": 0.24,
+        "precision@10": 0.0369,
+        "recall@10": 0.0254,
+        "ndcg@10": 0.0441,
+        "coverage": 0.2672,
+        "cases": 1500
+      },
+      "hybride": {
+        "hit_rate@10": 0.3367,
+        "precision@10": 0.0518,
+        "recall@10": 0.0299,
+        "ndcg@10": 0.0615,
+        "coverage": 0.3844,
+        "cases": 1500
+      },
+      "hybride + popularite (alpha=0.4, retenu)": {
+        "hit_rate@10": 0.3567,
+        "precision@10": 0.0603,
+        "recall@10": 0.0343,
+        "ndcg@10": 0.0694,
+        "coverage": 0.2158,
+        "cases": 1500
+      }
+    }
+  },
+  "bought_together": {
+    "train_invoices": 29842,
+    "test_invoices": 6492,
+    "rules_for_products": 3570,
+    "association_rules_hit@5": 0.4707,
+    "popularity_hit@5": 0.4303,
+    "share_of_items_with_rules": 0.9029
+  }
+}

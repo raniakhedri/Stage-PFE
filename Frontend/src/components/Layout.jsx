@@ -6,7 +6,7 @@ import { useStore } from '../context/StoreContext';
 
 export default function Layout() {
   const { pathname } = useLocation();
-  const { ready, missing } = useStore();
+  const { ready, missing, status, storeName } = useStore();
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -17,6 +17,20 @@ export default function Layout() {
     return (
       <div className="min-h-screen flex items-center justify-center p-6">
         <p className="text-slate-500">Cette boutique n’existe pas.</p>
+      </div>
+    )
+  }
+
+  if (status && status !== 'ACTIVE') {
+    const suspended = status === 'SUSPENDED'
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6 bg-surface text-ink">
+        <div className="max-w-md text-center">
+          <p className="font-headline text-3xl">{storeName || 'Boutique'}</p>
+          <p className="mt-4 text-neutral-500">
+            {suspended ? 'Cette boutique est temporairement indisponible.' : 'Cette boutique ouvre très bientôt. Revenez dans quelques jours !'}
+          </p>
+        </div>
       </div>
     )
   }

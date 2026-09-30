@@ -2,10 +2,12 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { ChevronRight, Heart, ShoppingBag, Truck, ShieldCheck, Star, Minus, Plus, Wind, Droplets, X, Send, Award, Leaf } from 'lucide-react';
-import { fetchProductBySlug, fetchProductsByCategory, fetchReviewsByProduct, submitReview, fetchMyOrders, fetchSimilarProducts } from '../api/apiClient';
+import { fetchProductBySlug, fetchReviewsByProduct, submitReview, fetchMyOrders, fetchSimilarProducts } from '../api/apiClient';
 import { getUser } from '../api/tokenStorage';
 import ProductCard from '../components/ProductCard';
 import { sizeOptions, needsSizeChoice } from '../utils/cartLines';
+import { track } from '../tracking/tracker';
+import RecommendedProducts from '../components/RecommendedProducts';
 import { useShop } from '../context/ShopContext';
 import LoginPromptModal from '../components/LoginPromptModal';
 import { TryOnButton } from '../components/TryOnModal';
@@ -146,6 +148,7 @@ export default function ProductPage() {
     fetchProductBySlug(slug)
       .then((p) => {
         setProduct(p);
+        track('VIEW_PRODUCT', { productId: p.id, price: p.price, categorySlug: p.categorySlug });
         // Several sizes: the customer must pick one. A single option is chosen for them.
         const opts = sizeOptions(p, isClothes);
         setSelectedSize(opts.length === 1 ? opts[0] : null);
@@ -156,22 +159,12 @@ export default function ProductPage() {
           if (ids.length > 0) {
             fetchSimilarProducts(ids)
               .then(prods => setRelatedProducts(prods.filter(rp => rp.id !== p.id)))
-              .catch(() => {
-                if (p.categorySlug) {
-                  fetchProductsByCategory(p.categorySlug)
-                    .then(prods => setRelatedProducts(prods.filter(rp => rp.id !== p.id).slice(0, 4)))
-                    .catch(() => {});
-                }
-              });
+              .catch(() => setRelatedProducts([]));
             loadReviews(p.id);
             return;
           }
         }
-        if (p.categorySlug) {
-          fetchProductsByCategory(p.categorySlug)
-            .then(prods => setRelatedProducts(prods.filter(rp => rp.id !== p.id).slice(0, 4)))
-            .catch(() => {});
-        }
+        setRelatedProducts([]);
         loadReviews(p.id);
       })
       .catch(() => setProduct(null))
@@ -269,7 +262,7 @@ export default function ProductPage() {
 
           <div className="mb-8 p-6 bg-surface-container-low rounded-2xl">
             <div className="flex items-baseline gap-3 mb-4">
-              <span className="text-3xl font-headline font-bold text-primary">{product.price.toFixed(2)} TND</span>
+              <span className="t-price text-3xl font-headline font-bold text-primary">{product.price.toFixed(2)} TND</span>
               {product.oldPrice && <span className="text-lg text-on-surface-variant line-through opacity-60">{product.oldPrice.toFixed(2)} TND</span>}
             </div>
             {product.description && <p className="text-on-surface-variant text-sm leading-relaxed">{product.description}</p>}
@@ -408,18 +401,6 @@ export default function ProductPage() {
                 ))}
               </div>
             )}
-            {!product.usageInstructions && (
-              <div className="bg-surface-container rounded-2xl p-8 flex flex-col justify-center gap-8">
-                <div className="flex items-start gap-5">
-                  <div className="p-4 bg-white rounded-xl shadow-sm"><Wind size={28} className="text-primary" /></div>
-                  <div><h4 className="font-headline font-bold text-primary mb-1">En Diffusion</h4><p className="text-xs text-on-surface-variant leading-relaxed">Verser 5 a 10 gouttes dans votre diffuseur pour une ambiance relaxante.</p></div>
-                </div>
-                <div className="flex items-start gap-5">
-                  <div className="p-4 bg-white rounded-xl shadow-sm"><Droplets size={28} className="text-primary" /></div>
-                  <div><h4 className="font-headline font-bold text-primary mb-1">En Massage</h4><p className="text-xs text-on-surface-variant leading-relaxed">Diluer 2 gouttes dans une cuillere a soupe d huile vegetale.</p></div>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
@@ -548,8 +529,8 @@ export default function ProductPage() {
         <section className="mb-24 overflow-hidden">
           <div className="flex justify-between items-end mb-10">
             <div>
-              <h3 className="text-3xl font-headline font-bold text-primary">Vous aimerez aussi</h3>
-              <p className="text-secondary">Completez votre collection</p>
+              <h3 className="text-3xl font-headline font-bold text-primary">Complétez votre collection</h3>
+              <p className="text-secondary">La sélection de la boutique</p>
             </div>
           </div>
           <div className="flex gap-6 overflow-x-auto hide-scrollbar pb-6 -mx-2 px-2">
@@ -559,6 +540,10 @@ export default function ProductPage() {
           </div>
         </section>
       )}
+
+      {/* Recommendation engine: similar products (hybrid model), then personalised picks */}
+      <RecommendedProducts bare kind="similar" params={{ productId: String(product.id) }} reloadKey={product.id} title="Vous aimerez aussi" eyebrow="Produits similaires" />
+      <RecommendedProducts bare kind="for-you" reloadKey={`fy-${product.id}`} title="Recommandé pour vous" eyebrow="Selon votre navigation" exclude={[product.id]} />
 
       <LoginPromptModal open={showLoginModal} onClose={() => setShowLoginModal(false)} redirectTo={`/produits/${slug}`} />
       {showReviewModal && <ReviewModal product={product} onClose={() => setShowReviewModal(false)} onSuccess={() => loadReviews(product.id)} />}

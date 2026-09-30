@@ -3,6 +3,7 @@ import { getUser, getAccessToken } from '../api/tokenStorage';
 import { fetchServerCart, saveServerCart } from '../api/apiClient';
 import { useToast } from './ToastContext';
 import { lineKeyOf } from '../utils/cartLines';
+import { track } from '../tracking/tracker';
 
 const ShopContext = createContext(null);
 
@@ -67,6 +68,7 @@ export function ShopProvider({ children }) {
   const addToCart = useCallback((product, qty = 1, size = '') => {
     const chosen = size || product.size || '';
     const line = { ...product, size: chosen, volume: chosen || product.volume, lineKey: `${product.id}::${chosen}` };
+    track('ADD_TO_CART', { productId: product.id, quantity: qty, price: product.price });
     setCart(prev => {
       const existing = prev.find(i => lineKeyOf(i) === line.lineKey);
       const label = chosen ? `${product.name} (${chosen})` : product.name;
@@ -80,6 +82,8 @@ export function ShopProvider({ children }) {
   }, [showToast]);
 
   const removeFromCart = useCallback((key) => {
+    const productId = Number(String(key).split('::')[0]);
+    if (productId) track('REMOVE_FROM_CART', { productId });
     setCart(prev => prev.filter(i => lineKeyOf(i) !== String(key)));
   }, []);
 
@@ -104,6 +108,7 @@ export function ShopProvider({ children }) {
         return prev.filter(i => i.id !== product.id);
       }
       showToast(`${product.name} ajouté aux favoris`, 'wishlist');
+      track('WISHLIST_ADD', { productId: product.id, price: product.price });
       return [...prev, product];
     });
     return { requiresLogin: false };

@@ -3,6 +3,10 @@ package com.naturessence.analytics.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.naturessence.shared.dto.analytics.UserFeaturesDTO;
+import com.naturessence.shared.entity.User;
+import com.naturessence.shared.repository.ShopRepository;
+import com.naturessence.shared.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import jakarta.annotation.PostConstruct;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -11,7 +15,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -24,34 +30,62 @@ public class ChurnPredictionService {
     @Value("${churn.python-command:python}")
     private String pythonCommand;
 
-    private double highThreshold = 0.70;
-    private double mediumThreshold = 0.40;
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private ShopRepository shopRepository;
+
+    /** Risk bands per churn model: {high, medium}. "general" = UCI Online Retail II, "clothes" = Kaggle H&M. */
+    private final Map<String, double[]> thresholds = new HashMap<>(Map.of(
+        "general", new double[] { 0.70, 0.40 },
+        "clothes", new double[] { 0.70, 0.40 }
+    ));
 
     @PostConstruct
     void loadThresholds() {
-        Path metrics = resolveWorkDir().resolve("python/models/metrics.json");
+        readThresholds("general", "python/models/metrics.json", "thresholds");
+        readThresholds("clothes", "python/models/hm_metrics.json", "churn", "thresholds");
+    }
+
+    private void readThresholds(String model, String file, String... path) {
+        Path metrics = resolveWorkDir().resolve(file);
         if (!Files.exists(metrics)) {
             return;
         }
         try {
-            JsonNode root = MAPPER.readTree(metrics.toFile());
-            JsonNode cuts = root.path("thresholds");
-            if (cuts.has("high")) {
-                highThreshold = cuts.get("high").asDouble(highThreshold);
+            JsonNode cuts = MAPPER.readTree(metrics.toFile());
+            for (String key : path) {
+                cuts = cuts.path(key);
             }
-            if (cuts.has("medium")) {
-                mediumThreshold = cuts.get("medium").asDouble(mediumThreshold);
-            }
+            double[] bands = thresholds.get(model);
+            bands[0] = cuts.path("high").asDouble(bands[0]);
+            bands[1] = cuts.path("medium").asDouble(bands[1]);
         } catch (Exception ignored) {
             // Keep the default 0.70 / 0.40 bands.
         }
     }
 
+    /** Clothes shops use the model trained on fashion purchases; every other shop the general one. */
+    public String modelFor(Long userId) {
+        if (userId == null) return "general";
+        return userRepository.findById(userId)
+            .map(User::getShopId)
+            .flatMap(shopRepository::findById)
+            .map(shop -> "CLOTHES".equalsIgnoreCase(shop.getBusinessType()) ? "clothes" : "general")
+            .orElse("general");
+    }
+
     public String riskLabel(double score) {
-        if (score > highThreshold) {
+        return riskLabel(score, "general");
+    }
+
+    public String riskLabel(double score, String model) {
+        double[] bands = thresholds.getOrDefault(model, thresholds.get("general"));
+        if (score > bands[0]) {
             return "HIGH";
         }
-        if (score > mediumThreshold) {
+        if (score > bands[1]) {
             return "MEDIUM";
         }
         return "LOW";
@@ -68,9 +102,17 @@ public class ChurnPredictionService {
         Path workDir = resolveWorkDir();
         Path payload = Files.createTempFile("churn-features-", ".json");
         try {
+            // Each row carries the model to use (see modelFor), read by predict.py.
+            List<Map<String, Object>> rows = new ArrayList<>();
+            for (UserFeaturesDTO dto : dtos) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> row = MAPPER.convertValue(dto, Map.class);
+                row.put("model", modelFor(dto.getUserId()));
+                rows.add(row);
+            }
             Files.writeString(
                 payload,
-                MAPPER.writeValueAsString(dtos),
+                MAPPER.writeValueAsString(rows),
                 StandardCharsets.UTF_8
             );
 

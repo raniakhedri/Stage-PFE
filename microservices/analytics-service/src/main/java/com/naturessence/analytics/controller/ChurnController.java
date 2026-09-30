@@ -146,7 +146,9 @@ public class ChurnController {
                 Map<String, Object> body = results.get(eligibleAt.get(i));
                 double score = scores.get(i);
                 body.put("churnProbability", Math.round(score * 10000.0) / 10000.0);
-                body.put("risk", predictionService.riskLabel(score));
+                String model = predictionService.modelFor(eligible.get(i).getUserId());
+                body.put("risk", predictionService.riskLabel(score, model));
+                body.put("model", model);
             }
         } catch (Exception e) {
             String msg = e.getMessage() != null ? e.getMessage() : "prediction failed";

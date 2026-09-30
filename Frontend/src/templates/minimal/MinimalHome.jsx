@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { ArrowRight, ArrowLeft } from 'lucide-react'
 import ProductCard from '../../components/ProductCard'
+import RecommendedProducts from '../../components/RecommendedProducts'
 import { useStore } from '../../context/StoreContext'
 import { useHomeData } from '../shared/useHomeData'
 import { copyFor } from '../shared/content'
@@ -11,7 +12,7 @@ function SectionTitle({ eyebrow, title, link }) {
     <div className="flex items-end justify-between gap-6 mb-10">
       <div>
         {eyebrow && <p className="text-[12px] uppercase tracking-[0.16em] text-accent mb-2">{eyebrow}</p>}
-        <h2 className="text-2xl md:text-[32px] font-headline font-semibold tracking-tight text-ink">{title}</h2>
+        <h2 className="t-heading text-2xl md:text-[32px] font-headline font-semibold tracking-tight text-ink">{title}</h2>
       </div>
       {link && (
         <Link to={link} className="hidden sm:inline-flex items-center gap-2 text-sm text-ink hover:gap-3 transition-all">
@@ -96,6 +97,8 @@ export default function MinimalHome() {
         </section>
       )}
 
+      <RecommendedProducts kind="for-you" reloadKey="home" title="Recommandé pour vous" eyebrow="Selon vos goûts" />
+
       {/* Editorial */}
       <section className="max-w-[1440px] mx-auto px-5 md:px-10 pt-28">
         <div className={data.editorialImage ? 'grid md:grid-cols-2 gap-10 md:gap-20 items-center' : 'bg-neutral-50 rounded-xl px-7 py-20 md:py-28 flex justify-center text-center'}>
@@ -106,7 +109,7 @@ export default function MinimalHome() {
           )}
           <div className={data.editorialImage ? 'max-w-md' : 'max-w-2xl'}>
             <p className="text-[12px] uppercase tracking-[0.18em] text-accent mb-5">{copy.editorial.eyebrow}</p>
-            <h2 className="font-headline text-3xl md:text-[44px] font-semibold tracking-tight leading-[1.1] text-ink">{copy.editorial.title}</h2>
+            <h2 className="t-heading font-headline text-3xl md:text-[44px] font-semibold tracking-tight leading-[1.1] text-ink">{copy.editorial.title}</h2>
             <p className="mt-6 text-neutral-600 leading-relaxed">{copy.editorial.text}</p>
             {firstCat && (
               <Link to={firstCat} className="mt-10 inline-flex items-center gap-2 text-sm font-medium border-b border-ink pb-1 hover:gap-3 transition-all">
@@ -137,7 +140,7 @@ export default function MinimalHome() {
       {/* Newsletter */}
       <section className="max-w-[1440px] mx-auto px-5 md:px-10 py-28">
         <div className="max-w-xl mx-auto text-center">
-          <h2 className="font-headline text-3xl md:text-4xl font-semibold tracking-tight text-ink">{copy.newsletter.title}</h2>
+          <h2 className="t-heading font-headline text-3xl md:text-4xl font-semibold tracking-tight text-ink">{copy.newsletter.title}</h2>
           <p className="mt-4 text-neutral-500">{copy.newsletter.text}</p>
           <NewsletterForm
             className="mt-8 flex gap-2"

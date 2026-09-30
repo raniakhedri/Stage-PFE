@@ -3,6 +3,7 @@ package com.naturessence.auth.service;
 import com.naturessence.auth.security.UserPrincipal;
 import com.naturessence.shared.dto.request.CreateShopRequest;
 import com.naturessence.shared.dto.request.LoginRequest;
+import com.naturessence.shared.dto.request.MerchantVerificationRequest;
 import com.naturessence.shared.dto.request.RegisterRequest;
 import com.naturessence.shared.dto.response.AuthResponse;
 import com.naturessence.shared.dto.response.UserResponse;
@@ -20,6 +21,7 @@ import com.naturessence.shared.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -52,6 +54,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final RefreshTokenService refreshTokenService;
     private final LoyaltyService loyaltyService;
+    private final MerchantVerificationService verificationService;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -156,6 +159,8 @@ public class AuthService {
         String type = "CLOTHES".equalsIgnoreCase(request.getBusinessType()) ? "CLOTHES" : "COSMETICS";
         String template = layoutKey(request.getTemplateKey());
 
+        MerchantVerificationRequest verification = verificationService.requireComplete(request.getVerification());
+
         String slug = uniqueSlug(request.getName());
         Shop shop = shopRepository.save(Shop.builder()
                 .name(request.getName().trim())
@@ -169,11 +174,14 @@ public class AuthService {
                 .accentColor(cleanHex(request.getAccentColor()))
                 .backgroundColor(cleanHex(request.getBackgroundColor()))
                 .textColor(cleanHex(request.getTextColor()))
+                .theme(cleanTheme(request.getTheme()))
+                .status(Shop.PENDING)
                 .ownerId(user.getId())
                 .build());
 
         user.setShopId(shop.getId());
         userRepository.save(user);
+        verificationService.submit(user.getId(), shop.getId(), verification);
         return mapToUserResponse(user);
     }
 
@@ -196,6 +204,7 @@ public class AuthService {
         if (request.getAccentColor() != null) shop.setAccentColor(cleanHex(request.getAccentColor()));
         if (request.getBackgroundColor() != null) shop.setBackgroundColor(cleanHex(request.getBackgroundColor()));
         if (request.getTextColor() != null) shop.setTextColor(cleanHex(request.getTextColor()));
+        if (request.getTheme() != null) shop.setTheme(cleanTheme(request.getTheme()));
         if (request.getCustomOptions() != null) {
             String options = request.getCustomOptions().trim();
             shop.setCustomOptions(options.isEmpty() || options.length() > 20000 ? null : options);
@@ -236,7 +245,7 @@ public class AuthService {
                     .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
 
             if (user.getStatus() == AccountStatus.BLOCKED) {
-                throw new RuntimeException("Votre compte a été bloqué. Contactez l'administrateur.");
+                throw new LockedException("Votre compte a été bloqué. Contactez l'équipe Sellio.");
             }
 
             user.setLastLogin(LocalDateTime.now());
@@ -312,6 +321,7 @@ public class AuthService {
                 .shopName(shop != null ? shop.getName() : null)
                 .businessType(shop != null ? shop.getBusinessType() : null)
                 .templateKey(shop != null ? shop.getTemplateKey() : null)
+                .shopStatus(shop != null ? Shop.statusOf(shop) : null)
                 .build();
     }
 
@@ -330,6 +340,20 @@ public class AuthService {
         if (value == null) return null;
         String hex = value.trim();
         return hex.matches("#[0-9A-Fa-f]{6}") ? hex : null;
+    }
+
+    /** Theme is a flat JSON object of colour keys; keep it small and only allow hex values. */
+    private String cleanTheme(String value) {
+        if (value == null) return null;
+        String theme = value.trim();
+        if (theme.isEmpty() || "{}".equals(theme)) return null;
+        if (theme.length() > 4000 || !theme.startsWith("{") || !theme.endsWith("}")) {
+            throw new IllegalArgumentException("Thème invalide.");
+        }
+        if (!theme.replaceAll("\"[A-Za-z]+\"\\s*:\\s*\"#[0-9A-Fa-f]{6}\"", "").replaceAll("[\\s,{}]", "").isEmpty()) {
+            throw new IllegalArgumentException("Le thème ne peut contenir que des couleurs #RRGGBB.");
+        }
+        return theme;
     }
 
     private String cleanLogo(String value) {

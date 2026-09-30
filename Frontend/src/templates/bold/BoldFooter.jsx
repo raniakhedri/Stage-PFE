@@ -11,7 +11,7 @@ export default function BoldFooter() {
   const link = 'block uppercase font-bold text-sm tracking-wide hover:opacity-50 transition-opacity'
 
   return (
-    <footer className="bg-black text-white overflow-hidden">
+    <footer className="t-footer bg-black text-white overflow-hidden">
       <div className="px-4 md:px-8 pt-16 grid grid-cols-2 md:grid-cols-4 gap-10 border-b border-white/15 pb-14">
         <div className="col-span-2 md:col-span-1">
           <p className="text-white/60 text-sm max-w-xs">{copy.footerBlurb}</p>

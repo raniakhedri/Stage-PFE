@@ -2,6 +2,45 @@
 import { Link } from 'react-router-dom';
 import { lineKeyOf } from '../utils/cartLines';
 import { useShop } from '../context/ShopContext';
+import { useStore } from '../context/StoreContext';
+import { useRecommendations } from '../tracking/recommendations';
+import { track } from '../tracking/tracker';
+import { sizeOptions, needsSizeChoice } from '../utils/cartLines';
+
+/** "Souvent achetés ensemble": association rules on the products currently in the cart. */
+function BoughtTogether({ items, onClose }) {
+  const { addToCart } = useShop();
+  const { isClothes } = useStore();
+  const ids = [...new Set(items.map((i) => i.id))];
+  const { products } = useRecommendations('bought-together', { ids: ids.join(','), limit: '3' }, ids.join(','));
+  const suggestions = products.filter((p) => !ids.includes(p.id)).slice(0, 3);
+  if (!suggestions.length) return null;
+  return (
+    <div className="pt-4 mt-2 border-t border-outline-variant/10">
+      <p className="text-xs font-bold uppercase tracking-widest text-secondary mb-3">Souvent achetés ensemble</p>
+      <div className="space-y-2">
+        {suggestions.map((p) => (
+          <div key={p.id} className="flex items-center gap-3">
+            <Link to={`/produits/${p.slug}`} onClick={() => { track('RECOMMENDATION_CLICK', { productId: p.id, price: p.price }); onClose(); }} className="flex items-center gap-3 flex-1 min-w-0">
+              {p.image && <img src={p.image} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />}
+              <span className="min-w-0">
+                <span className="block text-sm text-primary truncate">{p.name}</span>
+                <span className="block text-xs text-secondary">{p.price.toFixed(2)} TND</span>
+              </span>
+            </Link>
+            {needsSizeChoice(p, isClothes) ? (
+              <Link to={`/produits/${p.slug}`} onClick={onClose} className="text-xs font-bold text-primary underline shrink-0">Choisir</Link>
+            ) : (
+              <button onClick={() => { track('RECOMMENDATION_CLICK', { productId: p.id, price: p.price }); addToCart(p, 1, sizeOptions(p, isClothes)[0] || ''); }} className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center shrink-0" aria-label="Ajouter">
+                <Plus size={14} />
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function CartDrawer({ open, onClose }) {
   const { cart, removeFromCart, updateQty, cartTotal, cartCount } = useShop();
@@ -89,6 +128,7 @@ export default function CartDrawer({ open, onClose }) {
               </div>
             ))
           )}
+          {open && items.length > 0 && <BoughtTogether items={items} onClose={onClose} />}
         </div>
 
         {/* Footer */}

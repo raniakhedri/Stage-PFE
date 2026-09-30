@@ -1,0 +1,98 @@
+{
+  "source": "Kaggle — eCommerce Events History in Cosmetics Shop (mkechinov / REES46)",
+  "url": "https://www.kaggle.com/datasets/mkechinov/ecommerce-events-history-in-cosmetics-shop",
+  "profil_brut": {
+    "fichiers": [
+      "2019-Dec.csv"
+    ],
+    "lignes_brutes": 3533286,
+    "valeurs_manquantes": {
+      "category_code": 3474821,
+      "brand": 1510289,
+      "user_session": 779
+    },
+    "types": {
+      "view": 1728331,
+      "cart": 927124,
+      "remove_from_cart": 664655,
+      "purchase": 213176
+    },
+    "prix_negatifs_ou_nuls": 7607,
+    "doublons_exacts": 183860,
+    "utilisateurs": 370154
+  },
+  "etapes": [
+    {
+      "etape": "1. Date illisible",
+      "raison": "horodatage corrompu",
+      "lignes_avant": 3533286,
+      "lignes_apres": 3533286,
+      "supprimees": 0
+    },
+    {
+      "etape": "2. Doublons exacts",
+      "raison": "même événement enregistré plusieurs fois (double clic, rejeu du tracker)",
+      "lignes_avant": 3533286,
+      "lignes_apres": 3349426,
+      "supprimees": 183860
+    },
+    {
+      "etape": "3. Type d’événement inconnu",
+      "raison": "hors view/cart/remove_from_cart/purchase",
+      "lignes_avant": 3349426,
+      "lignes_apres": 3349426,
+      "supprimees": 0
+    },
+    {
+      "etape": "4. Prix ≤ 0",
+      "raison": "articles cadeaux, erreurs de catalogue",
+      "lignes_avant": 3349426,
+      "lignes_apres": 3341889,
+      "supprimees": 7537
+    },
+    {
+      "etape": "5. Session manquante",
+      "raison": "impossible de reconstituer la visite",
+      "lignes_avant": 3341889,
+      "lignes_apres": 3341175,
+      "supprimees": 714
+    },
+    {
+      "etape": "6. Robots",
+      "raison": "> 500 événements/jour ou > 60/minute (136 comptes)",
+      "lignes_avant": 3341175,
+      "lignes_apres": 3262177,
+      "supprimees": 78998
+    },
+    {
+      "etape": "7. Prix aberrant pour le produit",
+      "raison": "prix > 5× ou < 1/5 de la médiane du même produit",
+      "lignes_avant": 3262177,
+      "lignes_apres": 3261481,
+      "supprimees": 696
+    },
+    {
+      "etape": "9. Échantillon d’utilisateurs",
+      "raison": "60,000 utilisateurs tirés au hasard (graine 42) pour tenir en mémoire",
+      "lignes_avant": 3261481,
+      "lignes_apres": 525253,
+      "supprimees": 2736228
+    }
+  ],
+  "resultat": {
+    "evenements": 525253,
+    "utilisateurs": 60000,
+    "sessions": 132343,
+    "produits": 33716,
+    "types": {
+      "VIEW_PRODUCT": 273477,
+      "ADD_TO_CART": 141993,
+      "REMOVE_FROM_CART": 76473,
+      "PURCHASE": 33310
+    },
+    "periode": [
+      "2019-12-01 00:00:00+00:00",
+      "2019-12-31 23:59:57+00:00"
+    ]
+  }
+}

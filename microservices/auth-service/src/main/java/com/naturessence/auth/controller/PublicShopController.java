@@ -39,6 +39,8 @@ public class PublicShopController {
                 .backgroundColor(shop.getBackgroundColor())
                 .textColor(shop.getTextColor())
                 .customOptions(shop.getCustomOptions())
+                .theme(shop.getTheme())
+                .status(Shop.statusOf(shop))
                 .build();
     }
 }

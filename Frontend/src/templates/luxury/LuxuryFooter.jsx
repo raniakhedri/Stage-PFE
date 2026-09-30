@@ -13,7 +13,7 @@ export default function LuxuryFooter() {
   const link = 'text-sm font-light text-[#f6f1ea]/60 hover:text-[#f6f1ea] transition-colors'
 
   return (
-    <footer className="bg-primary text-[#f6f1ea]">
+    <footer className="t-footer bg-primary text-[#f6f1ea]">
       <div className="max-w-[1320px] mx-auto px-6 md:px-12 pt-20 pb-10">
         <div className="text-center pb-16 border-b border-[#f6f1ea]/15">
           <Logo className="font-headline text-3xl md:text-4xl tracking-[0.2em] uppercase" imgClassName="h-12 mx-auto" />

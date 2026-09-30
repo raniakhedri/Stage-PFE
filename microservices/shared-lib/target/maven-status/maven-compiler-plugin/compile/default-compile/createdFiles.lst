@@ -47,6 +47,7 @@ com\naturessence\shared\entity\ShippingZone.class
 com\naturessence\shared\dto\response\ReviewResponse.class
 com\naturessence\shared\enums\BannerStatut.class
 com\naturessence\shared\repository\ProductVariantRepository.class
+com\naturessence\shared\entity\MerchantVerification$MerchantVerificationBuilder.class
 com\naturessence\shared\entity\Segment.class
 com\naturessence\shared\dto\request\RegisterRequest.class
 com\naturessence\shared\dto\response\RoleResponse$RoleResponseBuilder.class
@@ -61,6 +62,7 @@ com\naturessence\shared\security\JwtUtil.class
 com\naturessence\shared\dto\response\DashboardResponse$StockAlertItem$StockAlertItemBuilder.class
 com\naturessence\shared\repository\RefreshTokenRepository.class
 com\naturessence\shared\dto\request\LoginRequest.class
+com\naturessence\shared\dto\request\MerchantVerificationRequest.class
 com\naturessence\shared\security\JwtAuthenticationFilter.class
 com\naturessence\shared\entity\TvaConfig$TvaConfigBuilder.class
 com\naturessence\shared\entity\User$UserBuilder.class
@@ -150,6 +152,7 @@ com\naturessence\shared\dto\response\CategoryResponse$CategoryResponseBuilder.cl
 com\naturessence\shared\entity\Product$ProductBuilder.class
 com\naturessence\shared\dto\response\ShippingZoneResponse$ShippingZoneResponseBuilder.class
 com\naturessence\shared\entity\Shop.class
+com\naturessence\shared\repository\MerchantVerificationRepository.class
 com\naturessence\shared\entity\Order$OrderBuilder.class
 com\naturessence\shared\enums\Gender.class
 com\naturessence\shared\dto\request\ShippingZoneRequest.class
@@ -165,6 +168,7 @@ com\naturessence\shared\entity\TvaConfig.class
 com\naturessence\shared\entity\ShippingZone$ShippingZoneBuilder.class
 com\naturessence\shared\dto\response\TvaConfigResponse.class
 com\naturessence\shared\dto\response\UserFeaturesDTO$UserFeaturesDTOBuilder.class
+com\naturessence\shared\entity\MerchantVerification.class
 com\naturessence\shared\enums\ClientSegment.class
 com\naturessence\shared\dto\request\UpdatePermissionsRequest.class
 com\naturessence\shared\dto\request\CreateShopRequest.class

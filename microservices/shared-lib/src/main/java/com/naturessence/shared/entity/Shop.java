@@ -15,6 +15,16 @@ import java.time.LocalDateTime;
 @Builder
 public class Shop {
 
+    public static final String PENDING = "PENDING";
+    public static final String ACTIVE = "ACTIVE";
+    public static final String REJECTED = "REJECTED";
+    public static final String SUSPENDED = "SUSPENDED";
+
+    /** Shops created before verification existed have no status and count as active. */
+    public static String statusOf(Shop shop) {
+        return shop.getStatus() == null || shop.getStatus().isBlank() ? ACTIVE : shop.getStatus();
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -47,6 +57,14 @@ public class Shop {
     /** JSON map of merchant-defined catalog options, e.g. {"tissu":["Tweed"]}. */
     @Column(columnDefinition = "TEXT")
     private String customOptions;
+
+    /** Detailed storefront colours as JSON, e.g. {"navbarBg":"#111111","buttonHoverBg":"#333333"}. */
+    @Column(columnDefinition = "TEXT")
+    private String theme;
+
+    /** PENDING until the platform validates the owner's identity, then ACTIVE; SUSPENDED when blocked. */
+    @Column(length = 20)
+    private String status;
 
     /** User id of the merchant who owns this shop. Null for the seeded NaturEssence shop. */
     private Long ownerId;

@@ -8,6 +8,11 @@ import com.naturessence.shared.repository.ProductRepository;
 import com.naturessence.shared.repository.ShopRepository;
 import com.naturessence.shared.repository.UserRepository;
 import com.naturessence.auth.service.AuthService;
+import com.naturessence.auth.service.MerchantVerificationService;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -40,6 +45,7 @@ public class PlatformController {
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
     private final AuthService authService;
+    private final MerchantVerificationService verificationService;
     private final JdbcTemplate jdbcTemplate;
 
     private record OrderStats(long count, double revenue, LocalDateTime lastOrderAt) {}
@@ -53,6 +59,9 @@ public class PlatformController {
         result.put("products", productRepository.count());
         result.put("orders", queryLong("SELECT COUNT(*) FROM orders"));
         result.put("revenue", queryDouble("SELECT COALESCE(SUM(total), 0) FROM orders WHERE " + PAID_FILTER));
+        result.put("pendingVerifications", queryLong(
+                "SELECT COUNT(*) FROM merchant_verifications WHERE status = 'PENDING'"));
+        result.put("suspendedShops", queryLong("SELECT COUNT(*) FROM shops WHERE status = 'SUSPENDED'"));
         result.put("shopsThisMonth", queryLong(
                 "SELECT COUNT(*) FROM shops WHERE created_at >= date_trunc('month', now())"));
         return result;
@@ -92,6 +101,53 @@ public class PlatformController {
         return result;
     }
 
+    /** body: {"status": "SUSPENDED" | "ACTIVE"} — suspending also blocks the owner's account. */
+    @PatchMapping("/shops/{id}/status")
+    public PlatformShopResponse setShopStatus(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        String status = body.getOrDefault("status", "");
+        if (!Shop.SUSPENDED.equals(status) && !Shop.ACTIVE.equals(status)) {
+            throw new IllegalArgumentException("Statut attendu : SUSPENDED ou ACTIVE");
+        }
+        verificationService.setShopSuspended(id, Shop.SUSPENDED.equals(status));
+        Shop shop = shopRepository.findById(id).orElseThrow();
+        return toResponse(shop, orderStatsByShop().get(id));
+    }
+
+    /** body: {"status": "BLOCKED" | "ACTIVE"} */
+    @PatchMapping("/users/{id}/status")
+    public UserResponse setUserStatus(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        String status = body.getOrDefault("status", "");
+        if (!"BLOCKED".equals(status) && !"ACTIVE".equals(status)) {
+            throw new IllegalArgumentException("Statut attendu : BLOCKED ou ACTIVE");
+        }
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Utilisateur introuvable"));
+        verificationService.setUserBlocked(user, "BLOCKED".equals(status));
+        return authService.mapToUserResponse(user);
+    }
+
+    @GetMapping("/verifications")
+    public List<Map<String, Object>> verifications() {
+        return verificationService.list();
+    }
+
+    @GetMapping("/verifications/{id}")
+    public Map<String, Object> verification(@PathVariable Long id) {
+        return verificationService.detail(id);
+    }
+
+    @PostMapping("/verifications/{id}/approve")
+    public Map<String, Object> approve(@PathVariable Long id, Authentication authentication) {
+        return verificationService.approve(id, authentication.getName());
+    }
+
+    /** body: {"reason": "..."} — shown to the merchant, who can then send a new file. */
+    @PostMapping("/verifications/{id}/reject")
+    public Map<String, Object> reject(@PathVariable Long id, @RequestBody Map<String, String> body,
+                                      Authentication authentication) {
+        return verificationService.reject(id, body.get("reason"), authentication.getName());
+    }
+
     @GetMapping("/users")
     public List<UserResponse> users() {
         return userRepository.findAll(PageRequest.of(0, 500, Sort.by(Sort.Direction.DESC, "createdAt")))
@@ -113,6 +169,7 @@ public class PlatformController {
                 .accentColor(shop.getAccentColor())
                 .backgroundColor(shop.getBackgroundColor())
                 .createdAt(shop.getCreatedAt())
+                .status(Shop.statusOf(shop))
                 .ownerId(owner != null ? owner.getId() : null)
                 .ownerEmail(owner != null ? owner.getEmail() : null)
                 .ownerName(owner != null ? (owner.getFirstName() + " " + owner.getLastName()).trim() : null)

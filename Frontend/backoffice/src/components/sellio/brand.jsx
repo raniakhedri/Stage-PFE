@@ -4,16 +4,16 @@ export const DISPLAY = { fontFamily: '"Space Grotesk", Inter, sans-serif' }
 export const MONO = { fontFamily: '"JetBrains Mono", ui-monospace, monospace' }
 
 /** Sellio mark: a stacked "S" built from two offset bars. */
-export function SellioLogo({ to = '/', className = '' }) {
+export function SellioLogo({ to = '/', className = '', light = false }) {
   return (
     <Link to={to} className={`inline-flex items-center gap-2.5 ${className}`} aria-label="Sellio">
-      <span className="relative w-8 h-8 rounded-lg bg-white text-black flex items-center justify-center overflow-hidden">
-        <span className="absolute inset-0 bg-gradient-to-br from-white via-white to-violet-200" />
+      <span className={`relative w-8 h-8 rounded-lg flex ${light ? 'bg-slate-900 text-white' : 'bg-white text-black'} items-center justify-center overflow-hidden`}>
+        {!light && <span className="absolute inset-0 bg-gradient-to-br from-white via-white to-violet-200" />}
         <svg viewBox="0 0 24 24" className="relative w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
           <path d="M17 6.5H9.5a3 3 0 0 0 0 6h5a3 3 0 0 1 0 6H7" />
         </svg>
       </span>
-      <span className="text-lg font-semibold tracking-tight text-white" style={DISPLAY}>Sellio</span>
+      <span className={`text-lg font-semibold tracking-tight ${light ? 'text-slate-900' : 'text-white'}`} style={DISPLAY}>Sellio</span>
     </Link>
   )
 }

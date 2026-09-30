@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router-dom'
-import { currentShopSlug, readUser } from '../../lib/sellio'
+import { currentShopSlug, readUser, shopIsActive } from '../../lib/sellio'
 
 export default function RequireAuth() {
   const token = localStorage.getItem('accessToken')
@@ -19,6 +19,11 @@ export default function RequireAuth() {
   const slug = currentShopSlug()
   if (user?.roleName === 'ADMIN' && !user.shopSlug && slug) {
     window.location.replace('/nouvelle-boutique')
+    return null
+  }
+  // The backoffice stays closed until Sellio has validated the merchant's identity.
+  if (user?.roleName === 'ADMIN' && user.shopSlug && slug && !shopIsActive(user)) {
+    window.location.replace('/verification')
     return null
   }
   if (user?.roleName === 'ADMIN' && user.shopSlug && slug && slug !== user.shopSlug) {

@@ -47,6 +47,7 @@ C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\natu
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\repository\PermissionRepository.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\dto\response\DashboardResponse.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\entity\StoreProfile.java
+C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\dto\request\MerchantVerificationRequest.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\repository\ReturnPolicyRepository.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\dto\request\CategoryRequest.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\repository\BannerRepository.java
@@ -64,6 +65,7 @@ C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\natu
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\repository\CollectionRepository.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\entity\LoyaltyConfig.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\entity\RefreshToken.java
+C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\repository\MerchantVerificationRepository.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\repository\CouponRepository.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\dto\request\OrderRequest.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\dto\request\ProductRequest.java
@@ -74,6 +76,7 @@ C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\natu
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\dto\request\RoleRequest.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\dto\response\PlatformShopResponse.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\enums\OrderStatus.java
+C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\entity\MerchantVerification.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\dto\request\RefreshTokenRequest.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\dto\response\DiscountResponse.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\shared-lib\src\main\java\com\naturessence\shared\repository\LoyaltyConfigRepository.java

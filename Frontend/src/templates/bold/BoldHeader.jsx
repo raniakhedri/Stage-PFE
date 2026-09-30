@@ -10,7 +10,7 @@ import { Logo, AccountMenu, SearchOverlay, useOutsideClose, useScrollLock, hideB
 function Marquee({ text }) {
   const items = Array.from({ length: 8 }, () => text)
   return (
-    <div className="bg-primary text-white overflow-hidden whitespace-nowrap py-2 text-[11px] font-bold uppercase tracking-[0.2em]">
+    <div className="t-announce bg-primary text-white overflow-hidden whitespace-nowrap py-2 text-[11px] font-bold uppercase tracking-[0.2em]">
       <div className="marquee-track inline-flex">
         {[...items, ...items].map((t, i) => (
           <span key={i} className="px-8 flex items-center gap-8">{t}<span aria-hidden>✦</span></span>
@@ -35,13 +35,13 @@ export default function BoldHeader() {
 
   const overlay = isHome && !scrolled
   const active = categories[hovered]
-  const btn = 'relative uppercase text-[12px] font-bold tracking-[0.12em] hover:opacity-60 transition-opacity'
+  const btn = 't-nav-link relative uppercase text-[12px] font-bold tracking-[0.12em] hover:opacity-60 transition-opacity'
 
   return (
     <>
       <div className={`${isHome ? 'fixed' : 'sticky'} top-0 inset-x-0 z-[100]`}>
         {announcement && <Marquee text={announcement} />}
-        <header className={`transition-colors duration-300 ${overlay ? 'bg-transparent text-white' : 'bg-black text-white'}`}>
+        <header className={`transition-colors duration-300 ${overlay ? 'bg-transparent text-white' : 't-nav bg-black text-white'}`}>
           <div className="h-16 md:h-20 px-4 md:px-8 grid grid-cols-[1fr_auto_1fr] items-center">
             <div className="flex items-center gap-5 md:gap-8">
               <button onClick={() => setMenu(true)} className={`${btn} flex items-center gap-3`}>
@@ -53,7 +53,7 @@ export default function BoldHeader() {
               </button>
             </div>
 
-            <Logo className="font-headline text-2xl md:text-4xl uppercase leading-none tracking-tight" imgClassName="h-8 md:h-10" />
+            <Logo className="t-nav-link font-headline text-2xl md:text-4xl uppercase leading-none tracking-tight" imgClassName="h-8 md:h-10" />
 
             <div className="flex items-center justify-end gap-4 md:gap-6">
               <button onClick={() => setSearch(true)} aria-label="Chercher" className="md:hidden"><Search size={20} strokeWidth={2.5} /></button>

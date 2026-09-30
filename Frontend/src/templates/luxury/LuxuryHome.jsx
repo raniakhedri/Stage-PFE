@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import ProductCard from '../../components/ProductCard'
+import RecommendedProducts from '../../components/RecommendedProducts'
 import { useStore } from '../../context/StoreContext'
 import { useHomeData } from '../shared/useHomeData'
 import { copyFor } from '../shared/content'
@@ -21,7 +22,7 @@ function SectionTitle({ eyebrow, title }) {
   return (
     <div className="text-center mb-14 md:mb-16">
       {eyebrow && <p className={`${small} text-accent mb-4`}>{eyebrow}</p>}
-      <h2 className="font-headline text-4xl md:text-6xl text-ink">{title}</h2>
+      <h2 className="t-heading font-headline text-4xl md:text-6xl text-ink">{title}</h2>
       <Ornament className="mt-6 text-ink" />
     </div>
   )
@@ -114,6 +115,8 @@ export default function LuxuryHome() {
         </section>
       )}
 
+      <RecommendedProducts kind="for-you" reloadKey="home" title="Recommandé pour vous" eyebrow="Selon vos goûts" />
+
       {/* Editorial split */}
       <section className={`mt-28 md:mt-40 grid bg-surface-container-low ${data.editorialImage ? 'lg:grid-cols-2' : ''}`}>
         {data.editorialImage && (
@@ -124,7 +127,7 @@ export default function LuxuryHome() {
         <div className="flex items-center justify-center px-8 md:px-20 py-20 md:py-28">
           <div className={`max-w-md text-center ${data.editorialImage ? 'lg:text-left' : ''}`}>
             <p className={`${small} text-accent`}>{copy.editorial.eyebrow}</p>
-            <h2 className="font-headline text-4xl md:text-5xl leading-[1.15] mt-6">{copy.editorial.title}</h2>
+            <h2 className="t-heading font-headline text-4xl md:text-5xl leading-[1.15] mt-6">{copy.editorial.title}</h2>
             <p className="mt-8 text-neutral-600 leading-loose">{copy.editorial.text}</p>
             <Link to={firstCat} className={`${small} inline-block mt-12 border-b border-ink pb-1.5 hover:opacity-60 transition-opacity`}>
               {copy.editorial.cta}
@@ -163,7 +166,7 @@ export default function LuxuryHome() {
       {/* Newsletter */}
       <section className="px-6 py-28 md:py-40 text-center">
         <p className={`${small} text-accent`}>Newsletter</p>
-        <h2 className="font-headline text-4xl md:text-6xl mt-5">{copy.newsletter.title}</h2>
+        <h2 className="t-heading font-headline text-4xl md:text-6xl mt-5">{copy.newsletter.title}</h2>
         <p className="mt-5 text-neutral-500 font-light">{copy.newsletter.text}</p>
         <NewsletterForm
           className="mt-12 max-w-md mx-auto flex items-center border-b border-ink"

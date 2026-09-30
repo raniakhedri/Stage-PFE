@@ -6,12 +6,13 @@ import { useStore } from '../context/StoreContext';
 import LoginPromptModal from './LoginPromptModal';
 import { hideBroken } from '../templates/shared/ui';
 import { sizeOptions, needsSizeChoice } from '../utils/cartLines';
+import { track } from '../tracking/tracker';
 
 function Price({ product, className = '', oldClassName = '' }) {
   return (
-    <span className={`inline-flex items-baseline gap-2 ${className}`}>
+    <span className={`t-price inline-flex items-baseline gap-2 ${className}`}>
       {product.oldPrice && <span className={`line-through opacity-50 text-[0.85em] ${oldClassName}`}>{product.oldPrice.toFixed(2)}</span>}
-      <span className={product.oldPrice ? 'text-red-600' : ''}>{product.price.toFixed(2)} TND</span>
+      <span className={product.oldPrice ? 't-sale text-red-600' : ''}>{product.price.toFixed(2)} TND</span>
     </span>
   );
 }
@@ -28,6 +29,10 @@ export default function ProductCard({ product, index }) {
     e.preventDefault();
     const result = toggleWishlist(product);
     if (result?.requiresLogin) setShowLoginModal(true);
+  };
+  // A click anywhere on the card except its buttons (add to cart, wishlist) opens the product.
+  const trackClick = (e) => {
+    if (!e.target.closest('button')) track('CLICK_PRODUCT', { productId: product.id, price: product.price });
   };
   const sizes = sizeOptions(product, isClothes);
   const [picking, setPicking] = useState(false);
@@ -69,18 +74,18 @@ export default function ProductCard({ product, index }) {
 
   if (layout === 'bold') {
     return (
-      <div className="group relative">
+      <div onClickCapture={trackClick} className="group relative">
         <Link to={to} className="block relative aspect-[3/4] overflow-hidden bg-neutral-200">
           {image('transition-transform duration-700 group-hover:scale-105')}
           {product.badge && (
-            <span className="absolute top-0 left-0 bg-black text-white text-[11px] font-bold uppercase tracking-wider px-3 py-1.5">{product.badge}</span>
+            <span className="t-badge absolute top-0 left-0 bg-black text-white text-[11px] font-bold uppercase tracking-wider px-3 py-1.5">{product.badge}</span>
           )}
           {index != null && (
             <span className="absolute top-2 right-3 font-headline text-white text-3xl mix-blend-difference">{String(index + 1).padStart(2, '0')}</span>
           )}
           <button
             onClick={handleAdd}
-            className="absolute inset-x-0 bottom-0 bg-black text-white uppercase font-bold text-sm tracking-wider py-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 flex items-center justify-center gap-2"
+            className="t-btn absolute inset-x-0 bottom-0 bg-black text-white uppercase font-bold text-sm tracking-wider py-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 flex items-center justify-center gap-2"
           >
             <Plus size={16} strokeWidth={3} /> Ajouter
           </button>
@@ -105,15 +110,15 @@ export default function ProductCard({ product, index }) {
 
   if (layout === 'luxury') {
     return (
-      <div className="group relative text-center">
+      <div onClickCapture={trackClick} className="group relative text-center">
         <Link to={to} className="block relative aspect-[3/4] overflow-hidden bg-[#ebe4d9]">
           {image('transition-all duration-[1200ms] ease-out group-hover:scale-[1.04]')}
           {product.badge && (
-            <span className="absolute top-4 left-4 text-[10px] uppercase tracking-[0.25em] text-neutral-800 bg-white/80 backdrop-blur px-3 py-1.5">{product.badge}</span>
+            <span className="t-badge absolute top-4 left-4 text-[10px] uppercase tracking-[0.25em] text-neutral-800 bg-white/80 backdrop-blur px-3 py-1.5">{product.badge}</span>
           )}
           <button
             onClick={handleAdd}
-            className="absolute left-4 right-4 bottom-4 bg-white/90 backdrop-blur text-ink text-[11px] uppercase tracking-[0.25em] py-3.5 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500"
+            className="t-btn absolute left-4 right-4 bottom-4 bg-white/90 backdrop-blur text-ink text-[11px] uppercase tracking-[0.25em] py-3.5 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500"
           >
             Ajouter au panier
           </button>
@@ -133,16 +138,16 @@ export default function ProductCard({ product, index }) {
   }
 
   return (
-    <div className="group relative">
+    <div onClickCapture={trackClick} className="group relative">
       <Link to={to} className="block relative aspect-[4/5] overflow-hidden rounded-lg bg-neutral-100">
         {image('transition-transform duration-700 group-hover:scale-[1.03]')}
         {product.badge && (
-          <span className="absolute top-3 left-3 bg-white text-ink text-[11px] font-medium px-2.5 py-1 rounded-full shadow-sm">{product.badge}</span>
+          <span className="t-badge absolute top-3 left-3 bg-white text-ink text-[11px] font-medium px-2.5 py-1 rounded-full shadow-sm">{product.badge}</span>
         )}
         <button
           onClick={handleAdd}
           aria-label="Ajouter au panier"
-          className="absolute right-3 bottom-3 h-10 pl-3 pr-4 rounded-full bg-white text-ink shadow-md text-[13px] font-medium flex items-center gap-1.5 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 hover:bg-neutral-900 hover:text-white"
+          className="t-btn absolute right-3 bottom-3 h-10 pl-3 pr-4 rounded-full bg-white text-ink shadow-md text-[13px] font-medium flex items-center gap-1.5 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 hover:bg-neutral-900 hover:text-white"
         >
           <Plus size={15} /> Ajouter
         </button>

@@ -2,6 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAdminNotifications } from '../../hooks/useAdminNotifications'
 import { STOREFRONT_URL } from '../../lib/storefront'
+import { currentShopSlug, readUser } from '../../lib/sellio'
 
 const navItems = [
   { path: '/dashboard',      label: 'Tableau de bord',  icon: 'dashboard',        moduleKey: 'TABLEAU_DE_BORD' },
@@ -19,6 +20,7 @@ const marketingItems = [
   { path: '/fidelite',        label: 'Fidélité',        icon: 'stars',        moduleKey: 'PROMOTIONS' },
   { path: '/email-marketing', label: 'Email Marketing', icon: 'mail',         moduleKey: 'EMAIL_MARKETING' },
   { path: '/avis',            label: 'Avis',            icon: 'reviews',      moduleKey: 'AVIS' },
+  { path: '/comportement',    label: 'Comportement & IA', icon: 'psychology', moduleKey: 'TABLEAU_DE_BORD' },
 ]
 
 const parametresItems = [
@@ -293,7 +295,7 @@ function Sidebar() {
         </div>
 
         <a
-          href={STOREFRONT_URL}
+          href={`${STOREFRONT_URL}/${readUser().shopSlug || currentShopSlug()}`}
           target="_blank"
           rel="noopener noreferrer"
           className="w-full flex items-center gap-3 px-4 py-2 text-slate-600 hover:bg-slate-50 hover:text-sidebar rounded-lg transition-all"

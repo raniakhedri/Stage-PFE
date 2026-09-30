@@ -29,6 +29,35 @@ const PALETTE_VARS = [
   ['buttonTextColor', '--rgb-button-text'],
 ]
 
+// Detailed theme keys (JSON column `theme`) → CSS variable name.
+export const THEME_VARS = {
+  announceBg: 'announce-bg',
+  announceText: 'announce-text',
+  navBg: 'nav-bg',
+  navText: 'nav-text',
+  navHover: 'nav-hover',
+  headingColor: 'heading-color',
+  buttonHoverBg: 'button-hover-bg',
+  buttonHoverText: 'button-hover-text',
+  priceColor: 'price-color',
+  saleColor: 'sale-color',
+  badgeBg: 'badge-bg',
+  badgeText: 'badge-text',
+  footerBg: 'footer-bg',
+  footerText: 'footer-text',
+}
+
+function parseTheme(raw) {
+  try {
+    const value = JSON.parse(raw || '{}')
+    return value && typeof value === 'object' ? value : {}
+  } catch {
+    return {}
+  }
+}
+
+const hexOk = (v) => /^#[0-9a-f]{6}$/i.test(v || '')
+
 // `?preview=minimal|bold|luxury` lets a merchant look at another template without saving it.
 function previewLayout() {
   const value = new URLSearchParams(window.location.search).get('preview')
@@ -77,6 +106,8 @@ export function StoreProvider({ children }) {
           accentColor: data.accentColor || '',
           backgroundColor: data.backgroundColor || '',
           textColor: data.textColor || '',
+          theme: parseTheme(data.theme),
+          status: data.status || 'ACTIVE',
           ready: true,
           missing: false,
         })
@@ -96,12 +127,25 @@ export function StoreProvider({ children }) {
       if (channels) root.style.setProperty(cssVar, channels)
       else root.style.removeProperty(cssVar)
     })
+    const theme = store.theme || {}
+    Object.entries(THEME_VARS).forEach(([key, name]) => {
+      if (hexOk(theme[key])) {
+        root.style.setProperty(`--t-${name}`, theme[key])
+        root.setAttribute(`data-t-${name}`, '')
+      } else {
+        root.style.removeProperty(`--t-${name}`)
+        root.removeAttribute(`data-t-${name}`)
+      }
+    })
+    // Buttons that normally follow the template (e.g. white CTAs on Bold) switch to the merchant's button colour.
+    if (hexOk(store.buttonColor)) root.setAttribute('data-t-button', '')
+    else root.removeAttribute('data-t-button')
     // Secondary surfaces follow the chosen background, slightly darker.
     const low = hexChannels(store.backgroundColor, 0.96)
     if (low) root.style.setProperty('--rgb-surface-low', low)
     else root.style.removeProperty('--rgb-surface-low')
   }, [store.templateKey, store.layout, store.businessType, store.storeName, store.primaryColor, store.buttonColor,
-    store.buttonTextColor, store.accentColor, store.backgroundColor, store.textColor])
+    store.buttonTextColor, store.accentColor, store.backgroundColor, store.textColor, store.theme])
 
   return (
     <StoreContext.Provider value={{ ...store, layout: store.layout || layoutOf(store.templateKey), isClothes: store.businessType === 'CLOTHES' }}>

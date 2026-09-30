@@ -1,0 +1,92 @@
+{
+  "source": "UCI Machine Learning Repository — Online Retail II (id 502), CC BY 4.0",
+  "url": "https://archive.ics.uci.edu/dataset/502/online+retail+ii",
+  "profil_brut": {
+    "lignes_brutes": 1067371,
+    "colonnes": [
+      "Invoice",
+      "StockCode",
+      "Description",
+      "Quantity",
+      "InvoiceDate",
+      "Price",
+      "Customer ID",
+      "Country"
+    ],
+    "valeurs_manquantes": {
+      "Description": 4382,
+      "Customer ID": 243007
+    },
+    "periode": [
+      "2009-12-01 07:45:00",
+      "2011-12-09 12:50:00"
+    ],
+    "factures_annulees_C": 19494,
+    "quantites_negatives": 22950,
+    "prix_negatifs_ou_nuls": 6207,
+    "doublons_exacts": 34335
+  },
+  "etapes": [
+    {
+      "etape": "1. Doublons exacts",
+      "raison": "recouvrement des 2 feuilles Excel + double saisie",
+      "lignes_avant": 1067371,
+      "lignes_apres": 1033036,
+      "supprimees": 34335
+    },
+    {
+      "etape": "2. Annulations (C) et ajustements (A)",
+      "raison": "pas des ventes ; les annulations sont aussi utilisées pour le taux de retour",
+      "lignes_avant": 1033036,
+      "lignes_apres": 1013926,
+      "supprimees": 19110
+    },
+    {
+      "etape": "3. Quantité ≤ 0 ou prix ≤ 0",
+      "raison": "retours non préfixés, dons, erreurs de saisie",
+      "lignes_avant": 1013926,
+      "lignes_apres": 1007912,
+      "supprimees": 6014
+    },
+    {
+      "etape": "4. Codes non-produits",
+      "raison": "frais de port (POST), remises (D), manuels (M), frais bancaires, tests",
+      "lignes_avant": 1007912,
+      "lignes_apres": 1003214,
+      "supprimees": 4698
+    },
+    {
+      "etape": "5. Client inconnu (Customer ID vide)",
+      "raison": "achats anonymes : aucun historique à rattacher",
+      "lignes_avant": 1003214,
+      "lignes_apres": 776577,
+      "supprimees": 226637
+    },
+    {
+      "etape": "6. Description manquante / annotation interne",
+      "raison": "« damaged », « wet », « ? »… remplacées par le libellé du code, sinon supprimées",
+      "lignes_avant": 776577,
+      "lignes_apres": 776098,
+      "supprimees": 479
+    },
+    {
+      "etape": "7. Valeurs aberrantes (> 99,9e centile)",
+      "raison": "quantité > 576 ou prix > 34.95 £",
+      "lignes_avant": 776098,
+      "lignes_apres": 774591,
+      "supprimees": 1507
+    }
+  ],
+  "resultat": {
+    "lignes": 774591,
+    "factures": 36374,
+    "clients": 5834,
+    "produits": 4593,
+    "pays": 41,
+    "periode": [
+      "2009-12-01 07:45:00",
+      "2011-12-09 12:50:00"
+    ],
+    "part_conservee": 0.7257
+  }
+}

@@ -1,6 +1,10 @@
 package com.naturessence.auth.controller;
 
 import com.naturessence.auth.service.AuthService;
+import com.naturessence.auth.service.MerchantVerificationService;
+import com.naturessence.shared.dto.request.MerchantVerificationRequest;
+import com.naturessence.shared.entity.User;
+import java.util.Map;
 import com.naturessence.shared.dto.request.CreateShopRequest;
 import com.naturessence.shared.dto.request.LoginRequest;
 import com.naturessence.shared.dto.request.RefreshTokenRequest;
@@ -24,6 +28,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final UserRepository userRepository;
+    private final MerchantVerificationService verificationService;
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
@@ -54,6 +59,38 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         return ResponseEntity.ok(PublicShopController.toResponse(authService.myShop(authentication.getName())));
+    }
+
+    /** Current session user, re-read from the database (shop status changes after admin review). */
+    @GetMapping("/me")
+    public ResponseEntity<UserResponse> me(Authentication authentication) {
+        User user = currentUser(authentication);
+        if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        return ResponseEntity.ok(authService.mapToUserResponse(user));
+    }
+
+    @GetMapping("/my-shop/verification")
+    public ResponseEntity<Map<String, Object>> verificationStatus(Authentication authentication) {
+        User user = currentUser(authentication);
+        if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        return ResponseEntity.ok(verificationService.statusFor(user));
+    }
+
+    @PutMapping("/my-shop/verification")
+    public ResponseEntity<Map<String, Object>> resubmitVerification(Authentication authentication,
+                                                                    @RequestBody MerchantVerificationRequest request) {
+        User user = currentUser(authentication);
+        if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        return ResponseEntity.ok(verificationService.resubmit(user, request));
+    }
+
+    private User currentUser(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()
+                || authentication.getName() == null
+                || "anonymousUser".equals(authentication.getName())) {
+            return null;
+        }
+        return userRepository.findByEmailIgnoreCase(authentication.getName()).orElse(null);
     }
 
     @PatchMapping("/my-shop")

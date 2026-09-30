@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Search, X, Sparkles, Truck, ShieldCheck, RefreshCw, LogOut } from 'lucide-react'
 import { fetchAllProducts } from '../../api/apiClient'
+import { track } from '../../tracking/tracker'
 import { useStore } from '../../context/StoreContext'
 import { formatPrice } from './content'
 
@@ -167,6 +168,15 @@ export function SearchOverlay({ open, onClose, variant = 'minimal' }) {
       .slice(0, 8)
   }, [query, products])
 
+  // A search is recorded once the visitor stops typing, with its number of results
+  // (searches with 0 results show the merchant what is missing from the catalogue).
+  useEffect(() => {
+    const q = query.trim()
+    if (!open || q.length < 2) return
+    const id = setTimeout(() => track('SEARCH', { query: q, resultsCount: results.length }), 900)
+    return () => clearTimeout(id)
+  }, [open, query, results.length])
+
   if (!open) return null
 
   const dark = variant === 'bold'
@@ -197,7 +207,7 @@ export function SearchOverlay({ open, onClose, variant = 'minimal' }) {
         )}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-6">
           {results.map((p) => (
-            <Link key={p.id} to={`/produits/${p.slug}`} onClick={onClose} className="group">
+            <Link key={p.id} to={`/produits/${p.slug}`} onClick={() => { track('SEARCH_CLICK', { productId: p.id, query: query.trim() }); onClose() }} className="group">
               <div className={`aspect-[4/5] overflow-hidden ${dark ? 'bg-neutral-900' : 'bg-neutral-100'}`}>
                 {p.image && <img src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />}
               </div>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ChevronRight, Minus, Plus, Trash2, ShoppingBag, Truck, CreditCard, Banknote, Tag, X, CheckCircle, MapPin, Plus as PlusIcon } from 'lucide-react';
 import { lineKeyOf } from '../utils/cartLines';
+import { track } from '../tracking/tracker';
 import { useShop } from '../context/ShopContext';
 import { loadStripe } from '@stripe/stripe-js';
 import { getUser } from '../api/tokenStorage';
@@ -77,6 +78,10 @@ async function placeOrder(payload) {
   return res.json();
 }
 
+function trackPurchase(items) {
+  items.forEach((i) => track('PURCHASE', { productId: i.id, quantity: i.qty, price: i.price }));
+}
+
 export default function CheckoutPage() {
   const { cart, cartTotal, clearCart, updateQty, removeFromCart } = useShop();
   const items = cart;
@@ -117,6 +122,11 @@ export default function CheckoutPage() {
   });
 
   // Pre-fill from logged-in user + fetch saved address
+  useEffect(() => {
+    if (cart.length) track('BEGIN_CHECKOUT', { quantity: cart.reduce((n, i) => n + i.qty, 0), price: cartTotal });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     try {
       const u = getUser();
@@ -307,6 +317,7 @@ export default function CheckoutPage() {
             quantity: i.qty,
           })),
         });
+        trackPurchase(items);
         clearCart();
         navigate('/confirmation');
       } catch (err) {
@@ -337,6 +348,7 @@ export default function CheckoutPage() {
           quantity: i.qty,
         })),
       });
+      trackPurchase(items);
       clearCart();
       navigate('/confirmation');
     } catch (err) {

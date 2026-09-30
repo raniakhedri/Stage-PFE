@@ -43,6 +43,11 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers(HttpMethod.OPTIONS, "/**")
                     .permitAll()
+                    // Storefront: behaviour collection and recommendations are open to shoppers.
+                    .requestMatchers(HttpMethod.POST, "/api/v1/analytics/events")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/v1/analytics/recommendations/**")
+                    .permitAll()
                     .requestMatchers("/api/v1/analytics/**")
                     .hasAnyRole("ADMIN", "SUPER_ADMIN", "MANAGER")
                     .anyRequest()

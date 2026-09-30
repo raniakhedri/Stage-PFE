@@ -42,3 +42,6 @@ Front Office/
 Backend/src/main/resources/application.properties
 microservices/nul
 nul
+
+# Jeux de données bruts (téléchargés ; régénérables avec python/data_prep/*)
+microservices/analytics-service/python/datasets/raw/

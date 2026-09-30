@@ -29,6 +29,7 @@ import Bannieres from './pages/Bannieres'
 import AjouterBanniere from './pages/AjouterBanniere'
 import TvaLivraison from './pages/TvaLivraison'
 import Avis from './pages/Avis'
+import Comportement from './pages/Comportement'
 import Promotions from './pages/Promotions'
 import Fidelite from './pages/Fidelite'
 import EmailMarketing from './pages/EmailMarketing'
@@ -39,8 +40,9 @@ import SellioInscription from './pages/SellioInscription'
 import NouvelleBoutique from './pages/NouvelleBoutique'
 import SellioConsole from './pages/SellioConsole'
 import SellioHome from './pages/SellioHome'
+import VerificationBoutique from './pages/VerificationBoutique'
 
-const RESERVED = new Set(['login', 'inscription', 'auth-callback', 'nouvelle-boutique', 'sellio'])
+const RESERVED = new Set(['login', 'inscription', 'auth-callback', 'nouvelle-boutique', 'verification', 'sellio'])
 
 function App() {
   useEffect(() => {
@@ -78,6 +80,7 @@ function App() {
 
         <Route element={<RequireAuth />}>
           <Route path="/nouvelle-boutique" element={<NouvelleBoutique />} />
+          <Route path="/verification" element={<VerificationBoutique />} />
           <Route path="/sellio" element={<SellioConsole />} />
           <Route element={<Layout />}>
             <Route path="/configuration" element={<ConfigurationBoutique />} />
@@ -104,6 +107,7 @@ function App() {
             <Route path="/bannieres/edit/:id" element={<AjouterBanniere />} />
             <Route path="/tva-livraison" element={<TvaLivraison />} />
             <Route path="/avis" element={<Avis />} />
+            <Route path="/comportement" element={<Comportement />} />
             <Route path="/promotions" element={<Promotions />} />
             <Route path="/fidelite" element={<Fidelite />} />
             <Route path="/email-marketing" element={<EmailMarketing />} />

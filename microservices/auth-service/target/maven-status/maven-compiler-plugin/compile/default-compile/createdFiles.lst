@@ -1,6 +1,7 @@
 com\naturessence\auth\AuthServiceApplication.class
 com\naturessence\auth\service\RoleService.class
 com\naturessence\auth\service\LoyaltyService.class
+com\naturessence\auth\service\MerchantVerificationService.class
 com\naturessence\auth\config\DataSeeder.class
 com\naturessence\auth\controller\AdminLoyaltyController.class
 com\naturessence\auth\service\EmailService.class

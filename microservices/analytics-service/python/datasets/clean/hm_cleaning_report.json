@@ -1,0 +1,98 @@
+{
+  "source": "Kaggle — H&M Personalized Fashion Recommendations (2022)",
+  "url": "https://www.kaggle.com/competitions/h-and-m-personalized-fashion-recommendations",
+  "profil_transactions": {
+    "transactions_brutes": 31788324,
+    "periode": [
+      "2018-09-20",
+      "2020-09-22"
+    ],
+    "canaux": {
+      "2": 1393291,
+      "1": 588289
+    },
+    "prix_nuls_ou_negatifs": 0,
+    "lignes_identiques": 185955
+  },
+  "profil_clients": {
+    "clients_echantillon": 68874,
+    "age_manquant": 779,
+    "fashion_news_frequency": {
+      "NONE": 44871,
+      "Regularly": 23233,
+      "NaN": 751,
+      "Monthly": 19
+    },
+    "club_member_status": {
+      "ACTIVE": 62725,
+      "PRE-CREATE": 5757,
+      "NaN": 363,
+      "LEFT CLUB": 29
+    }
+  },
+  "articles_sans_description": 277,
+  "etapes": [
+    {
+      "etape": "1. Échantillon de clients",
+      "raison": "1 client sur 16 (identifiant se terminant par 0), pour tenir en mémoire",
+      "lignes_avant": 31788324,
+      "lignes_apres": 1981580,
+      "supprimees": 29806744
+    },
+    {
+      "etape": "2. Achats en magasin retirés",
+      "raison": "Sellio est une boutique en ligne : seul le canal web (2) est gardé",
+      "lignes_avant": 1981580,
+      "lignes_apres": 1393291,
+      "supprimees": 588289
+    },
+    {
+      "etape": "3. Prix ≤ 0",
+      "raison": "erreurs de caisse",
+      "lignes_avant": 1393291,
+      "lignes_apres": 1393291,
+      "supprimees": 0
+    },
+    {
+      "etape": "4. Prix aberrants (> 99,9e centile)",
+      "raison": "prix > 0.1749 (unités H&M)",
+      "lignes_avant": 1393291,
+      "lignes_apres": 1391897,
+      "supprimees": 1394
+    },
+    {
+      "etape": "5. Lignes identiques regroupées en quantité",
+      "raison": "même article acheté plusieurs fois le même jour → 1 ligne, quantité > 1",
+      "lignes_avant": 1391897,
+      "lignes_apres": 1224099,
+      "supprimees": 167798
+    }
+  ],
+  "prix": {
+    "facteur_echelle": 1967.98,
+    "hypothese": "article médian ≈ 50 TND"
+  },
+  "couverture_fiche_vetement_sellio": {
+    "nom": 1.0,
+    "description": 1.0,
+    "categorie": 1.0,
+    "sous_categorie": 1.0,
+    "couleur": 0.9796,
+    "genre": 1.0,
+    "tissu": 0.7977,
+    "coupe": 0.3248,
+    "manches": 0.3346,
+    "col": 0.2638,
+    "saison": 0.0,
+    "tailles": 0.0
+  },
+  "resultat": {
+    "achats": 1224099,
+    "clients": 68874,
+    "articles": 71735,
+    "periode": [
+      "2018-09-20",
+      "2020-09-22"
+    ]
+  }
+}

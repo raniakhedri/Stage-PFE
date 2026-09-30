@@ -3,7 +3,9 @@ package com.naturessence.order.service;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
+import com.stripe.model.SetupIntent;
 import com.stripe.param.PaymentIntentCreateParams;
+import com.stripe.param.SetupIntentCreateParams;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -47,5 +49,15 @@ public class StripeService {
 
         PaymentIntent intent = PaymentIntent.create(params);
         return intent.getClientSecret();
+    }
+
+    /** SetupIntent used to verify and save a merchant's card without charging it. */
+    public String createSetupIntent() throws StripeException {
+        SetupIntentCreateParams params = SetupIntentCreateParams.builder()
+                .addPaymentMethodType("card")
+                .setUsage(SetupIntentCreateParams.Usage.OFF_SESSION)
+                .putMetadata("purpose", "sellio_merchant_verification")
+                .build();
+        return SetupIntent.create(params).getClientSecret();
     }
 }

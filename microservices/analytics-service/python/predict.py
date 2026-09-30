@@ -19,19 +19,24 @@ import pandas as pd
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, "models", "churn_model.pkl")
+# One churn model per business: "general" (UCI Online Retail II) and "clothes" (Kaggle H&M).
+MODEL_PATHS = {
+    "general": MODEL_PATH,
+    "clothes": os.path.join(BASE_DIR, "models", "churn_model_clothes.pkl"),
+}
 
-_ARTIFACT = None
+_ARTIFACTS: dict = {}
 
 
-def load_artifact():
-    global _ARTIFACT
-    if _ARTIFACT is None:
-        if not os.path.exists(MODEL_PATH):
-            raise FileNotFoundError(
-                f"Model not found at '{MODEL_PATH}'. Run python/train.py first."
-            )
-        _ARTIFACT = joblib.load(MODEL_PATH)
-    return _ARTIFACT
+def load_artifact(model: str = "general"):
+    path = MODEL_PATHS.get(model, MODEL_PATH)
+    if not os.path.exists(path):
+        path = MODEL_PATH  # sector model not trained yet: fall back to the general one
+    if path not in _ARTIFACTS:
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"Model not found at '{path}'. Run python/train_churn_real.py first.")
+        _ARTIFACTS[path] = joblib.load(path)
+    return _ARTIFACTS[path]
 
 
 def row_from_payload(payload: dict) -> dict:
@@ -57,12 +62,18 @@ def row_from_payload(payload: dict) -> dict:
 
 
 def predict_rows(payloads: list[dict]) -> list[float]:
-    artifact = load_artifact()
-    pipeline = artifact["pipeline"]
-    features = artifact["metadata"]["all_features"]
-    frame = pd.DataFrame([row_from_payload(p) for p in payloads])[features]
-    probs = pipeline.predict_proba(frame)[:, 1]
-    return [float(p) for p in probs]
+    """Scores each customer with the model of their shop's business ("model" key, default "general")."""
+    probs: list[float] = [0.0] * len(payloads)
+    groups: dict[str, list[int]] = {}
+    for i, p in enumerate(payloads):
+        groups.setdefault(p.get("model", "general"), []).append(i)
+    for model, idx in groups.items():
+        artifact = load_artifact(model)
+        features = artifact["metadata"]["all_features"]
+        frame = pd.DataFrame([row_from_payload(payloads[i]) for i in idx])[features]
+        for i, prob in zip(idx, artifact["pipeline"].predict_proba(frame)[:, 1]):
+            probs[i] = float(prob)
+    return probs
 
 
 def load_payload():

@@ -24,22 +24,22 @@ export default function MinimalHeader() {
   useScrollLock(drawer)
 
   const openCat = categories.find((c) => c.slug === openSlug)
-  const icon = 'relative p-1.5 text-neutral-800 hover:text-neutral-500 transition-colors'
+  const icon = 't-nav-link relative p-1.5 text-neutral-800 hover:text-neutral-500 transition-colors'
 
   return (
     <>
       {announcement && (
-        <div className="bg-primary text-white text-[11px] tracking-[0.08em] text-center py-2.5 px-4">{announcement}</div>
+        <div className="t-announce bg-primary text-white text-[11px] tracking-[0.08em] text-center py-2.5 px-4">{announcement}</div>
       )}
 
-      <header className="sticky top-0 z-[100] bg-surface/95 backdrop-blur border-b border-neutral-200" onMouseLeave={() => setOpenSlug(null)}>
+      <header className="t-nav sticky top-0 z-[100] bg-surface/95 backdrop-blur border-b border-neutral-200" onMouseLeave={() => setOpenSlug(null)}>
         <div className="max-w-[1440px] mx-auto h-[72px] px-5 md:px-10 grid grid-cols-[1fr_auto_1fr] lg:grid-cols-[auto_1fr_auto] items-center gap-8">
           <div className="flex items-center gap-3 lg:hidden">
             <button onClick={() => setDrawer(true)} aria-label="Menu" className={icon}><Menu size={22} /></button>
             <button onClick={() => setSearch(true)} aria-label="Rechercher" className={icon}><Search size={20} /></button>
           </div>
 
-          <Logo className="justify-self-center lg:justify-self-start text-xl font-semibold tracking-tight text-ink" />
+          <Logo className="t-nav-link justify-self-center lg:justify-self-start text-xl font-semibold tracking-tight text-ink" />
 
           <nav className="hidden lg:flex items-center justify-center gap-1 h-full">
             {categories.map((c) => {
@@ -50,7 +50,7 @@ export default function MinimalHeader() {
                   to={`/categories/${c.slug}`}
                   onMouseEnter={() => setOpenSlug(c.slug)}
                   onClick={() => setOpenSlug(null)}
-                  className={`h-[72px] px-4 flex items-center gap-1 text-[13.5px] transition-colors border-b-2 ${
+                  className={`t-nav-link h-[72px] px-4 flex items-center gap-1 text-[13.5px] transition-colors border-b-2 ${
                     active || openSlug === c.slug ? 'border-ink text-ink' : 'border-transparent text-neutral-600 hover:text-ink'
                   }`}
                 >

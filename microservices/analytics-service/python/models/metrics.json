@@ -1,42 +1,145 @@
 {
+  "source": "UCI Online Retail II — https://archive.ics.uci.edu/dataset/502/online+retail+ii (CC BY 4.0)",
   "horizon_days": 90,
-  "label": "no_order_in_next_90_days_given_prior_purchase",
-  "n_customers": 12000,
-  "churn_rate": 0.4711,
-  "train_size": 9600,
-  "test_size": 2400,
-  "baseline_recency": {
-    "accuracy": 0.5942,
-    "roc_auc": 0.8025
+  "label": "aucune commande dans les 90 jours suivant la date d'observation (clients ayant déjà acheté)",
+  "protocol": "temporel : entraînement T1, sélection T2, test T3 (modèle final ré-entraîné sur T1+T2)",
+  "snapshots": {
+    "T1": {
+      "date": "2011-03-01",
+      "clients": 4496,
+      "churn_rate": 0.6492
+    },
+    "T2": {
+      "date": "2011-06-01",
+      "clients": 4892,
+      "churn_rate": 0.6701
+    },
+    "T3": {
+      "date": "2011-09-10",
+      "clients": 5239,
+      "churn_rate": 0.565
+    }
   },
-  "logistic_regression": {
-    "accuracy": 0.7558,
-    "roc_auc": 0.8228
+  "features": [
+    "tenure_days",
+    "total_orders",
+    "total_spent",
+    "avg_order_value",
+    "order_frequency",
+    "days_since_last_order"
+  ],
+  "gbp_to_tnd": 3.9,
+  "validation_T2": {
+    "regression_logistique": {
+      "roc_auc": 0.8123,
+      "pr_auc": 0.8841,
+      "accuracy": 0.7441,
+      "precision_churn": 0.8379,
+      "recall_churn": 0.7663,
+      "f1_churn": 0.8005
+    },
+    "random_forest(d=6,leaf=5)": {
+      "roc_auc": 0.8168,
+      "pr_auc": 0.8844,
+      "accuracy": 0.7659,
+      "precision_churn": 0.8307,
+      "recall_churn": 0.8173,
+      "f1_churn": 0.8239
+    },
+    "random_forest(d=6,leaf=20)": {
+      "roc_auc": 0.8157,
+      "pr_auc": 0.8844,
+      "accuracy": 0.7655,
+      "precision_churn": 0.8341,
+      "recall_churn": 0.8115,
+      "f1_churn": 0.8226
+    },
+    "random_forest(d=10,leaf=5)": {
+      "roc_auc": 0.8068,
+      "pr_auc": 0.8733,
+      "accuracy": 0.7641,
+      "precision_churn": 0.824,
+      "recall_churn": 0.824,
+      "f1_churn": 0.824
+    },
+    "random_forest(d=10,leaf=20)": {
+      "roc_auc": 0.8121,
+      "pr_auc": 0.8803,
+      "accuracy": 0.7666,
+      "precision_churn": 0.8331,
+      "recall_churn": 0.8148,
+      "f1_churn": 0.8239
+    },
+    "random_forest(d=16,leaf=5)": {
+      "roc_auc": 0.7981,
+      "pr_auc": 0.865,
+      "accuracy": 0.7651,
+      "precision_churn": 0.8225,
+      "recall_churn": 0.8282,
+      "f1_churn": 0.8254
+    },
+    "random_forest(d=16,leaf=20)": {
+      "roc_auc": 0.8116,
+      "pr_auc": 0.8795,
+      "accuracy": 0.7655,
+      "precision_churn": 0.8327,
+      "recall_churn": 0.8136,
+      "f1_churn": 0.823
+    },
+    "gradient_boosting(lr=0.05)": {
+      "roc_auc": 0.7978,
+      "pr_auc": 0.8671,
+      "accuracy": 0.7651,
+      "precision_churn": 0.8233,
+      "recall_churn": 0.827,
+      "f1_churn": 0.8251
+    },
+    "gradient_boosting(lr=0.1)": {
+      "roc_auc": 0.7842,
+      "pr_auc": 0.8565,
+      "accuracy": 0.7598,
+      "precision_churn": 0.8119,
+      "recall_churn": 0.835,
+      "f1_churn": 0.8233
+    }
   },
-  "random_forest": {
-    "accuracy": 0.7571,
-    "roc_auc": 0.8327,
-    "cv_roc_auc_mean": 0.8389,
-    "cv_roc_auc_std": 0.003,
-    "n_estimators": 300
+  "test_T3": {
+    "baseline_recence": {
+      "roc_auc": 0.7623,
+      "pr_auc": 0.799,
+      "accuracy": 0.6076,
+      "precision_churn": 0.8435,
+      "recall_churn": 0.375,
+      "f1_churn": 0.5192
+    },
+    "regression_logistique": {
+      "roc_auc": 0.791,
+      "pr_auc": 0.8123,
+      "accuracy": 0.7276,
+      "precision_churn": 0.7374,
+      "recall_churn": 0.8044,
+      "f1_churn": 0.7694
+    },
+    "modele_retenu": {
+      "nom": "random_forest(d=6,leaf=5)",
+      "roc_auc": 0.8012,
+      "pr_auc": 0.8196,
+      "accuracy": 0.7354,
+      "precision_churn": 0.728,
+      "recall_churn": 0.849,
+      "f1_churn": 0.7838
+    }
+  },
+  "permutation_importance_auc": {
+    "days_since_last_order": 0.0671,
+    "order_frequency": 0.0366,
+    "total_spent": 0.0114,
+    "total_orders": 0.0114,
+    "avg_order_value": 0.0009,
+    "tenure_days": 0.0004
   },
   "thresholds": {
-    "high": 0.7,
-    "medium": 0.4,
-    "high_quantile": 0.8372,
-    "medium_quantile": 0.4617,
-    "f1_optimal": 0.3411
-  },
-  "top_features": {
-    "days_since_last_login": 0.2335,
-    "days_since_last_order": 0.2021,
-    "order_frequency": 0.103,
-    "total_spent": 0.0709,
-    "loyalty_points": 0.062,
-    "tenure_days": 0.0529,
-    "avg_order_value": 0.0471,
-    "total_orders": 0.0423,
-    "age": 0.0357,
-    "avg_rating": 0.0296
+    "high": 0.7584,
+    "medium": 0.5737
   }
 }

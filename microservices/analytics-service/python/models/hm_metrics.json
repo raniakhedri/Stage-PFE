@@ -1,0 +1,255 @@
+{
+  "source": "Kaggle — H&M Personalized Fashion Recommendations (nettoyé, adapté Sellio)",
+  "recommendation": {
+    "validation_best": {
+      "n_factors": 128,
+      "shrinkage": 100.0,
+      "alpha": 0.4
+    },
+    "validation_grid_top5": [
+      {
+        "n_factors": 128,
+        "shrinkage": 100.0,
+        "alpha": 0.4,
+        "hit_rate@10": 0.06,
+        "precision@10": 0.0067,
+        "ndcg@10": 0.0223,
+        "coverage": 0.581,
+        "cases": 2000
+      },
+      {
+        "n_factors": 64,
+        "shrinkage": 300.0,
+        "alpha": 0.4,
+        "hit_rate@10": 0.0555,
+        "precision@10": 0.0061,
+        "ndcg@10": 0.0212,
+        "coverage": 0.5368,
+        "cases": 2000
+      },
+      {
+        "n_factors": 64,
+        "shrinkage": 100.0,
+        "alpha": 0.4,
+        "hit_rate@10": 0.0525,
+        "precision@10": 0.0058,
+        "ndcg@10": 0.0207,
+        "coverage": 0.514,
+        "cases": 2000
+      },
+      {
+        "n_factors": 128,
+        "shrinkage": 300.0,
+        "alpha": 0.4,
+        "hit_rate@10": 0.055,
+        "precision@10": 0.0061,
+        "ndcg@10": 0.0207,
+        "coverage": 0.5612,
+        "cases": 2000
+      },
+      {
+        "n_factors": 32,
+        "shrinkage": 100.0,
+        "alpha": 0.4,
+        "hit_rate@10": 0.0525,
+        "precision@10": 0.0057,
+        "ndcg@10": 0.0202,
+        "coverage": 0.4366,
+        "cases": 2000
+      }
+    ],
+    "test": {
+      "articles": 5000,
+      "interactions": 233232,
+      "cases": 2000,
+      "density": 0.00129,
+      "results": {
+        "popularite (baseline)": {
+          "hit_rate@10": 0.053,
+          "precision@10": 0.0056,
+          "ndcg@10": 0.0152,
+          "coverage": 0.0028,
+          "cases": 2000
+        },
+        "contenu seul (TF-IDF)": {
+          "hit_rate@10": 0.038,
+          "precision@10": 0.0044,
+          "ndcg@10": 0.014,
+          "coverage": 0.7428,
+          "cases": 2000
+        },
+        "filtrage collaboratif seul (SVD)": {
+          "hit_rate@10": 0.02,
+          "precision@10": 0.0022,
+          "ndcg@10": 0.0084,
+          "coverage": 0.8096,
+          "cases": 2000
+        },
+        "hybride": {
+          "hit_rate@10": 0.039,
+          "precision@10": 0.0044,
+          "ndcg@10": 0.0149,
+          "coverage": 0.745,
+          "cases": 2000
+        },
+        "hybride + popularite (alpha=0.4, retenu)": {
+          "hit_rate@10": 0.0585,
+          "precision@10": 0.0066,
+          "ndcg@10": 0.0215,
+          "coverage": 0.6104,
+          "cases": 2000
+        }
+      }
+    }
+  },
+  "churn": {
+    "snapshots": {
+      "T1": {
+        "date": "2019-12-24",
+        "clients": 52934,
+        "churn_rate": 0.7127
+      },
+      "T2": {
+        "date": "2020-03-24",
+        "clients": 57466,
+        "churn_rate": 0.6611
+      },
+      "T3": {
+        "date": "2020-06-24",
+        "clients": 64871,
+        "churn_rate": 0.7307
+      }
+    },
+    "features": [
+      "tenure_days",
+      "total_orders",
+      "total_spent",
+      "avg_order_value",
+      "order_frequency",
+      "days_since_last_order",
+      "age"
+    ],
+    "validation_T2": {
+      "regression_logistique": {
+        "roc_auc": 0.774,
+        "pr_auc": 0.8488,
+        "accuracy": 0.7296,
+        "precision_churn": 0.8048,
+        "recall_churn": 0.7802,
+        "f1_churn": 0.7923
+      },
+      "random_forest(d=6,leaf=5)": {
+        "roc_auc": 0.7748,
+        "pr_auc": 0.8494,
+        "accuracy": 0.733,
+        "precision_churn": 0.8001,
+        "recall_churn": 0.7948,
+        "f1_churn": 0.7974
+      },
+      "random_forest(d=6,leaf=20)": {
+        "roc_auc": 0.7748,
+        "pr_auc": 0.8497,
+        "accuracy": 0.7331,
+        "precision_churn": 0.7994,
+        "recall_churn": 0.7961,
+        "f1_churn": 0.7977
+      },
+      "random_forest(d=10,leaf=5)": {
+        "roc_auc": 0.7738,
+        "pr_auc": 0.8472,
+        "accuracy": 0.7346,
+        "precision_churn": 0.7975,
+        "recall_churn": 0.8023,
+        "f1_churn": 0.7999
+      },
+      "random_forest(d=10,leaf=20)": {
+        "roc_auc": 0.7744,
+        "pr_auc": 0.8479,
+        "accuracy": 0.7342,
+        "precision_churn": 0.7987,
+        "recall_churn": 0.7994,
+        "f1_churn": 0.7991
+      },
+      "random_forest(d=16,leaf=5)": {
+        "roc_auc": 0.7674,
+        "pr_auc": 0.8419,
+        "accuracy": 0.7346,
+        "precision_churn": 0.7919,
+        "recall_churn": 0.8119,
+        "f1_churn": 0.8018
+      },
+      "random_forest(d=16,leaf=20)": {
+        "roc_auc": 0.7719,
+        "pr_auc": 0.8455,
+        "accuracy": 0.7332,
+        "precision_churn": 0.7975,
+        "recall_churn": 0.7994,
+        "f1_churn": 0.7985
+      },
+      "gradient_boosting(lr=0.05)": {
+        "roc_auc": 0.7754,
+        "pr_auc": 0.8491,
+        "accuracy": 0.7306,
+        "precision_churn": 0.8055,
+        "recall_churn": 0.7812,
+        "f1_churn": 0.7931
+      },
+      "gradient_boosting(lr=0.1)": {
+        "roc_auc": 0.7751,
+        "pr_auc": 0.8492,
+        "accuracy": 0.7303,
+        "precision_churn": 0.8053,
+        "recall_churn": 0.7807,
+        "f1_churn": 0.7928
+      }
+    },
+    "test_T3": {
+      "baseline_recence": {
+        "roc_auc": 0.7384,
+        "pr_auc": 0.8753,
+        "accuracy": 0.5008,
+        "precision_churn": 0.9154,
+        "recall_churn": 0.3492,
+        "f1_churn": 0.5055
+      },
+      "modele_online_retail_applique_tel_quel": {
+        "roc_auc": 0.7872,
+        "pr_auc": 0.8913,
+        "accuracy": 0.7858,
+        "precision_churn": 0.8311,
+        "recall_churn": 0.8871,
+        "f1_churn": 0.8582
+      },
+      "modele_vetements_sans_age": {
+        "roc_auc": 0.7988,
+        "pr_auc": 0.8974,
+        "accuracy": 0.725,
+        "precision_churn": 0.8782,
+        "recall_churn": 0.7241,
+        "f1_churn": 0.7938
+      },
+      "modele_vetements_retenu": {
+        "nom": "gradient_boosting(lr=0.05)",
+        "roc_auc": 0.7993,
+        "pr_auc": 0.8989,
+        "accuracy": 0.7223,
+        "precision_churn": 0.8799,
+        "recall_churn": 0.7179,
+        "f1_churn": 0.7907
+      }
+    },
+    "permutation_importance_auc": {
+      "total_orders": 0.1372,
+      "days_since_last_order": 0.0598,
+      "age": 0.0028,
+      "total_spent": 0.0028,
+      "order_frequency": 0.0014,
+      "tenure_days": 0.0003,
+      "avg_order_value": -0.0001
+    },
+    "thresholds": {
+      "high": 0.7222,
+      "medium": 0.4959
+    }
+  }
+}

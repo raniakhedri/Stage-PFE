@@ -1,0 +1,147 @@
+{
+  "source": "Kaggle — eCommerce Events History in Cosmetics Shop (REES46), nettoyé",
+  "segmentation": {
+    "visiteurs": 60000,
+    "k": 3,
+    "silhouette": 0.4678,
+    "silhouette_by_k": {
+      "3": 0.4678,
+      "4": 0.3847,
+      "5": 0.4076,
+      "6": 0.4176
+    },
+    "davies_bouldin": 1.2608,
+    "stabilite_ari_moyen": 0.9506,
+    "stabilite_ari_min": 0.9463,
+    "segments": [
+      {
+        "label": "Visiteurs occasionnels",
+        "size": 45694,
+        "centroid": {
+          "sessions": 1.144,
+          "events_per_session": 1.429,
+          "product_views": 1.434,
+          "search_ratio": 0.0,
+          "cart_rate": 0.086,
+          "purchase_rate": 0.002,
+          "wishlist_rate": 0.0,
+          "recency_days": 15.769,
+          "active_days": 1.088
+        }
+      },
+      {
+        "label": "Acheteurs décidés",
+        "size": 7615,
+        "centroid": {
+          "sessions": 1.409,
+          "events_per_session": 15.107,
+          "product_views": 8.025,
+          "search_ratio": 0.0,
+          "cart_rate": 1.988,
+          "purchase_rate": 0.25,
+          "wishlist_rate": 0.0,
+          "recency_days": 16.821,
+          "active_days": 1.211
+        }
+      },
+      {
+        "label": "Explorateurs",
+        "size": 6691,
+        "centroid": {
+          "sessions": 5.632,
+          "events_per_session": 7.088,
+          "product_views": 21.944,
+          "search_ratio": 0.0,
+          "cart_rate": 0.704,
+          "purchase_rate": 0.157,
+          "wishlist_rate": 0.0,
+          "recency_days": 9.994,
+          "active_days": 3.965
+        }
+      }
+    ]
+  },
+  "recommendation": {
+    "produits": 5000,
+    "visiteurs": 29666,
+    "interactions": 115542,
+    "densite": 0.00078,
+    "lambda_choisi": 10.0,
+    "reglage_lambda": {
+      "tuned": true,
+      "cases": 500,
+      "ndcg@10_by_lambda": {
+        "10.0": 0.0537,
+        "30.0": 0.0521,
+        "100.0": 0.0523,
+        "300.0": 0.0511,
+        "1000.0": 0.0496
+      }
+    },
+    "validation_alpha": {
+      "0.0": {
+        "hit_rate@10": 0.0785,
+        "ndcg@10": 0.0211,
+        "coverage": 0.6672,
+        "cases": 1006
+      },
+      "0.2": {
+        "hit_rate@10": 0.0835,
+        "ndcg@10": 0.0225,
+        "coverage": 0.6664,
+        "cases": 1006
+      },
+      "0.4": {
+        "hit_rate@10": 0.1014,
+        "ndcg@10": 0.0284,
+        "coverage": 0.6528,
+        "cases": 1006
+      },
+      "0.6": {
+        "hit_rate@10": 0.1412,
+        "ndcg@10": 0.0425,
+        "coverage": 0.6062,
+        "cases": 1006
+      },
+      "0.8": {
+        "hit_rate@10": 0.1879,
+        "ndcg@10": 0.049,
+        "coverage": 0.212,
+        "cases": 1006
+      }
+    },
+    "alpha_choisi": 0.8,
+    "results": {
+      "popularite (baseline)": {
+        "hit_rate@10": 0.1588,
+        "ndcg@10": 0.0441,
+        "coverage": 0.0038,
+        "cases": 1373
+      },
+      "contenu seul": {
+        "hit_rate@10": 0.0692,
+        "ndcg@10": 0.0186,
+        "coverage": 0.7752,
+        "cases": 1373
+      },
+      "filtrage collaboratif seul": {
+        "hit_rate@10": 0.0838,
+        "ndcg@10": 0.02,
+        "coverage": 0.792,
+        "cases": 1373
+      },
+      "hybride": {
+        "hit_rate@10": 0.0794,
+        "ndcg@10": 0.0215,
+        "coverage": 0.7428,
+        "cases": 1373
+      },
+      "hybride + popularite (alpha=0.8, retenu)": {
+        "hit_rate@10": 0.1777,
+        "ndcg@10": 0.0517,
+        "coverage": 0.2764,
+        "cases": 1373
+      }
+    }
+  }
+}

@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, ArrowLeft, ArrowUpRight } from 'lucide-react'
 import ProductCard from '../../components/ProductCard'
+import RecommendedProducts from '../../components/RecommendedProducts'
 import { useStore } from '../../context/StoreContext'
 import { useHomeData } from '../shared/useHomeData'
 import { copyFor } from '../shared/content'
@@ -10,7 +11,7 @@ import { HeroMedia, CtaLink, bannerCtaTarget, PROMISE_ICONS, NewsletterForm, hid
 function Heading({ children, count, right }) {
   return (
     <div className="flex items-end justify-between gap-6 border-b-2 border-black pb-4 mb-8">
-      <h2 className="font-headline uppercase text-5xl md:text-8xl leading-[0.85]">
+      <h2 className="t-heading font-headline uppercase text-5xl md:text-8xl leading-[0.85]">
         {children}
         {count > 0 && <sup className="text-lg md:text-2xl align-top ml-2">({count})</sup>}
       </h2>
@@ -52,7 +53,7 @@ export default function BoldHome() {
                   <button onClick={data.next} aria-label="Suivant" className="w-14 h-14 border-2 border-white flex items-center justify-center hover:bg-white hover:text-black transition-colors"><ArrowRight size={20} /></button>
                 </>
               )}
-              <CtaLink to={bannerCtaTarget(banner, categories)} className="h-14 px-8 bg-white text-black font-bold uppercase tracking-wider text-sm flex items-center gap-3 hover:gap-5 transition-all">
+              <CtaLink to={bannerCtaTarget(banner, categories)} className="t-btn h-14 px-8 bg-white text-black font-bold uppercase tracking-wider text-sm flex items-center gap-3 hover:gap-5 transition-all">
                 {banner?.ctaText || copy.cta} <ArrowRight size={18} strokeWidth={2.5} />
               </CtaLink>
             </div>
@@ -134,6 +135,8 @@ export default function BoldHome() {
         </section>
       )}
 
+      <RecommendedProducts kind="for-you" reloadKey="home" title="Recommandé pour vous" eyebrow="Selon vos goûts" />
+
       {/* Statement */}
       <section className="mt-20 md:mt-28 bg-black text-white px-4 md:px-8 py-20 md:py-32 overflow-hidden">
         <div className="grid lg:grid-cols-[1fr_auto] gap-12 items-center">
@@ -148,7 +151,7 @@ export default function BoldHome() {
             </div>
           )}
         </div>
-        <Link to={firstCat} className="mt-12 inline-flex h-14 px-8 bg-white text-black font-bold uppercase tracking-wider text-sm items-center gap-3 hover:gap-5 transition-all">
+        <Link to={firstCat} className="t-btn mt-12 inline-flex h-14 px-8 bg-white text-black font-bold uppercase tracking-wider text-sm items-center gap-3 hover:gap-5 transition-all">
           {copy.editorial.cta} <ArrowRight size={18} strokeWidth={2.5} />
         </Link>
       </section>
@@ -191,7 +194,7 @@ export default function BoldHome() {
           <NewsletterForm
             className="mt-10 flex flex-col sm:flex-row gap-0 max-w-2xl border-2 border-white"
             inputClassName="flex-1 min-w-0 bg-transparent px-5 py-4 text-white placeholder:text-white/50 uppercase font-bold text-sm tracking-wider outline-none"
-            buttonClassName="bg-white text-black px-8 py-4 font-bold uppercase text-sm tracking-wider"
+            buttonClassName="t-btn bg-white text-black px-8 py-4 font-bold uppercase text-sm tracking-wider"
             placeholder="Ton email"
             buttonLabel="Je m'inscris"
           />

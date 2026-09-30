@@ -43,4 +43,5 @@ public class UserResponse {
     private String shopName;
     private String businessType;
     private String templateKey;
+    private String shopStatus;
 }

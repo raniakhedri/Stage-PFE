@@ -11,7 +11,7 @@ export default function MinimalFooter() {
   const link = 'text-sm text-neutral-500 hover:text-ink transition-colors'
 
   return (
-    <footer className="bg-surface-container-low border-t border-neutral-200">
+    <footer className="t-footer bg-surface-container-low border-t border-neutral-200">
       <div className="max-w-[1440px] mx-auto px-5 md:px-10 pt-16 pb-10 grid grid-cols-2 md:grid-cols-12 gap-10">
         <div className="col-span-2 md:col-span-5">
           <Logo className="text-xl font-semibold tracking-tight text-ink" />
