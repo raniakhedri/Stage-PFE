@@ -8,7 +8,7 @@ import java.util.Map;
 @Data
 public class RoleRequest {
 
-    @NotBlank(message = "Le nom du rôle est obligatoire")
+    /** System key; derived from the label when left empty (merchant roles). */
     private String name;
 
     @NotBlank(message = "Le libellé du rôle est obligatoire")

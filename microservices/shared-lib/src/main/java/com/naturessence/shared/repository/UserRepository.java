@@ -39,6 +39,16 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByEmailIgnoreCase(String email);
 
+    /** The merchant's team: every account of the shop that is not a customer (owner + staff). */
+    @Query("SELECT u FROM User u WHERE u.shopId = :shopId AND u.role.name <> 'CLIENT' ORDER BY u.createdAt ASC")
+    List<User> findTeamByShopId(@Param("shopId") Long shopId);
+
+    @Query("SELECT COUNT(u) FROM User u WHERE u.shopId = :shopId AND u.role.name <> 'CLIENT'")
+    long countTeamByShop(@Param("shopId") Long shopId);
+
+    @Query("SELECT COUNT(u) FROM User u WHERE u.shopId = :shopId AND u.role.name <> 'CLIENT' AND u.status = :status")
+    long countTeamByShopAndStatus(@Param("shopId") Long shopId, @Param("status") AccountStatus status);
+
     @Query("SELECT u FROM User u WHERE u.role.name = :roleName")
     Page<User> findByRoleName(@Param("roleName") String roleName, Pageable pageable);
 

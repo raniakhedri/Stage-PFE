@@ -10,6 +10,8 @@ import java.util.Optional;
 public interface OrderRepository extends JpaRepository<Order, Long> {
     Optional<Order> findByReference(String reference);
 
+    boolean existsByPaymentIntentId(String paymentIntentId);
+
     List<Order> findAllByOrderByCreatedAtDesc();
 
     List<Order> findByUserIdOrderByCreatedAtDesc(Long userId);

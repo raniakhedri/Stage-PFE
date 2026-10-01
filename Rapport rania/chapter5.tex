@@ -1,0 +1,449 @@
+\thispagestyle{fancy}
+\fancyhead[R]{A.U 2025-2026}
+\fancyhead[L]{ chapitre 5: Release 3 : Parcours transactionnel }
+\chapter{Release 3 : Parcours transactionnel}
+\section*{Introduction}
+Ce chapitre présente la troisième release, cœur transactionnel de la plateforme. Le Sprint 5 couvre l'acte d'achat : panier dynamique, tunnel de commande et paiement par carte avec Stripe. Le Sprint 6 couvre ce qui suit la commande : gestion des statuts par le commerçant, tableau de bord des ventes, retours, paramétrage de la TVA et des zones de livraison, et avis clients.
+
+%==================================================================
+\section{Backlog du Sprint 5}
+\Needspace{18\baselineskip}
+Le tableau~\ref{tab:backlog-sprint5} présente le \textbf{backlog du Sprint 5}.
+
+\renewcommand{\arraystretch}{1.05}
+\setlength{\tabcolsep}{3pt}
+\begin{longtable}{|>{\raggedright\arraybackslash}p{4cm}|>{\raggedright\arraybackslash}p{9cm}|>{\centering\arraybackslash}p{1.2cm}|}
+\hline
+\textbf{User Story} & \textbf{Tâches} & \textbf{Estimation} \\
+\hline
+\endfirsthead
+\hline
+\textbf{User Story} & \textbf{Tâches} & \textbf{Estimation} \\
+\hline
+\endhead
+\hline
+\multicolumn{3}{r}{\textit{Suite à la page suivante}} \\
+\endfoot
+\hline
+\endlastfoot
+
+\textbf{En tant que visiteur, je souhaite gérer mon panier en choisissant la taille}
+& Développer le contexte panier (ajout, quantité, suppression, total) persistant dans le navigateur. & 1 \\
+\cline{2-3}
+& Distinguer les lignes par produit, taille et couleur (clé de ligne). & 1 \\
+\cline{2-3}
+& Bloquer « Ajouter au panier » tant que la taille n'est pas choisie, sur la fiche et sur la carte produit. & 1 \\
+\cline{2-3}
+& Développer le tiroir de panier. & 1 \\
+\cline{2-3}
+& Tester la fonctionnalité. & 1 \\
+\hline
+
+\textbf{En tant que client, je souhaite passer commande avec livraison et code promo}
+& Développer l'API de création de commande (sous-total, remise, livraison, TVA incluse, décrément du stock). & 1 \\
+\cline{2-3}
+& Calculer les frais de livraison selon la zone et la TVA selon la configuration. & 1 \\
+\cline{2-3}
+& Développer l'API de validation d'un code promo (dates, montant minimum, catégories, produits). & 1 \\
+\cline{2-3}
+& Développer le tunnel de commande (adresse, livraison, paiement, récapitulatif) et la page de confirmation. & 1 \\
+\cline{2-3}
+& Envoyer l'e-mail de confirmation de commande. & 1 \\
+\cline{2-3}
+& Tester la fonctionnalité. & 1 \\
+\hline
+
+\textbf{En tant que client, je souhaite retrouver mon panier sur un autre appareil}
+& Développer l'API de sauvegarde du panier du client connecté et sa restauration à la connexion. & 1 \\
+\hline
+
+\textbf{En tant que client, je souhaite payer ma commande par carte}
+& Configurer le SDK Stripe côté serveur (clé secrète en variable d'environnement). & 1 \\
+\cline{2-3}
+& Développer l'API de création d'un \textit{PaymentIntent}. & 1 \\
+\cline{2-3}
+& Intégrer Stripe Elements et confirmer le paiement dans le navigateur. & 1 \\
+\cline{2-3}
+& Conserver le paiement à la livraison comme alternative. & 1 \\
+\cline{2-3}
+& Tester avec les cartes de test Stripe (succès, refus, authentification 3-D Secure). & 1 \\
+\hline
+
+\multicolumn{2}{|r|}{\textbf{Total}} & \textbf{17} \\
+\hline
+\caption{Backlog du Sprint 5}
+\label{tab:backlog-sprint5}
+\end{longtable}
+
+\section{Diagramme de cas d'utilisation du Sprint 5}
+\Needspace{20\baselineskip}
+\begin{figure}[H]
+    \centering
+    \img{0.8}{cu_sprint5.png}
+    \caption{Diagramme de cas d'utilisation du Sprint 5}
+    \label{fig:cu-sprint5}
+\end{figure}
+
+\section{Services web du Sprint 5}
+Le tableau~\ref{tab:ws-sprint5} présente les services web du Sprint 5.
+\renewcommand{\arraystretch}{1.15}
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{|p{1.5cm}|p{6.8cm}|p{6.2cm}|}
+\hline
+\textbf{Méthode} & \textbf{URL} & \textbf{Description} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Méthode} & \textbf{URL} & \textbf{Description} \\
+\hline
+\endhead
+\multicolumn{3}{|c|}{\textbf{Tunnel de commande --- /api/v1/public/checkout (order-service)}} \\
+\hline
+GET & /api/v1/public/checkout/shipping-zones & Zones de livraison et tarifs. \\
+\hline
+GET & /api/v1/public/checkout/tva-config & Configuration de la TVA. \\
+\hline
+POST & /api/v1/public/checkout/orders & Créer une commande. \\
+\hline
+GET & /api/v1/public/coupons/validate & Valider un code promo pour un panier. \\
+\hline
+GET & /api/v1/public/coupons/announcement & Promotion à afficher dans le bandeau d'annonce. \\
+\hline
+\multicolumn{3}{|c|}{\textbf{Paiement --- /api/v1/public/stripe}} \\
+\hline
+POST & /api/v1/public/stripe/payment-intent & Créer un \textit{PaymentIntent} et retourner son \textit{client secret}. \\
+\hline
+\multicolumn{3}{|c|}{\textbf{Panier du client --- /api/v1/profile (auth-service)}} \\
+\hline
+GET & /api/v1/profile/cart & Récupérer le panier sauvegardé. \\
+\hline
+PUT & /api/v1/profile/cart & Sauvegarder le panier. \\
+\hline
+\caption{Services web du Sprint 5}
+\label{tab:ws-sprint5}
+\end{longtable}
+
+\section{Les cas d'utilisation du Sprint 5}
+\subsection{Cas d'utilisation « Passer commande et payer par carte »}
+\subsubsection{Description textuelle}
+Le tableau~\ref{tab:uc-commande} présente la description textuelle de ce cas.
+\renewcommand{\arraystretch}{1.5}
+\begin{longtable}{|p{4cm}|p{11cm}|}
+\hline
+\textbf{Acteurs} & Client, Stripe \\
+\hline
+\textbf{Objectif} & Transformer un panier en commande payée. \\
+\hline
+\textbf{Pré-condition} & Le panier contient au moins un article ; la taille de chaque vêtement est choisie ; la boutique est active. \\
+\hline
+\textbf{Scénario principal} &
+1. Le client ouvre le tunnel de commande et saisit ou choisit son adresse.\newline
+2. Il choisit sa ville ; le système affiche les frais de la zone de livraison correspondante et la TVA.\newline
+3. Il saisit un code promo ; le système le valide et affiche la remise.\newline
+4. Il choisit « Carte bancaire » ; le système crée un \textit{PaymentIntent} Stripe et renvoie son \textit{client secret}.\newline
+5. Le client saisit sa carte dans le champ sécurisé Stripe, qui confirme le paiement (avec authentification 3-D Secure si la banque l'exige).\newline
+6. Après confirmation, l'interface envoie la commande ; le système calcule le sous-total, applique la remise, la livraison (gratuite au-delà du seuil) et la TVA incluse dans les prix, enregistre la commande au statut \texttt{EN\_ATTENTE} avec le mode de paiement \texttt{CARTE}, puis décrémente le stock.\newline
+7. Le système envoie l'e-mail de confirmation ; le client est redirigé vers la page de confirmation et un événement d'achat est enregistré pour l'analyse comportementale. \\
+\hline
+\textbf{Scénario alternatif} &
+\textbf{Code promo invalide :} à l'étape 3, le système en donne la raison (expiré, montant minimum non atteint, réservé à d'autres catégories).\newline
+\textbf{Paiement refusé :} à l'étape 5, le message de Stripe est affiché ; aucune commande n'est créée et le client peut réessayer.\newline
+\textbf{Paiement à la livraison :} à l'étape 4, si le client choisit ce mode, la commande est créée directement, sans passer par Stripe. \\
+\hline
+\caption{Description textuelle du cas « Passer commande et payer par carte »}
+\label{tab:uc-commande}
+\end{longtable}
+
+\subsubsection{Diagramme de séquence système}
+\Needspace{18\baselineskip}
+\begin{figure}[H]
+    \centering
+    \img{0.7}{dss_commande.png}
+    \caption{Diagramme de séquence système du cas « Passer commande et payer par carte »}
+    \label{fig:dss-commande}
+\end{figure}
+
+\subsubsection{Diagramme de séquence objet}
+\Needspace{20\baselineskip}
+\begin{figure}[H]
+    \centering
+    \img{0.95}{dso_commande.png}
+    \caption{Diagramme de séquence objet du cas « Passer commande et payer par carte »}
+    \label{fig:dso-commande}
+\end{figure}
+
+\section{Réalisation du Sprint 5}
+\Needspace{20\baselineskip}
+\textbf{Panier :} la figure~\ref{fig:ui-panier} présente le tiroir de panier. Chaque ligne correspond à une combinaison produit / taille / couleur ; la section « Souvent achetés ensemble », ajoutée au Sprint 10, y propose des articles complémentaires.
+\begin{figure}[H]
+    \centering
+    \img{0.8}{ui_panier.png}
+    \caption{Tiroir de panier}
+    \label{fig:ui-panier}
+\end{figure}
+
+\Needspace{20\baselineskip}
+\textbf{Tunnel de commande et paiement :} les figures~\ref{fig:ui-checkout} et~\ref{fig:ui-stripe} présentent le tunnel de commande puis le formulaire de paiement Stripe.
+\begin{figure}[H]
+    \centering
+    \img{0.85}{ui_checkout.png}
+    \caption{Tunnel de commande : adresse, livraison et code promo}
+    \label{fig:ui-checkout}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \img{0.8}{ui_paiement_stripe.png}
+    \caption{Paiement par carte avec Stripe}
+    \label{fig:ui-stripe}
+\end{figure}
+
+\Needspace{10\baselineskip}
+\textbf{Remarque sur la devise :} Stripe ne prend pas en charge le dinar tunisien ; en mode test, les montants sont donc débités en euros. Une mise en production en Tunisie passerait par un prestataire de paiement local ou par la conversion des montants, et la confirmation de la commande devrait alors s'appuyer sur un \textit{webhook} du prestataire plutôt que sur le seul retour du navigateur. De même, les prix unitaires transmis par le panier devraient être revérifiés côté serveur à partir du catalogue, et le stock contrôlé avant la validation. Ces points figurent dans les perspectives.
+
+%==================================================================
+\section{Backlog du Sprint 6}
+\Needspace{18\baselineskip}
+Le tableau~\ref{tab:backlog-sprint6} présente le \textbf{backlog du Sprint 6}.
+
+\renewcommand{\arraystretch}{1.05}
+\setlength{\tabcolsep}{3pt}
+\begin{longtable}{|>{\raggedright\arraybackslash}p{4cm}|>{\raggedright\arraybackslash}p{9cm}|>{\centering\arraybackslash}p{1.2cm}|}
+\hline
+\textbf{User Story} & \textbf{Tâches} & \textbf{Estimation} \\
+\hline
+\endfirsthead
+\hline
+\textbf{User Story} & \textbf{Tâches} & \textbf{Estimation} \\
+\hline
+\endhead
+\hline
+\multicolumn{3}{r}{\textit{Suite à la page suivante}} \\
+\endfoot
+\hline
+\endlastfoot
+
+\textbf{En tant que commerçant, je souhaite gérer mes commandes et leurs statuts}
+& Développer l'API de liste, de détail et de recherche par référence des commandes. & 1 \\
+\cline{2-3}
+& Développer le changement de statut (en attente, confirmée, en préparation, expédiée, livrée, annulée, remboursée), avec remise en stock en cas d'annulation et e-mail au client à la livraison. & 1 \\
+\cline{2-3}
+& Développer les interfaces « Commandes » et « Détail commande ». & 1 \\
+\cline{2-3}
+& Tester la fonctionnalité. & 1 \\
+\hline
+
+\textbf{En tant que client, je souhaite suivre mes commandes}
+& Développer l'API et la page « Mes commandes ». & 1 \\
+\hline
+
+\textbf{En tant que commerçant, je souhaite consulter un tableau de bord des ventes}
+& Développer l'API d'agrégats (chiffre d'affaires, commandes, panier moyen, meilleurs produits). & 1 \\
+\cline{2-3}
+& Développer le tableau de bord avec graphiques. & 1 \\
+\hline
+
+\textbf{En tant que client, je souhaite demander un retour}
+& Développer l'API de demande de retour (articles, motif) dans le délai de la politique. & 1 \\
+\cline{2-3}
+& Développer la page « Mes retours ». & 1 \\
+\hline
+
+\textbf{En tant que commerçant, je souhaite traiter les retours et définir ma politique de retour}
+& Développer l'API de traitement des retours et de la politique de retour. & 1 \\
+\cline{2-3}
+& Développer les interfaces « Retours », « Détail retour » et « Historique des remboursements ». & 1 \\
+\cline{2-3}
+& Tester la fonctionnalité. & 1 \\
+\hline
+
+\textbf{En tant que commerçant, je souhaite paramétrer la TVA et les zones de livraison}
+& Développer l'API de configuration de la TVA et des taux. & 1 \\
+\cline{2-3}
+& Développer l'API des zones de livraison (villes, tarif, seuil de gratuité, délai). & 1 \\
+\cline{2-3}
+& Développer l'interface « TVA et livraison ». & 1 \\
+\hline
+
+\textbf{En tant que client, je souhaite publier un avis sur un produit acheté}
+& Développer l'API de publication (un avis par produit et par commande) et l'affichage sur la fiche produit. & 1 \\
+\hline
+
+\textbf{En tant que commerçant, je souhaite modérer les avis et y répondre}
+& Développer l'API et l'interface de modération (statut, réponse, suppression). & 1 \\
+\hline
+
+\multicolumn{2}{|r|}{\textbf{Total}} & \textbf{17} \\
+\hline
+\caption{Backlog du Sprint 6}
+\label{tab:backlog-sprint6}
+\end{longtable}
+
+\section{Diagramme de cas d'utilisation du Sprint 6}
+\Needspace{20\baselineskip}
+\begin{figure}[H]
+    \centering
+    \img{0.85}{cu_sprint6.png}
+    \caption{Diagramme de cas d'utilisation du Sprint 6}
+    \label{fig:cu-sprint6}
+\end{figure}
+
+\section{Services web du Sprint 6}
+Le tableau~\ref{tab:ws-sprint6} présente les services web du Sprint 6.
+\renewcommand{\arraystretch}{1.15}
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{|p{1.5cm}|p{6.8cm}|p{6.2cm}|}
+\hline
+\textbf{Méthode} & \textbf{URL} & \textbf{Description} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Méthode} & \textbf{URL} & \textbf{Description} \\
+\hline
+\endhead
+\multicolumn{3}{|c|}{\textbf{Commandes --- order-service}} \\
+\hline
+GET & /api/v1/admin/orders & Lister les commandes de la boutique. \\
+\hline
+GET & /api/v1/admin/orders/\{id\} & Détail d'une commande. \\
+\hline
+GET & /api/v1/admin/orders/reference/\{reference\} & Rechercher une commande par référence. \\
+\hline
+GET & /api/v1/admin/orders/user/\{userId\} & Commandes d'un client. \\
+\hline
+PATCH & /api/v1/admin/orders/\{id\}/status & Changer le statut d'une commande. \\
+\hline
+GET & /api/v1/profile/orders & Commandes du client connecté. \\
+\hline
+GET & /api/v1/admin/dashboard & Indicateurs du tableau de bord. \\
+\hline
+\multicolumn{3}{|c|}{\textbf{Retours}} \\
+\hline
+GET, POST & /api/v1/profile/returns & Lister, créer ses demandes de retour. \\
+\hline
+GET & /api/v1/admin/returns & Lister les retours. \\
+\hline
+PATCH & /api/v1/admin/returns/\{id\}/status & Accepter, refuser ou rembourser un retour. \\
+\hline
+GET, PUT & /api/v1/admin/returns/policy & Consulter, modifier la politique de retour. \\
+\hline
+GET & /api/v1/public/return-policy & Politique de retour publique. \\
+\hline
+\multicolumn{3}{|c|}{\textbf{TVA et livraison --- /api/v1/admin/tva-shipping}} \\
+\hline
+GET, PUT & /api/v1/admin/tva-shipping/config & Configuration générale de la TVA. \\
+\hline
+GET, POST & /api/v1/admin/tva-shipping/rates & Lister, créer un taux de TVA. \\
+\hline
+PUT, DELETE & /api/v1/admin/tva-shipping/rates/\{id\} & Modifier, supprimer un taux. \\
+\hline
+GET, POST & /api/v1/admin/tva-shipping/zones & Lister, créer une zone de livraison. \\
+\hline
+PUT, DELETE & /api/v1/admin/tva-shipping/zones/\{id\} & Modifier, supprimer une zone. \\
+\hline
+\multicolumn{3}{|c|}{\textbf{Avis --- catalog-service}} \\
+\hline
+GET & /api/v1/public/reviews/product/\{productId\} & Avis publiés d'un produit. \\
+\hline
+POST & /api/v1/profile/reviews & Publier un avis. \\
+\hline
+GET & /api/v1/reviews/has-reviewed & Savoir si le client a déjà noté le produit. \\
+\hline
+GET & /api/v1/admin/reviews & Lister les avis à modérer. \\
+\hline
+PATCH & /api/v1/admin/reviews/\{id\}/statut & Publier ou masquer un avis. \\
+\hline
+PATCH & /api/v1/admin/reviews/\{id\}/reponse & Répondre à un avis. \\
+\hline
+\caption{Services web du Sprint 6}
+\label{tab:ws-sprint6}
+\end{longtable}
+
+\section{Les cas d'utilisation du Sprint 6}
+\subsection{Cas d'utilisation « Traiter une demande de retour »}
+\subsubsection{Description textuelle}
+Le tableau~\ref{tab:uc-retour} présente la description textuelle de ce cas.
+\renewcommand{\arraystretch}{1.5}
+\begin{longtable}{|p{4cm}|p{11cm}|}
+\hline
+\textbf{Acteurs} & Client, Commerçant \\
+\hline
+\textbf{Objectif} & Permettre au client de retourner un article et au commerçant de traiter la demande jusqu'au remboursement. \\
+\hline
+\textbf{Pré-condition} & La commande est livrée et le délai de retour de la politique de la boutique n'est pas dépassé. \\
+\hline
+\textbf{Scénario principal} &
+1. Le client ouvre « Mes commandes », choisit une commande livrée et clique sur « Retourner ».\newline
+2. Il sélectionne les articles, indique le motif et valide.\newline
+3. Le système vérifie le délai et crée la demande au statut « en attente ».\newline
+4. Le commerçant consulte la demande dans « Retours » et l'accepte.\newline
+5. À la réception des articles, il marque le retour comme remboursé ; le système met à jour la commande et l'historique des remboursements.\newline
+6. Le client suit l'avancement de sa demande dans « Mes retours ». \\
+\hline
+\textbf{Scénario alternatif} &
+\textbf{Délai dépassé :} à l'étape 3, le système refuse la demande et rappelle la politique de retour.\newline
+\textbf{Retour refusé :} à l'étape 4, le commerçant refuse la demande en indiquant la raison, communiquée au client. \\
+\hline
+\caption{Description textuelle du cas « Traiter une demande de retour »}
+\label{tab:uc-retour}
+\end{longtable}
+
+\subsubsection{Diagramme de séquence système}
+\Needspace{18\baselineskip}
+\begin{figure}[H]
+    \centering
+    \img{0.7}{dss_retour.png}
+    \caption{Diagramme de séquence système du cas « Traiter une demande de retour »}
+    \label{fig:dss-retour}
+\end{figure}
+
+\subsubsection{Diagramme de séquence objet}
+\Needspace{20\baselineskip}
+\begin{figure}[H]
+    \centering
+    \img{0.9}{dso_retour.png}
+    \caption{Diagramme de séquence objet du cas « Traiter une demande de retour »}
+    \label{fig:dso-retour}
+\end{figure}
+
+\section{Réalisation du Sprint 6}
+\Needspace{20\baselineskip}
+\textbf{Gestion des commandes :} la figure~\ref{fig:ui-commandes} présente la liste des commandes et la figure~\ref{fig:ui-dashboard} le tableau de bord des ventes.
+\begin{figure}[H]
+    \centering
+    \img{0.85}{ui_commandes.png}
+    \caption{Gestion des commandes}
+    \label{fig:ui-commandes}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \img{0.85}{ui_dashboard.png}
+    \caption{Tableau de bord des ventes}
+    \label{fig:ui-dashboard}
+\end{figure}
+
+\Needspace{20\baselineskip}
+\textbf{Retours, TVA et livraison :} les figures~\ref{fig:ui-retours} et~\ref{fig:ui-tva} présentent le traitement des retours et le paramétrage de la TVA et des zones de livraison.
+\begin{figure}[H]
+    \centering
+    \img{0.85}{ui_retours.png}
+    \caption{Traitement des retours}
+    \label{fig:ui-retours}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \img{0.85}{ui_tva_livraison.png}
+    \caption{Paramétrage de la TVA et des zones de livraison}
+    \label{fig:ui-tva}
+\end{figure}
+
+\Needspace{20\baselineskip}
+\textbf{Avis clients :} la figure~\ref{fig:ui-avis} présente la modération des avis.
+\begin{figure}[H]
+    \centering
+    \img{0.85}{ui_avis.png}
+    \caption{Modération des avis clients}
+    \label{fig:ui-avis}
+\end{figure}
+
+\subsection*{Conclusion}
+Cette release a rendu la plateforme pleinement transactionnelle : un client peut acheter, payer et retourner un article, et le commerçant pilote ses ventes et son paramétrage fiscal et logistique. La release suivante apporte les outils marketing et de fidélisation.

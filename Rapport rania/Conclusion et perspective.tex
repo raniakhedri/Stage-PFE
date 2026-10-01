@@ -1,0 +1,21 @@
+\thispagestyle{plain}
+\chapter*{
+  \vspace{-1.7cm}
+  \centering
+  \rule{\textwidth}{0.5pt} \\[0.4cm]
+  Conclusion et perspectives
+}
+\addcontentsline{toc}{chapter}{\numberline{}Conclusion et perspectives}
+Au terme de ce projet de fin d'études, nous avons conçu et développé \textbf{Sellio}, une plateforme transactionnelle intelligente qui permet à des commerçants de cosmétiques et de vêtements de créer, personnaliser et exploiter leur propre boutique en ligne. Partie d'une boutique unique, NaturEssence, la solution est devenue une plateforme multi-boutiques fondée sur une architecture microservices : cinq services Spring Boot derrière une passerelle, deux applications React et une base PostgreSQL. \newline
+
+La plateforme couvre l'ensemble du cycle d'une boutique : intégration et vérification des commerçants (KYC par carte bancaire, pièce d'identité et selfie), catalogue aux attributs normalisés, trois gabarits de vitrine personnalisables sans code, tunnel de commande avec paiement Stripe, gestion des commandes, des retours, de la TVA et de la livraison, promotions, e-mailing et programme de fidélité.\newline
+
+Elle se distingue par deux volets intelligents. Le premier est une \textbf{cabine d'essayage virtuel en temps réel}, fondée sur le modèle génératif \textit{Lucy VTON} de Decart et intégrée de façon sécurisée par des jetons éphémères. Le second est un ensemble de \textbf{modèles d'apprentissage automatique} alimentés par le suivi comportemental des visiteurs : un moteur de recommandation hybride, une segmentation des visiteurs par K-Means et une prédiction de l'attrition adaptée au secteur de chaque boutique. Ces modèles ont été entraînés et évalués sur trois jeux de données publics réels, nettoyés par des scripts reproductibles, avec un découpage temporel et une comparaison systématique à une référence simple. Les gains obtenus sont réels et mesurés : +10 à +16\,\% de taux de réussite pour la recommandation, une AUC d'environ 0,80 pour l'attrition, des segments stables et interprétables.\newline
+
+Sur le plan professionnel, ce projet nous a permis de consolider nos compétences en architecture distribuée, en sécurité des applications web, en intégration de services tiers (paiement, IA générative, e-mail), en ingénierie des données et en apprentissage automatique, tout en appliquant une démarche Agile fondée sur Scrum. Il nous a surtout appris qu'un modèle ne vaut que par la rigueur de son évaluation : un score présenté sans référence ni protocole ne dit rien.\newline
+
+\textbf{Perspectives.} Plusieurs évolutions peuvent être envisagées. Sur le plan des paiements, l'intégration d'un \textbf{prestataire de paiement local} prenant en charge le dinar tunisien, la confirmation des commandes par \textit{webhook} et la revérification serveur des prix et du stock sont les prochaines étapes indispensables avant une mise en production. La vérification des commerçants pourrait être automatisée par une \textbf{reconnaissance faciale} comparant le selfie à la photo de la pièce d'identité, l'administrateur n'intervenant plus que sur les cas douteux.
+
+Sur le plan de l'architecture, le passage à une \textbf{base de données par microservice}, une communication asynchrone par messages (par exemple pour les événements de commande), la conteneurisation et le \textbf{déploiement dans le Cloud} amélioreraient l'isolation, la disponibilité et la capacité de montée en charge. Sur le plan de l'intelligence, le modèle d'attrition pourrait être \textbf{ré-entraîné sur les données tunisiennes} dès que les boutiques auront accumulé plusieurs mois d'historique, et les recommandations évaluées en production par des \textbf{tests A/B} mesurant leur effet réel sur le chiffre d'affaires. Enfin, une \textbf{application mobile} pour les clients et pour les commerçants élargirait l'usage de la plateforme.
+
+Ainsi, Sellio pourrait évoluer d'une plateforme de création de boutiques vers une véritable solution de commerce intelligent, locale, sécurisée et pilotée par les données de chaque commerçant.

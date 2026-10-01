@@ -2,6 +2,7 @@ com\naturessence\order\controller\AdminDashboardController.class
 com\naturessence\order\service\CouponService.class
 com\naturessence\order\controller\AdminTvaShippingController.class
 com\naturessence\order\service\OrderService.class
+com\naturessence\order\service\CheckoutPricingService$Quote.class
 com\naturessence\order\config\NaturEssenceOrderBinder.class
 com\naturessence\order\service\ReturnPolicyService.class
 com\naturessence\order\config\SecurityConfig.class
@@ -10,11 +11,13 @@ com\naturessence\order\controller\ProfileOrderController.class
 com\naturessence\order\OrderServiceApplication.class
 com\naturessence\order\controller\PublicReturnPolicyController.class
 com\naturessence\order\service\DashboardService.class
+com\naturessence\order\service\CheckoutPricingService.class
 com\naturessence\order\service\StripeService.class
 com\naturessence\order\controller\StripeController.class
 com\naturessence\order\service\ReturnService.class
 com\naturessence\order\controller\AdminOrderController.class
 com\naturessence\order\controller\AdminPromotionController.class
+com\naturessence\order\service\CheckoutPricingService$Line.class
 com\naturessence\order\service\LoyaltyService.class
 com\naturessence\order\controller\AdminReturnController.class
 com\naturessence\order\controller\PublicCouponController.class

@@ -1,0 +1,353 @@
+@startuml dso_login
+!include style.iuml
+autonumber
+actor "Utilisateur" as U
+boundary "Login.jsx" as UI
+participant "API Gateway" as GW
+control "AuthController" as C
+control "AuthService" as SV
+participant "AuthenticationManager" as AM
+entity "UserRepository" as UR
+participant "JwtUtil" as J
+control "RefreshTokenService" as RT
+U -> UI : e-mail, mot de passe
+UI -> GW : POST /api/v1/auth/login
+GW -> C : route vers auth-service
+C -> SV : login(request)
+SV -> AM : authenticate(e-mail, mot de passe)
+AM -> UR : findByEmail(e-mail)
+UR --> AM : User
+AM -> AM : BCrypt.matches()
+alt identifiants invalides
+  AM --> SV : BadCredentialsException
+  SV --> C : 401 « Email ou mot de passe incorrect »
+else authentifié
+  SV -> SV : status == BLOCKED ?
+  alt bloqué
+    SV --> C : LockedException (401)
+  else actif
+    SV -> J : generateAccessToken(user)
+    J --> SV : jeton d'accès
+    SV -> RT : createRefreshToken(user)
+    RT --> SV : jeton de rafraîchissement
+    SV --> C : AuthResponse
+  end
+end
+C --> GW : réponse
+GW --> UI : réponse
+UI -> UI : stocker les jetons, rediriger
+@enduml
+
+@startuml dso_kyc
+!include style.iuml
+autonumber
+actor "Commerçant" as M
+boundary "NouvelleBoutique.jsx\n(CardStep, IdentityStep)" as UI
+participant "Stripe.js" as SJ
+control "StripeController\n(order-service)" as STC
+control "AuthController" as C
+control "AuthService" as SV
+control "MerchantVerificationService" as MV
+entity "ShopRepository" as SR
+entity "MerchantVerificationRepository" as VR
+actor "Administrateur" as A
+boundary "VerificationBoutique /\nSellioConsole" as AUI
+control "PlatformController" as PC
+M -> UI : informations, secteur, identité visuelle
+UI -> STC : POST /public/stripe/setup-intent
+STC --> UI : client secret
+UI -> SJ : confirmCardSetup(carte)
+SJ --> UI : pm_…, marque, 4 derniers chiffres, expiration
+M -> UI : pièce d'identité + selfie
+UI -> C : POST /auth/my-shop (boutique + dossier)
+C -> SV : createShop(e-mail, request)
+SV -> MV : requireComplete(dossier)
+alt dossier invalide
+  MV --> C : IllegalArgumentException (400)
+else dossier valide
+  SV -> SR : save(shop, status = PENDING)
+  SV -> MV : submit(userId, shopId, dossier)
+  MV -> VR : save(verification, PENDING)
+  C --> UI : boutique en attente
+end
+A -> AUI : ouvrir le dossier
+AUI -> PC : GET /admin/platform/verifications/{id}
+PC -> MV : detail(id)
+MV --> AUI : pièces, selfie, carte
+alt validation
+  AUI -> PC : POST …/{id}/approve
+  PC -> MV : approve(id, reviewer)
+  MV -> SR : shop.status = ACTIVE
+else refus
+  AUI -> PC : POST …/{id}/reject (motif)
+  PC -> MV : reject(id, motif, reviewer)
+  MV -> SR : shop.status = REJECTED
+end
+@enduml
+
+@startuml dso_produit
+!include style.iuml
+autonumber
+actor "Commerçant" as M
+boundary "AjouterProduit.jsx\n(OptionPickers)" as UI
+participant "useShopOptions" as OPT
+control "FileUploadController" as FU
+control "AdminProductController" as C
+control "ProductService" as SV
+entity "ProductRepository" as PR
+entity "ProductVariantRepository" as VR
+M -> UI : ouvrir le formulaire
+UI -> OPT : options (défaut + boutique)
+OPT --> UI : tailles, couleurs, tissus
+M -> UI : images
+UI -> FU : POST /admin/upload
+FU --> UI : URL
+M -> UI : informations, attributs, stock
+opt nouvelle valeur
+  UI -> OPT : ajouter (customOptions de la boutique)
+end
+UI -> C : POST /admin/products
+C -> SV : createProduct(request)
+SV -> SV : valider
+SV -> PR : save(product)
+SV -> VR : saveAll(variantes)
+SV --> C : ProductResponse
+C --> UI : 201 produit créé
+@enduml
+
+@startuml dso_theme
+!include style.iuml
+autonumber
+actor "Commerçant" as M
+boundary "ConfigurationBoutique.jsx\n(ThemeEditor)" as UI
+control "AuthController" as C
+control "AuthService" as SV
+entity "ShopRepository" as SR
+actor "Visiteur" as V
+boundary "Vitrine\n(StoreContext)" as ST
+control "PublicShopController" as PS
+M -> UI : gabarit, palette, réglages du thème
+UI -> C : PATCH /auth/my-shop
+C -> SV : updateShop(e-mail, request)
+SV -> SV : valider thème (#RRGGBB) et logo
+alt invalide
+  SV --> C : 400
+else valide
+  SV -> SR : save(shop)
+  C --> UI : boutique mise à jour
+end
+V -> ST : ouvrir /{slug}
+ST -> PS : GET /public/shops/{slug}
+PS --> ST : gabarit, couleurs, thème
+ST -> ST : layoutOf(gabarit)
+ST -> ST : --rgb-* et --t-* sur <html>
+ST --> V : vitrine personnalisée
+@enduml
+
+@startuml dso_commande
+!include style.iuml
+autonumber
+actor "Client" as CL
+boundary "CheckoutPage.jsx" as UI
+participant "Stripe.js" as SJ
+control "PublicCouponController" as CC
+control "StripeController" as STC
+participant "StripeService" as SS
+control "PublicCheckoutController" as C
+control "OrderService" as SV
+control "CouponService" as CS
+entity "OrderRepository" as OR
+entity "ProductRepository" as PR
+participant "EmailService" as ES
+CL -> UI : adresse, code promo
+UI -> CC : GET /public/coupons/validate
+CC --> UI : remise
+CL -> UI : payer par carte
+UI -> STC : POST /public/stripe/payment-intent
+STC -> SS : createPaymentIntent(total, réf.)
+SS --> UI : client secret
+UI -> SJ : confirmPayment(carte)
+SJ --> UI : succès
+UI -> C : POST /public/checkout/orders
+C -> SV : createOrder(request)
+SV -> SV : TVA, livraison, sous-total
+SV -> CS : appliquer le coupon et\nenregistrer l'utilisation
+SV -> OR : save(order)
+SV -> PR : décrémenter le stock
+SV -> ES : sendOrderConfirmation(order)
+SV --> C : OrderResponse
+C --> UI : commande créée
+UI -> UI : vider le panier, suivre PURCHASE
+@enduml
+
+@startuml dso_retour
+!include style.iuml
+autonumber
+actor "Client" as CL
+boundary "MesCommandes / MesRetours" as UI
+control "ProfileOrderController" as PC
+control "ReturnService" as RS
+entity "OrderRepository" as OR
+entity "ReturnRequestRepository" as RR
+actor "Commerçant" as M
+boundary "Retours.jsx / DetailRetour.jsx" as AUI
+control "AdminReturnController" as AC
+CL -> UI : articles, motif
+UI -> PC : POST /profile/returns
+PC -> RS : createReturn(e-mail, dto)
+RS -> OR : findById(commande)
+RS -> RS : livrée + délai de la politique ?
+alt hors délai
+  RS --> PC : 400
+else
+  RS -> RR : save(demande, en attente)
+  PC --> UI : demande créée
+end
+M -> AUI : consulter
+AUI -> AC : GET /admin/returns
+AC --> AUI : demandes
+M -> AUI : accepter / rembourser / refuser
+AUI -> AC : PATCH /admin/returns/{id}/status
+AC -> RS : updateStatus(id, statut, motif)
+RS -> RR : save
+@enduml
+
+@startuml dso_coupon
+!include style.iuml
+autonumber
+actor "Commerçant" as M
+boundary "Promotions.jsx" as UI
+control "AdminPromotionController" as C
+control "CouponService" as SV
+entity "CouponRepository" as CR
+M -> UI : paramètres du code
+UI -> C : POST /admin/promotions/coupons
+C -> SV : create(request)
+SV -> CR : existsByCode(code)
+alt existe
+  SV --> C : 400 « existe déjà »
+else
+  SV -> SV : computeStatut(dates)
+  SV -> CR : save(coupon)
+  C --> UI : 201
+end
+@enduml
+
+@startuml dso_fidelite
+!include style.iuml
+autonumber
+actor "Commerçant" as M
+boundary "DetailCommande.jsx" as UI
+control "AdminOrderController" as C
+control "OrderService" as OS
+control "LoyaltyService" as LS
+entity "LoyaltyConfigRepository" as LC
+entity "PointsTransactionRepository" as PT
+entity "SegmentRepository" as SR
+entity "UserRepository" as UR
+M -> UI : statut « livrée »
+UI -> C : PATCH /admin/orders/{id}/status
+C -> OS : updateStatus(id, LIVREE)
+OS -> LS : awardPointsForOrder(user, total, orderId)
+LS -> LC : configuration
+LS -> LS : points = arrondi(total × pts/DT × multiplicateur)
+LS -> UR : créditer le solde
+LS -> PT : save(mouvement)
+opt autoSegmentPromotion
+  LS -> SR : niveaux éligibles
+  LS -> UR : user.segment = meilleur niveau atteint
+end
+OS --> C : commande mise à jour
+@enduml
+
+@startuml dso_tryon
+!include style.iuml
+autonumber
+actor "Visiteur" as V
+boundary "TryOnModal.jsx" as UI
+participant "apiClient\ncreateTryOnToken()" as API
+control "PublicTryOnController" as C
+control "DecartTryOnService" as SV
+participant "API Decart\n/v1/client/tokens" as DT
+participant "SDK Decart\n(client.realtime)" as SDK
+participant "Modèle\nlucy-vton-latest" as MOD
+V -> UI : « Essayer virtuellement »
+UI -> API : createTryOnToken()
+API -> C : POST /public/tryon/token
+C -> SV : createClientToken()
+SV -> DT : POST (x-api-key, expiresIn 600)
+DT --> SV : apiKey éphémère, expiresAt
+SV --> API : jeton + sessionSeconds
+API --> UI : jeton
+UI -> UI : getUserMedia(1280×720)
+UI -> UI : fetchGarmentBlob() (768 px, JPEG)
+UI -> SDK : connect(stream, model)
+SDK -> MOD : session WebRTC
+UI -> SDK : set({prompt, image})
+MOD --> SDK : flux vidéo généré
+SDK --> UI : onRemoteStream
+UI -> UI : compte à rebours 45 s
+UI -> SDK : disconnect()
+@enduml
+
+@startuml dso_reco
+!include style.iuml
+autonumber
+actor "Visiteur" as V
+boundary "RecommendedProducts.jsx" as UI
+participant "tracker.js" as TR
+control "TrackingController" as TC
+participant "EventStore" as ES
+control "RecommendationController" as C
+control "RecommendationService" as SV
+database "PostgreSQL\n(user_events,\nproduct_recommendations)" as DB
+control "PublicProductController" as PP
+V -> TR : consulter des produits
+TR -> TC : POST /analytics/events (lot)
+TC -> ES : insert
+ES -> DB : INSERT user_events
+UI -> C : GET /analytics/recommendations/for-you
+C -> SV : forVisitor(shop, visiteur, client)
+SV -> DB : historique récent pondéré
+alt historique vide
+  SV -> DB : produits populaires
+else
+  SV -> DB : voisins SIMILAR
+  SV -> SV : somme pondérée + α·popularité,\nexclure panier/achats
+end
+SV --> UI : identifiants + stratégie
+UI -> PP : GET /public/products/by-ids
+PP --> UI : fiches produit
+UI --> V : section « Pour vous »
+@enduml
+
+@startuml dso_comportement
+!include style.iuml
+autonumber
+actor "Commerçant" as M
+boundary "Comportement.jsx" as UI
+control "BehaviorController" as BC
+participant "ShopAccess" as SA
+database "PostgreSQL" as DB
+boundary "Clients.jsx" as CUI
+control "ChurnController" as CC
+control "ChurnPredictionService" as CP
+participant "predict.py\n(modèle du secteur)" as PY
+M -> UI : ouvrir
+UI -> BC : GET /analytics/behavior/overview?shop=
+BC -> SA : vérifier shop.id == user.shopId
+alt refusé
+  SA --> UI : 403
+else
+  BC -> DB : entonnoir, segments, runs
+  BC --> UI : synthèse
+end
+M -> CUI : liste des clients
+CUI -> CC : POST /analytics/churn/batch-ids
+CC -> CP : predictAll(features)
+CP -> CP : modelFor(client) (general / clothes)
+CP -> PY : sous-processus
+PY --> CP : probabilités
+CP -> CP : riskLabel(score, modèle)
+CC --> CUI : HIGH / MEDIUM / LOW
+@enduml

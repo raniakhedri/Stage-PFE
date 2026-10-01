@@ -3,15 +3,22 @@ package com.naturessence.order.service;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
+import com.stripe.model.Refund;
 import com.stripe.model.SetupIntent;
 import com.stripe.param.PaymentIntentCreateParams;
+import com.stripe.param.RefundCreateParams;
 import com.stripe.param.SetupIntentCreateParams;
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 public class StripeService {
+
+    /** Stripe does not support the Tunisian dinar: test payments are made in euros (1 TND charged as 1 EUR). */
+    public static final String CURRENCY = "eur";
 
     @Value("${stripe.secret-key}")
     private String secretKey;
@@ -21,34 +28,53 @@ public class StripeService {
         Stripe.apiKey = secretKey;
     }
 
-    /**
-     * Creates a PaymentIntent for the given amount (in TND, converted to millimes for Stripe).
-     * Stripe uses the smallest currency unit — for TND (Tunisian Dinar), 1 TND = 1000 millimes.
-     * However, Stripe does not support TND natively. We charge in EUR as a proxy here.
-     * Adjust currency and conversion if your Stripe account supports TND.
-     *
-     * @param amountTnd the total amount in TND
-     * @param orderId   a reference to tag the PaymentIntent with metadata
-     * @return Stripe client secret to be sent to frontend
-     */
-    public String createPaymentIntent(double amountTnd, String orderId) throws StripeException {
-        // Stripe does not support TND — using EUR for demo. 1 TND ≈ 0.30 EUR
-        // In production, verify with your payment processor for TND support.
-        long amountInCents = Math.round(amountTnd * 100); // EUR cents
-
+    /** Creates a PaymentIntent for an amount computed by the server (see CheckoutPricingService). */
+    public PaymentIntent createPaymentIntent(long amountInCents, String shopSlug) throws StripeException {
         PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
                 .setAmount(amountInCents)
-                .setCurrency("eur")
-                .putMetadata("order_reference", orderId)
+                .setCurrency(CURRENCY)
+                .putMetadata("shop", shopSlug == null ? "" : shopSlug)
                 .setAutomaticPaymentMethods(
                         PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
                                 .setEnabled(true)
                                 .build()
                 )
                 .build();
+        return PaymentIntent.create(params);
+    }
 
-        PaymentIntent intent = PaymentIntent.create(params);
-        return intent.getClientSecret();
+    /**
+     * Checks with Stripe (never with the browser) that the payment went through for exactly the expected amount.
+     */
+    public void requireSucceeded(String paymentIntentId, long expectedAmountInCents) {
+        if (paymentIntentId == null || !paymentIntentId.startsWith("pi_")) {
+            throw new IllegalArgumentException("Paiement par carte introuvable. Veuillez réessayer.");
+        }
+        PaymentIntent intent;
+        try {
+            intent = PaymentIntent.retrieve(paymentIntentId);
+        } catch (StripeException e) {
+            throw new IllegalArgumentException("Impossible de vérifier le paiement auprès de Stripe.");
+        }
+        if (!"succeeded".equals(intent.getStatus())) {
+            throw new IllegalArgumentException("Le paiement n'a pas abouti (statut : " + intent.getStatus() + ").");
+        }
+        if (intent.getAmount() == null || intent.getAmount() != expectedAmountInCents
+                || !CURRENCY.equalsIgnoreCase(intent.getCurrency())) {
+            refundQuietly(paymentIntentId);
+            throw new IllegalArgumentException(
+                    "Le montant payé ne correspond plus au panier (prix ou stock modifié). Vous avez été remboursé ; merci de recommencer.");
+        }
+    }
+
+    /** Full refund, used when a paid order cannot be saved (e.g. the last item was just sold). */
+    public void refundQuietly(String paymentIntentId) {
+        try {
+            Refund.create(RefundCreateParams.builder().setPaymentIntent(paymentIntentId).build());
+            log.warn("[Stripe] Paiement {} remboursé", paymentIntentId);
+        } catch (StripeException e) {
+            log.error("[Stripe] Remboursement impossible pour {} : {}", paymentIntentId, e.getMessage());
+        }
     }
 
     /** SetupIntent used to verify and save a merchant's card without charging it. */

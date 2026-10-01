@@ -5,7 +5,9 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -27,14 +29,45 @@ public class JwtUtil {
      * role name, and database ID as claims.
      */
     public String generateAccessToken(User user) {
-        return Jwts.builder()
+        return generateAccessToken(user, null);
+    }
+
+    /**
+     * Same as {@link #generateAccessToken(User)}, plus the tenant: the shop slug (so every service can
+     * refuse {@code ?shop=} values that are not the caller's own shop) and, for team members whose role
+     * was created by the merchant, the list of modules that role grants.
+     */
+    public String generateAccessToken(User user, String shopSlug) {
+        var builder = Jwts.builder()
             .subject(user.getEmail())
             .claim("role", user.getRole().getName())
             .claim("userId", user.getId())
             .issuedAt(new Date())
-            .expiration(new Date(System.currentTimeMillis() + accessExpiration))
-            .signWith(getSecretKey())
-            .compact();
+            .expiration(new Date(System.currentTimeMillis() + accessExpiration));
+        if (shopSlug != null) builder.claim("shop", shopSlug);
+        if (user.getRole().getShopId() != null) {
+            List<String> granted = new ArrayList<>();
+            user.getRole().getPermissions().forEach(p -> {
+                if (p.isGranted()) granted.add(p.getModule().name());
+            });
+            builder.claim("perms", granted);
+        }
+        return builder.signWith(getSecretKey()).compact();
+    }
+
+    /** Shop slug of the caller, or null for platform accounts. */
+    public String extractShop(String token) {
+        return extractAllClaims(token).get("shop", String.class);
+    }
+
+    /** Modules granted to a team member; null for owners, platform admins and customers (no restriction). */
+    @SuppressWarnings("unchecked")
+    public List<String> extractPermissions(String token) {
+        Object raw = extractAllClaims(token).get("perms");
+        if (!(raw instanceof List<?> list)) return null;
+        List<String> out = new ArrayList<>();
+        list.forEach(v -> out.add(String.valueOf(v)));
+        return out;
     }
 
     /**

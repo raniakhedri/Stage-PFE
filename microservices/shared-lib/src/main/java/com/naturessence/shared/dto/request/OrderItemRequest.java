@@ -22,7 +22,7 @@ public class OrderItemRequest {
 
     private String image;
 
-    @NotNull
+    /** Ignored by the server: the price is read from the catalogue. Kept for older clients. */
     @Min(0)
     private Double unitPrice;
 

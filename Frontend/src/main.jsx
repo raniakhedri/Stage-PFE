@@ -8,7 +8,7 @@ import './index.css'
 
 const RESERVED = new Set([
   'login', 'inscription', 'produits', 'categories', 'checkout', 'confirmation',
-  'profile', 'commandes', 'retours', 'favoris',
+  'profile', 'commandes', 'retours', 'favoris', 'mot-de-passe-oublie', 'changer-mot-de-passe',
 ])
 
 const parts = window.location.pathname.split('/').filter(Boolean)

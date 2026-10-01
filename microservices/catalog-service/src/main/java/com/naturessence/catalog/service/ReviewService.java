@@ -23,6 +23,7 @@ public class ReviewService {
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
     private final ShopRepository shopRepository;
+    private final LoyaltyService loyaltyService;
 
     @Transactional
     public ReviewResponse createReview(Long userId, ReviewRequest req) {
@@ -96,7 +97,7 @@ public class ReviewService {
             .build();
 
         Review saved = reviewRepository.save(review);
-        // loyaltyService.awardPointsForReview(user) — skipped in catalog-service scope
+        // Loyalty points are granted when the merchant approves the review (see updateStatut).
         return mapToResponse(saved);
     }
 
@@ -132,8 +133,11 @@ public class ReviewService {
     @Transactional
     public ReviewResponse updateStatut(Long reviewId, String statut, String shopSlug) {
         Review review = findInShop(reviewId, shopSlug);
+        boolean approvedNow = "Approuvé".equals(statut) && !"Approuvé".equals(review.getStatut());
         review.setStatut(statut);
-        return mapToResponse(reviewRepository.save(review));
+        Review saved = reviewRepository.save(review);
+        if (approvedNow) loyaltyService.awardPointsForReview(saved.getUser(), saved.getId());
+        return mapToResponse(saved);
     }
 
     @Transactional

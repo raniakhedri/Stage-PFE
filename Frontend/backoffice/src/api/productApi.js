@@ -38,7 +38,7 @@ export function computeProductStock(productStock) {
 
 function currentShopSlug() {
   const first = window.location.pathname.split('/').filter(Boolean)[0]
-  const reserved = new Set(['login', 'inscription', 'auth-callback', 'nouvelle-boutique', 'sellio'])
+  const reserved = new Set(['login', 'inscription', 'auth-callback', 'nouvelle-boutique', 'sellio', 'verification', 'mot-de-passe-oublie', 'changer-mot-de-passe'])
   if (!first || reserved.has(first)) return ''
   return first
 }

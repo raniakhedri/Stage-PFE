@@ -44,4 +44,10 @@ public class UserResponse {
     private String businessType;
     private String templateKey;
     private String shopStatus;
+    private Long roleId;
+    /** True for team members whose role was created by the merchant (permissions limited). */
+    private Boolean staff;
+    /** True for the account that created the shop. */
+    private Boolean shopOwner;
+    private Boolean mustChangePassword;
 }

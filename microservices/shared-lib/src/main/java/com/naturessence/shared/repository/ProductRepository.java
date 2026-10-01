@@ -2,6 +2,7 @@ package com.naturessence.shared.repository;
 
 import com.naturessence.shared.entity.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -11,6 +12,11 @@ import java.util.Optional;
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
     Optional<Product> findBySlug(String slug);
+
+    /** Takes stock only if enough is left; returns 0 when another order got there first. */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE Product p SET p.stock = p.stock - :qty WHERE p.id = :id AND p.stock >= :qty")
+    int decrementStockIfAvailable(@Param("id") Long id, @Param("qty") int qty);
 
     Optional<Product> findByShopIdAndSlug(Long shopId, String slug);
 

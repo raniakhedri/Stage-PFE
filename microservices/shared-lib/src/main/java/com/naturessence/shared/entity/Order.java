@@ -90,6 +90,10 @@ public class Order {
     @Column(nullable = false)
     private PaymentMethod paymentMethod;
 
+    /** Stripe PaymentIntent that paid this order (card payments). One order per payment. */
+    @Column(unique = true)
+    private String paymentIntentId;
+
     // ── Status ──
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

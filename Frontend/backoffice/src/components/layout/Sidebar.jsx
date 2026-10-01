@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAdminNotifications } from '../../hooks/useAdminNotifications'
 import { STOREFRONT_URL } from '../../lib/storefront'
-import { currentShopSlug, readUser } from '../../lib/sellio'
+import { canAccess, currentShopSlug } from '../../lib/sellio'
 
 const navItems = [
   { path: '/dashboard',      label: 'Tableau de bord',  icon: 'dashboard',        moduleKey: 'TABLEAU_DE_BORD' },
@@ -20,7 +20,7 @@ const marketingItems = [
   { path: '/fidelite',        label: 'Fidélité',        icon: 'stars',        moduleKey: 'PROMOTIONS' },
   { path: '/email-marketing', label: 'Email Marketing', icon: 'mail',         moduleKey: 'EMAIL_MARKETING' },
   { path: '/avis',            label: 'Avis',            icon: 'reviews',      moduleKey: 'AVIS' },
-  { path: '/comportement',    label: 'Comportement & IA', icon: 'psychology', moduleKey: 'TABLEAU_DE_BORD' },
+  { path: '/comportement',    label: 'Comportement & IA', icon: 'psychology', moduleKey: 'ANALYSES' },
 ]
 
 const parametresItems = [
@@ -30,18 +30,32 @@ const parametresItems = [
   { path: '/compte',    label: 'Compte & Hébergement',icon: 'settings',            moduleKey: 'COMPTE_HEBERGEMENT' },
 ]
 
-function canSee(permissions, roleName, moduleKey) {
-  if (roleName === 'SUPER_ADMIN') return true
-  if (!permissions) return false
-  return permissions[moduleKey] === true
+function canSee(user, moduleKey) {
+  return canAccess(user, moduleKey)
 }
 
-function Sidebar() {
-  const navigate = useNavigate()
+/** Shop brand: its logo, or its initial on the brand colour. */
+function ShopBrand({ shop, fallbackName, align }) {
+  const name = shop?.name || fallbackName || 'Ma boutique'
+  return (
+    <div className={`flex items-center gap-3 min-w-0 ${align === 'center' ? 'justify-center w-full' : ''}`}>
+      {shop?.logo ? (
+        <img src={shop.logo} alt={name} className="w-9 h-9 rounded-lg object-contain bg-white border border-slate-100 shrink-0" />
+      ) : (
+        <div
+          className="w-9 h-9 rounded-lg flex items-center justify-center shadow-sm shrink-0 text-white font-bold"
+          style={{ backgroundColor: shop?.primaryColor || '#111827' }}
+        >
+          {name.trim().charAt(0).toUpperCase()}
+        </div>
+      )}
+      <span className="text-lg font-bold tracking-tight text-slate-800 truncate">{name}</span>
+    </div>
+  )
+}
 
-  const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
-  const userPermissions = storedUser.permissions || {}
-  const userRole = storedUser.roleName || ''
+function Sidebar({ user = {}, shop = null }) {
+  const navigate = useNavigate()
 
   /* ── read sidebar layout toggles from CSS custom properties ── */
   const readToggle = useCallback((prop) => {
@@ -51,32 +65,17 @@ function Sidebar() {
 
   const [showIcons, setShowIcons] = useState(() => readToggle('--sidebar-show-icons'))
   const [showLogo, setShowLogo]   = useState(() => readToggle('--sidebar-show-logo'))
-  const [logoMain, setLogoMain]   = useState(() => document.documentElement.getAttribute('data-logo-main') || '')
-  const [logoLight, setLogoLight] = useState(() => document.documentElement.getAttribute('data-logo-light') || '')
-  const [isDark, setIsDark]       = useState(() => document.documentElement.classList.contains('dark-mode'))
-  const [logoScale, setLogoScale] = useState(() => {
-    const v = getComputedStyle(document.documentElement).getPropertyValue('--logo-scale').trim()
-    return v ? parseInt(v, 10) : 100
-  })
   const [logoAlign, setLogoAlign] = useState(() => {
     return getComputedStyle(document.documentElement).getPropertyValue('--logo-align').trim() || 'left'
   })
-
-  // Pick the right logo: use light variant in dark mode if available, else main
-  const logoSrc = (isDark && logoLight) ? logoLight : logoMain
 
   useEffect(() => {
     const observer = new MutationObserver(() => {
       setShowIcons(readToggle('--sidebar-show-icons'))
       setShowLogo(readToggle('--sidebar-show-logo'))
-      setLogoMain(document.documentElement.getAttribute('data-logo-main') || '')
-      setLogoLight(document.documentElement.getAttribute('data-logo-light') || '')
-      setIsDark(document.documentElement.classList.contains('dark-mode'))
-      const v = getComputedStyle(document.documentElement).getPropertyValue('--logo-scale').trim()
-      setLogoScale(v ? parseInt(v, 10) : 100)
       setLogoAlign(getComputedStyle(document.documentElement).getPropertyValue('--logo-align').trim() || 'left')
     })
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['style', 'class', 'data-logo-main', 'data-logo-light'] })
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['style', 'class'] })
     return () => observer.disconnect()
   }, [readToggle])
 
@@ -133,31 +132,13 @@ function Sidebar() {
       {/* Logo */}
       {showLogo && (
       <div className={`px-4 py-4 flex-shrink-0 flex items-center border-b border-slate-200 ${logoAlign === 'center' ? 'justify-center' : ''}`}>
-        {logoSrc ? (
-          <img
-            src={logoSrc}
-            alt="Logo"
-            className="w-auto object-contain transition-all duration-200"
-            style={{ height: `${36 * logoScale / 100}px`, maxWidth: '200px' }}
-          />
-        ) : (
-          <>
-            <div className="w-9 h-9 bg-sidebar rounded-custom flex items-center justify-center shadow-sm flex-shrink-0">
-              <span className="material-symbols-outlined text-white text-[18px]">shield</span>
-            </div>
-            <span className="ml-3 text-lg font-bold tracking-tight text-slate-800">
-              {(() => {
-                try { return JSON.parse(localStorage.getItem('user') || '{}').shopName || 'Sellio' } catch { return 'Sellio' }
-              })()}
-            </span>
-          </>
-        )}
+        <ShopBrand shop={shop} fallbackName={user.shopName} align={logoAlign} />
       </div>
       )}
 
       {/* Navigation */}
       <nav className="mt-4 px-3 flex-1 space-y-1 overflow-y-auto">
-        {navItems.filter(item => canSee(userPermissions, userRole, item.moduleKey)).map((item) => (
+        {navItems.filter(item => canSee(user, item.moduleKey)).map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
@@ -175,12 +156,12 @@ function Sidebar() {
         ))}
 
         {/* Marketing Section — afficher seulement si au moins 1 item visible */}
-        {marketingItems.some(item => canSee(userPermissions, userRole, item.moduleKey)) && (
+        {marketingItems.some(item => canSee(user, item.moduleKey)) && (
           <div className="pt-4 pb-2 px-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
             Marketing
           </div>
         )}
-        {marketingItems.filter(item => canSee(userPermissions, userRole, item.moduleKey)).map((item) => (
+        {marketingItems.filter(item => canSee(user, item.moduleKey)).map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
@@ -198,12 +179,12 @@ function Sidebar() {
         ))}
 
         {/* Paramètres Section — afficher seulement si au moins 1 item visible */}
-        {parametresItems.some(item => canSee(userPermissions, userRole, item.moduleKey)) && (
+        {parametresItems.some(item => canSee(user, item.moduleKey)) && (
           <div className="pt-4 pb-2 px-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
             Paramètres
           </div>
         )}
-        {parametresItems.filter(item => canSee(userPermissions, userRole, item.moduleKey)).map((item) => (
+        {parametresItems.filter(item => canSee(user, item.moduleKey)).map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
@@ -295,13 +276,23 @@ function Sidebar() {
         </div>
 
         <a
-          href={`${STOREFRONT_URL}/${readUser().shopSlug || currentShopSlug()}`}
+          href={`${STOREFRONT_URL}/${user.shopSlug || currentShopSlug()}`}
           target="_blank"
           rel="noopener noreferrer"
           className="w-full flex items-center gap-3 px-4 py-2 text-slate-600 hover:bg-slate-50 hover:text-sidebar rounded-lg transition-all"
         >
           {showIcons && <span className="material-symbols-outlined text-[20px]">language</span>}
           <span className="text-sm font-medium">Voir le site</span>
+        </a>
+        <div className="px-4 pt-2 pb-1 text-[11px] text-slate-400 truncate" title={user.email}>
+          {user.firstName} {user.lastName} · {user.roleLabel || user.roleName}
+        </div>
+        <a
+          href="/changer-mot-de-passe"
+          className="w-full flex items-center gap-3 px-4 py-2 text-slate-600 hover:bg-slate-50 hover:text-sidebar rounded-lg transition-all"
+        >
+          {showIcons && <span className="material-symbols-outlined text-[20px]">key</span>}
+          <span className="text-sm font-medium">Mot de passe</span>
         </a>
         <button
           onClick={handleLogout}

@@ -14,4 +14,6 @@ public class DashboardStatsResponse {
     private long fideleClients;
     private long totalAdmins;
     private long rolesCount;
+    /** Active owner + team members of the shop. */
+    private long activeTeamMembers;
 }

@@ -54,11 +54,8 @@ export default function AjouterCompte() {
     dateNaissance: '', genre: '',
     adresse: '', ville: '', codePostal: '', pays: 'France',
     segment: '',
-    motDePasse: '', confirmerMotDePasse: '',
     notes: '',
-    sendInvite: true,
   })
-  const [showPass, setShowPass] = useState(false)
   const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
 
@@ -72,10 +69,15 @@ export default function AjouterCompte() {
         ])
         const rolesData = rolesRes.data.data || rolesRes.data
         const segmentsData = segmentsRes.data.data || segmentsRes.data
-        setRoles(Array.isArray(rolesData) ? rolesData : [])
+        // Merchants see their shop's roles only: add the customer role in front.
+        const list = Array.isArray(rolesData) ? rolesData : []
+        const withClient = list.some(r => r.name === 'CLIENT')
+          ? list
+          : [{ name: 'CLIENT', label: 'Client', description: 'Achète sur votre boutique (espace client).' }, ...list]
+        setRoles(withClient)
         setSegments(Array.isArray(segmentsData) ? segmentsData : [])
         // Default selections
-        const rolesArr = Array.isArray(rolesData) ? rolesData : []
+        const rolesArr = withClient
         const segArr = Array.isArray(segmentsData) ? segmentsData : []
         const clientRole = rolesArr.find(r => r.name === 'CLIENT')
         if (clientRole) setSelectedRole(clientRole.name)
@@ -103,11 +105,6 @@ export default function AjouterCompte() {
     if (!form.nom.trim()) e.nom = 'Obligatoire'
     if (!form.email.trim()) e.email = 'Obligatoire'
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = 'Email invalide'
-    if (!form.sendInvite) {
-      if (!form.motDePasse) e.motDePasse = 'Obligatoire'
-      else if (form.motDePasse.length < 8) e.motDePasse = 'Minimum 8 caractères'
-      if (form.motDePasse !== form.confirmerMotDePasse) e.confirmerMotDePasse = 'Les mots de passe ne correspondent pas'
-    }
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -132,11 +129,9 @@ export default function AjouterCompte() {
         role: selectedRole,
         segment: form.segment || null,
         note: form.notes.trim() || null,
-        sendInvite: form.sendInvite,
-        password: form.sendInvite ? null : form.motDePasse,
       }
       await apiClient.post('/admin/users', payload)
-      toast.success(`Compte "${form.prenom} ${form.nom}" créé avec succès !`)
+      toast.success(`Compte créé : ${form.email.trim()} a reçu son mot de passe temporaire par e-mail.`)
       navigate('/clients')
     } catch (err) {
       const msg = err.response?.data?.message || err.response?.data?.error || 'Erreur lors de la création du compte'
@@ -253,34 +248,16 @@ export default function AjouterCompte() {
               <h3 className="text-sm font-bold text-slate-800">Accès au compte</h3>
             </div>
             <div className="p-6 space-y-5">
-              <label className="flex items-center justify-between cursor-pointer bg-slate-50 rounded-lg p-4 border border-slate-200">
+              <div className="flex items-start gap-3 bg-slate-50 rounded-lg p-4 border border-slate-200">
+                <span className="material-symbols-outlined text-brand">mark_email_read</span>
                 <div>
-                  <p className="text-sm font-semibold text-slate-800">Envoyer une invitation par email</p>
-                  <p className="text-xs text-slate-500 mt-0.5">Le client reçoit un lien pour définir son mot de passe</p>
+                  <p className="text-sm font-semibold text-slate-800">Mot de passe temporaire envoyé par e-mail</p>
+                  <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                    La personne reçoit ses identifiants à l'adresse ci-dessus. Ce mot de passe ne fonctionne qu'une fois :
+                    à la première connexion, elle doit en choisir un nouveau.
+                  </p>
                 </div>
-                <button type="button" onClick={() => setForm(p => ({ ...p, sendInvite: !p.sendInvite }))}
-                  className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${form.sendInvite ? 'bg-brand' : 'bg-slate-300'}`}>
-                  <span className={`absolute top-[2px] left-[2px] w-5 h-5 bg-white rounded-full shadow transition-transform ${form.sendInvite ? 'translate-x-5' : ''}`} />
-                </button>
-              </label>
-
-              {!form.sendInvite && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <Field label="Mot de passe" required error={errors.motDePasse}>
-                    <div className="relative">
-                      <input type={showPass ? 'text' : 'password'} value={form.motDePasse} onChange={setE('motDePasse')} placeholder="Minimum 8 caractères"
-                        className={`w-full px-3.5 py-2.5 pr-10 rounded-lg border text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand focus:border-brand outline-none transition-all ${errors.motDePasse ? 'border-red-400' : 'border-slate-200'}`} />
-                      <button type="button" onClick={() => setShowPass(p => !p)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700">
-                        <span className="material-symbols-outlined text-[18px]">{showPass ? 'visibility_off' : 'visibility'}</span>
-                      </button>
-                    </div>
-                  </Field>
-                  <Field label="Confirmer le mot de passe" required error={errors.confirmerMotDePasse}>
-                    <input type={showPass ? 'text' : 'password'} value={form.confirmerMotDePasse} onChange={setE('confirmerMotDePasse')} placeholder="Répéter le mot de passe"
-                      className={`w-full px-3.5 py-2.5 rounded-lg border text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand focus:border-brand outline-none transition-all ${errors.confirmerMotDePasse ? 'border-red-400' : 'border-slate-200'}`} />
-                  </Field>
-                </div>
-              )}
+              </div>
             </div>
           </div>
         </div>
@@ -382,8 +359,8 @@ export default function AjouterCompte() {
                 <span className="font-semibold text-slate-800">{selectedSegObj?.label || '—'}</span>
               </div>
               <div className="flex justify-between text-xs">
-                <span className="text-slate-500">Invitation email</span>
-                <span className={`font-semibold ${form.sendInvite ? 'text-brand' : 'text-slate-600'}`}>{form.sendInvite ? 'Oui' : 'Non'}</span>
+                <span className="text-slate-500">Identifiants</span>
+                <span className="font-semibold text-brand">Envoyés par e-mail</span>
               </div>
             </div>
           </div>

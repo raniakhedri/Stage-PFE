@@ -72,6 +72,10 @@ public class User {
     @Builder.Default
     private Integer loyaltyPoints = 0;
 
+    /** Set when an account is created from the backoffice: the emailed password works once, then must be replaced. */
+    @Builder.Default
+    private Boolean mustChangePassword = false;
+
     /** Shop this account belongs to. One shop per merchant. Customers belong to one shop. */
     @Column(name = "shop_id")
     private Long shopId;

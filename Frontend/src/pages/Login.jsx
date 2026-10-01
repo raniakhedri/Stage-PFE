@@ -30,9 +30,8 @@ export default function Login() {
       }
       // Admins always use localStorage (persistent) so the backoffice auth-callback works;
       // regular users respect the "Se souvenir de moi" choice.
-      const role = data.user?.roleName;
-      const isAdmin = role === 'SUPER_ADMIN' || role === 'ADMIN';
-      if (isAdmin) {
+      // Only customers sign in here: merchants and their team use Sellio.
+      if (data.user?.roleName !== 'CLIENT') {
         setError('Les marchands se connectent sur Sellio.');
         setLoading(false);
         return;
@@ -44,7 +43,8 @@ export default function Login() {
       }
       setTokens(data.accessToken, data.refreshToken, data.user, rememberMe);
       scheduleAutoLogout();
-      window.location.replace('/');
+      // Accounts created by the shop come with a one-time password that must be replaced first.
+      window.location.replace(`/${shopSlug}/${data.user?.mustChangePassword ? 'changer-mot-de-passe' : ''}`);
     } catch (err) {
       setError(err.message || 'E-mail ou mot de passe incorrect.');
       setLoading(false);
@@ -193,9 +193,9 @@ export default function Login() {
                   />
                   Se souvenir de moi
                 </label>
-                <a href="#" className="font-medium hover:underline" style={{ color: '#2D4A3E' }}>
+                <Link to="/mot-de-passe-oublie" className="font-medium hover:underline" style={{ color: 'rgb(var(--rgb-primary))' }}>
                   Mot de passe oublié ?
-                </a>
+                </Link>
               </div>
 
               <button

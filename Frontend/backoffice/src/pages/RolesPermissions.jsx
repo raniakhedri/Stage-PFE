@@ -1,11 +1,12 @@
-import { useState, useEffect, useCallback } from 'react'
+import { Fragment, useCallback, useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
 import apiClient from '../api/apiClient'
 import PageHeader from '../components/ui/PageHeader'
 import KpiCard from '../components/ui/KpiCard'
 import Spinner from '../components/ui/Spinner'
+import { readUser } from '../lib/sellio'
 
-// ── Permission module labels (French) — matches sidebar pages ──────────────
+// ── Pages a role can open (same keys as the server) ────────────────────────────
 const MODULE_LABELS = {
   TABLEAU_DE_BORD:    'Tableau de bord',
   PRODUITS:           'Produits',
@@ -16,581 +17,553 @@ const MODULE_LABELS = {
   CATEGORIES:         'Catégories',
   BANNIERES:          'Bannières',
   TVA_LIVRAISON:      'TVA & Livraison',
-  PROMOTIONS:         'Promotions',
+  PROMOTIONS:         'Promotions & Fidélité',
   EMAIL_MARKETING:    'Email Marketing',
   AVIS:               'Avis',
-  APPARENCE:          'Apparence',
-  ROLES_PERMISSIONS:  'Rôles & Permissions',
+  ANALYSES:           'Comportement & IA',
+  APPARENCE:          'Apparence & boutique',
+  ROLES_PERMISSIONS:  'Rôles & équipe',
   COMPTE_HEBERGEMENT: 'Compte & Hébergement',
 }
 
-// ── Section grouping for the matrix ────────────────────────────────────────────
 const MODULE_SECTIONS = [
   { title: 'Navigation principale', icon: 'menu', keys: ['TABLEAU_DE_BORD', 'PRODUITS', 'COMMANDES', 'RETOURS', 'CLIENTS', 'COLLECTIONS', 'CATEGORIES', 'BANNIERES', 'TVA_LIVRAISON'] },
-  { title: 'Marketing',             icon: 'campaign', keys: ['PROMOTIONS', 'EMAIL_MARKETING', 'AVIS'] },
-  { title: 'Paramètres',            icon: 'settings', keys: ['APPARENCE', 'ROLES_PERMISSIONS', 'COMPTE_HEBERGEMENT'] },
+  { title: 'Marketing', icon: 'campaign', keys: ['PROMOTIONS', 'EMAIL_MARKETING', 'AVIS', 'ANALYSES'] },
+  { title: 'Paramètres', icon: 'settings', keys: ['APPARENCE', 'ROLES_PERMISSIONS', 'COMPTE_HEBERGEMENT'] },
 ]
+const MODULE_KEYS = Object.keys(MODULE_LABELS)
 
-// ── Role card styling ──────────────────────────────────────────────────────────
-const ROLE_ICONS = {
-  SUPER_ADMIN: { icon: 'admin_panel_settings', iconBg: 'bg-badge/10 text-badge', border: 'border-2 border-badge/20 hover:border-badge' },
-  ADMIN:       { icon: 'manage_accounts',      iconBg: 'bg-slate-100 text-slate-500', border: 'border border-slate-200 hover:shadow-md' },
-  CLIENT:      { icon: 'shopping_cart',         iconBg: 'bg-blue-50 text-blue-500',   border: 'border border-slate-200 hover:shadow-md' },
-}
-const DEFAULT_ICON = { icon: 'shield_person', iconBg: 'bg-slate-100 text-slate-500', border: 'border border-slate-200 hover:shadow-md' }
-
-const roleBadgeClass = (name) => {
-  if (name === 'SUPER_ADMIN') return 'bg-badge/10 text-badge'
-  if (name === 'ADMIN') return 'bg-slate-100 text-slate-600'
-  return 'bg-blue-50 text-blue-600'
+const STATUS = {
+  ACTIVE:   { cls: 'bg-emerald-50 text-emerald-700', dot: 'bg-emerald-500', label: 'Actif' },
+  INACTIVE: { cls: 'bg-slate-100 text-slate-500', dot: 'bg-slate-400', label: 'Désactivé' },
+  BLOCKED:  { cls: 'bg-red-50 text-red-600', dot: 'bg-red-500', label: 'Bloqué' },
 }
 
-const statusCfg = {
-  ACTIVE:    { cls: 'bg-badge/10 text-badge', dot: 'bg-badge', label: 'Actif'     },
-  SUSPENDED: { cls: 'bg-amber-50 text-amber-600',     dot: 'bg-amber-500',   label: 'Suspendu'  },
-  BANNED:    { cls: 'bg-red-50 text-red-600',          dot: 'bg-red-500',     label: 'Banni'     },
-}
-const defaultStatus = { cls: 'bg-slate-100 text-slate-500', dot: 'bg-slate-400', label: 'Inconnu' }
+const inputCls = 'w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:ring-1 focus:ring-brand focus:border-brand outline-none'
+const emptyPerms = () => Object.fromEntries(MODULE_KEYS.map((k) => [k, false]))
+const errorOf = (err, fallback) => err.response?.data?.message || err.response?.data?.error || fallback
 
-// ── Main Component ─────────────────────────────────────────────────────────────
+function Modal({ title, onClose, children, footer, onSubmit, wide }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+      <form onSubmit={onSubmit} className={`bg-white rounded-2xl shadow-2xl w-full ${wide ? 'max-w-lg' : 'max-w-md'} mx-4 max-h-[90vh] overflow-y-auto`}>
+        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+          <h3 className="font-bold text-slate-800 text-base">{title}</h3>
+          <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-600">
+            <span className="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div className="px-6 py-5 space-y-4">{children}</div>
+        <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-3">{footer}</div>
+      </form>
+    </div>
+  )
+}
+
 export default function RolesPermissions() {
-  // Data state
+  const me = readUser()
+  const platform = me.roleName === 'SUPER_ADMIN'
+
   const [roles, setRoles] = useState([])
-  const [users, setUsers] = useState([])
+  const [team, setTeam] = useState([])
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  // Permissions matrix state
-  const [matrix, setMatrix] = useState({})   // { roleId: { MODULE_KEY: bool } }
+  const [matrix, setMatrix] = useState({})
   const [savingMatrix, setSavingMatrix] = useState(false)
 
-  // Users search
-  const [search, setSearch] = useState('')
-
-  // Create / Edit role modal
-  const [showModal, setShowModal] = useState(false)
-  const [editingRole, setEditingRole] = useState(null) // null = create, object = edit
-  const [roleForm, setRoleForm] = useState({ name: '', label: '', description: '', permissions: {} })
+  const [roleModal, setRoleModal] = useState(null) // null | { id?, label, description, name?, permissions }
   const [savingRole, setSavingRole] = useState(false)
-
-  // Delete confirmation
   const [deletingRole, setDeletingRole] = useState(null)
 
-  // ── Fetch all data ─────────────────────────────────────────────────────────
+  const [inviteModal, setInviteModal] = useState(null) // null | { firstName, lastName, email, phone, roleId }
+  const [inviting, setInviting] = useState(false)
+  const [removing, setRemoving] = useState(null)
+  const [search, setSearch] = useState('')
+
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const [rolesRes, usersRes, statsRes] = await Promise.all([
+      const [rolesRes, statsRes, teamRes] = await Promise.all([
         apiClient.get('/admin/roles'),
-        apiClient.get('/admin/users', { params: { size: 100 } }),
         apiClient.get('/admin/users/stats'),
+        platform ? Promise.resolve({ data: [] }) : apiClient.get('/admin/users/team'),
       ])
-
-      const rolesData = rolesRes.data.data || rolesRes.data
+      const rolesData = (rolesRes.data.data || rolesRes.data || []).filter((r) => r.name !== 'CLIENT')
       setRoles(rolesData)
-
-      // Build matrix from roles
-      const m = {}
-      rolesData.forEach((r) => { m[r.id] = { ...r.permissions } })
-      setMatrix(m)
-
-      const usersData = usersRes.data.content || usersRes.data
-      setUsers(Array.isArray(usersData) ? usersData : [])
-
+      setMatrix(Object.fromEntries(rolesData.map((r) => [r.id, { ...r.permissions }])))
       setStats(statsRes.data)
+      setTeam(Array.isArray(teamRes.data) ? teamRes.data : [])
     } catch (err) {
-      toast.error('Erreur lors du chargement des données')
-      console.error(err)
+      toast.error(errorOf(err, 'Erreur lors du chargement des données'))
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [platform])
 
   useEffect(() => { fetchData() }, [fetchData])
 
-  // ── Matrix toggle + save ───────────────────────────────────────────────────
-  const togglePerm = (roleId, moduleKey) => {
-    const role = roles.find((r) => r.id === roleId)
-    if (role?.name === 'SUPER_ADMIN') return // Super Admin always full
-    setMatrix((prev) => ({
-      ...prev,
-      [roleId]: { ...prev[roleId], [moduleKey]: !prev[roleId]?.[moduleKey] },
-    }))
+  // ── Matrix ────────────────────────────────────────────────────────────────
+  const editable = (role) => role.name !== 'SUPER_ADMIN'
+  const togglePerm = (role, key) => {
+    if (!editable(role)) return
+    setMatrix((prev) => ({ ...prev, [role.id]: { ...prev[role.id], [key]: !prev[role.id]?.[key] } }))
   }
-
-  const handleSaveMatrix = async () => {
+  const saveMatrix = async () => {
     setSavingMatrix(true)
     try {
-      const promises = roles
-        .filter((r) => r.name !== 'SUPER_ADMIN')
-        .map((r) =>
-          apiClient.put(`/admin/roles/${r.id}/permissions`, {
-            permissions: matrix[r.id],
-          })
-        )
-      await Promise.all(promises)
-      toast.success('Permissions sauvegardées !')
+      await Promise.all(roles.filter(editable).map((r) =>
+        apiClient.put(`/admin/roles/${r.id}/permissions`, { permissions: matrix[r.id] })))
+      toast.success('Permissions enregistrées. Elles s’appliquent à la prochaine connexion des membres.')
       fetchData()
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Erreur lors de la sauvegarde')
+      toast.error(errorOf(err, 'Erreur lors de la sauvegarde'))
     } finally {
       setSavingMatrix(false)
     }
   }
 
-  // ── Create / Edit role ─────────────────────────────────────────────────────
-  const openCreateModal = () => {
-    const perms = {}
-    Object.keys(MODULE_LABELS).forEach((k) => { perms[k] = false })
-    setEditingRole(null)
-    setRoleForm({ name: '', label: '', description: '', permissions: perms })
-    setShowModal(true)
-  }
-
-  const openEditModal = (role) => {
-    setEditingRole(role)
-    setRoleForm({
-      name: role.name,
-      label: role.label || '',
-      description: role.description || '',
-      permissions: { ...role.permissions },
-    })
-    setShowModal(true)
-  }
-
-  const handleSaveRole = async (e) => {
+  // ── Roles ─────────────────────────────────────────────────────────────────
+  const saveRole = async (e) => {
     e.preventDefault()
     setSavingRole(true)
+    const payload = {
+      name: platform ? roleModal.name : undefined,
+      label: roleModal.label,
+      description: roleModal.description,
+      permissions: roleModal.permissions,
+    }
     try {
-      if (editingRole) {
-        await apiClient.put(`/admin/roles/${editingRole.id}`, roleForm)
-        toast.success('Rôle modifié avec succès')
-      } else {
-        await apiClient.post('/admin/roles', roleForm)
-        toast.success('Rôle créé avec succès')
-      }
-      setShowModal(false)
+      if (roleModal.id) await apiClient.put(`/admin/roles/${roleModal.id}`, payload)
+      else await apiClient.post('/admin/roles', payload)
+      toast.success(roleModal.id ? 'Rôle modifié' : 'Rôle créé')
+      setRoleModal(null)
       fetchData()
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Erreur lors de la sauvegarde du rôle')
+      toast.error(errorOf(err, 'Erreur lors de la sauvegarde du rôle'))
     } finally {
       setSavingRole(false)
     }
   }
 
-  // ── Delete role ────────────────────────────────────────────────────────────
-  const handleDeleteRole = async () => {
-    if (!deletingRole) return
+  const deleteRole = async () => {
     try {
       await apiClient.delete(`/admin/roles/${deletingRole.id}`)
-      toast.success(`Rôle "${deletingRole.label}" supprimé`)
+      toast.success(`Rôle « ${deletingRole.label} » supprimé`)
       setDeletingRole(null)
       fetchData()
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Erreur lors de la suppression')
+      toast.error(errorOf(err, 'Erreur lors de la suppression'))
     }
   }
 
-  // ── Filtered users ─────────────────────────────────────────────────────────
-  const filteredUsers = users.filter(
-    (u) =>
-      `${u.firstName} ${u.lastName}`.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase())
-  )
+  // ── Team ──────────────────────────────────────────────────────────────────
+  const openInvite = () => {
+    if (roles.length === 0) {
+      toast.info('Créez d’abord un rôle : il définit les pages que le membre pourra ouvrir.')
+      setRoleModal({ label: '', description: '', permissions: emptyPerms() })
+      return
+    }
+    setInviteModal({ firstName: '', lastName: '', email: '', phone: '', roleId: roles[0].id })
+  }
 
-  // ── Loading ────────────────────────────────────────────────────────────────
+  const invite = async (e) => {
+    e.preventDefault()
+    setInviting(true)
+    try {
+      await apiClient.post('/admin/users/team', inviteModal)
+      toast.success(`${inviteModal.email} a reçu son mot de passe temporaire par e-mail.`)
+      setInviteModal(null)
+      fetchData()
+    } catch (err) {
+      toast.error(errorOf(err, 'Invitation impossible'))
+    } finally {
+      setInviting(false)
+    }
+  }
+
+  const changeRole = async (member, roleId) => {
+    try {
+      await apiClient.patch(`/admin/users/team/${member.id}/role`, { roleId: Number(roleId) })
+      toast.success(`Rôle de ${member.firstName} mis à jour`)
+      fetchData()
+    } catch (err) {
+      toast.error(errorOf(err, 'Modification impossible'))
+    }
+  }
+
+  const toggleStatus = async (member) => {
+    const status = member.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'
+    try {
+      await apiClient.patch(`/admin/users/${member.id}/status`, { status })
+      toast.success(status === 'ACTIVE' ? 'Accès réactivé' : 'Accès désactivé')
+      fetchData()
+    } catch (err) {
+      toast.error(errorOf(err, 'Modification impossible'))
+    }
+  }
+
+  const resendInvite = async (member) => {
+    try {
+      await apiClient.post(`/admin/users/team/${member.id}/resend-invite`)
+      toast.success(`Nouveau mot de passe temporaire envoyé à ${member.email}`)
+    } catch (err) {
+      toast.error(errorOf(err, 'Envoi impossible'))
+    }
+  }
+
+  const removeMember = async () => {
+    try {
+      await apiClient.delete(`/admin/users/team/${removing.id}`)
+      toast.success(`${removing.firstName} ne fait plus partie de l’équipe`)
+      setRemoving(null)
+      fetchData()
+    } catch (err) {
+      toast.error(errorOf(err, 'Suppression impossible'))
+    }
+  }
+
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <Spinner size="lg" />
-      </div>
-    )
+    return <div className="flex items-center justify-center h-96"><Spinner size="lg" /></div>
   }
 
-  // ── Helpers for role card permission preview ───────────────────────────────
-  const topPerms = (role) => {
-    const entries = Object.entries(role.permissions || {})
-    const granted = entries.filter(([, v]) => v).slice(0, 3)
-    const denied  = entries.filter(([, v]) => !v).slice(0, 1)
-    return [...granted, ...denied].map(([key, val]) => ({
-      label: MODULE_LABELS[key] || key,
-      granted: val,
-    }))
-  }
-
-  // Roles visible dans la matrice (exclure CLIENT — pas d’accès au backoffice)
-  const matrixRoles = roles.filter((r) => r.name !== 'CLIENT')
-
-  const moduleKeys = Object.keys(MODULE_LABELS)
+  const shown = team.filter((u) =>
+    `${u.firstName} ${u.lastName} ${u.email}`.toLowerCase().includes(search.toLowerCase()))
+  const granted = (role) => MODULE_KEYS.filter((k) => role.permissions?.[k])
 
   return (
     <div className="p-6 space-y-6 max-w-[1600px] mx-auto w-full">
-
-      {/* ── Page Header ── */}
-      <PageHeader title="Rôles & Permissions">
-        <PageHeader.PrimaryBtn icon="add_moderator" onClick={openCreateModal}>
-          Créer un Rôle
-        </PageHeader.PrimaryBtn>
+      <PageHeader title={platform ? 'Rôles de la plateforme' : 'Rôles & équipe'}>
+        <PageHeader.SecondaryBtn icon="add_moderator" onClick={() => setRoleModal({ label: '', name: '', description: '', permissions: emptyPerms() })}>
+          Créer un rôle
+        </PageHeader.SecondaryBtn>
+        {!platform && (
+          <PageHeader.PrimaryBtn icon="person_add" onClick={openInvite}>
+            Ajouter un membre
+          </PageHeader.PrimaryBtn>
+        )}
       </PageHeader>
 
-      {/* ── KPI Cards ── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <KpiCard
-          label="Utilisateurs Actifs"
-          value={stats?.activeClients ?? '–'}
-          icon="group"
-          iconBg="bg-slate-50 text-slate-400"
-        />
-        <KpiCard
-          label="Rôles Configurés"
-          value={roles.length}
-          icon="shield_person"
-          iconBg="bg-slate-50 text-slate-400"
-        />
-        <KpiCard
-          label="Total Administrateurs"
-          value={stats?.totalAdmins ?? '–'}
-          icon="admin_panel_settings"
-          iconBg="bg-slate-50 text-slate-400"
-        />
+        <KpiCard label={platform ? 'Administrateurs' : 'Membres de l’équipe'} value={stats?.totalAdmins ?? '–'} icon="groups" iconBg="bg-slate-50 text-slate-400" />
+        <KpiCard label="Membres actifs" value={platform ? '–' : (stats?.activeTeamMembers ?? '–')} icon="verified_user" iconBg="bg-slate-50 text-slate-400" />
+        <KpiCard label="Rôles configurés" value={roles.length} icon="shield_person" iconBg="bg-slate-50 text-slate-400" />
       </div>
 
-      {/* ── Roles Section ── */}
+      {/* ── Roles ── */}
       <section>
-        <div className="flex items-center gap-3 mb-6">
-          <h3 className="text-base font-bold text-slate-800">Rôles configurés</h3>
+        <div className="flex items-center gap-3 mb-4">
+          <h3 className="text-base font-bold text-slate-800">Rôles</h3>
           <div className="h-px flex-1 bg-slate-200" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {roles.filter((role) => role.name !== 'CLIENT').map((role) => {
-            const style = ROLE_ICONS[role.name] || DEFAULT_ICON
-            return (
-              <div
-                key={role.id}
-                className={`bg-white rounded-custom ${style.border} p-6 shadow-sm flex flex-col transition-all`}
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <div className={`w-12 h-12 ${style.iconBg} rounded-xl flex items-center justify-center`}>
-                    <span className="material-symbols-outlined text-2xl">{style.icon}</span>
-                  </div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    {role.userCount} Utilisateur{role.userCount !== 1 ? 's' : ''}
-                  </span>
-                </div>
-                <h4 className="text-base font-bold text-slate-800">{role.label || role.name}</h4>
-                <p className="text-slate-500 text-xs mt-2 mb-4 leading-relaxed flex-1">
-                  {role.description || 'Aucune description.'}
-                </p>
-                <div className="space-y-2 mb-5">
-                  {topPerms(role).map((p) => (
-                    <div key={p.label} className="flex items-center gap-2 text-[11px] font-medium">
-                      <span className={`material-symbols-outlined text-[16px] ${p.granted ? 'text-brand' : 'text-slate-300'}`}>
-                        {p.granted ? 'check_circle' : 'cancel'}
-                      </span>
-                      <span className={p.granted ? 'text-slate-600' : 'text-slate-400'}>{p.label}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => openEditModal(role)}
-                    className="flex-1 py-2 rounded-lg border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-50 transition-colors"
-                  >
-                    Modifier
-                  </button>
-                  {role.name !== 'SUPER_ADMIN' && (
-                    <button
-                      onClick={() => setDeletingRole(role)}
-                      className="py-2 px-3 rounded-lg border border-red-200 text-red-500 font-bold text-xs hover:bg-red-50 transition-colors"
-                    >
-                      <span className="material-symbols-outlined text-[16px]">delete</span>
-                    </button>
-                  )}
-                </div>
+          {!platform && (
+            <div className="bg-white rounded-custom border-2 border-brand/20 p-6 shadow-sm flex flex-col">
+              <div className="w-12 h-12 bg-brand/10 text-brand rounded-xl flex items-center justify-center mb-4">
+                <span className="material-symbols-outlined text-2xl">workspace_premium</span>
               </div>
-            )
-          })}
+              <h4 className="text-base font-bold text-slate-800">Propriétaire</h4>
+              <p className="text-slate-500 text-xs mt-2 leading-relaxed">
+                Le compte qui a créé la boutique. Accès complet à toutes les pages ; ce rôle ne se modifie pas.
+              </p>
+            </div>
+          )}
+          {roles.map((role) => (
+            <div key={role.id} className="bg-white rounded-custom border border-slate-200 hover:shadow-md p-6 shadow-sm flex flex-col transition-all">
+              <div className="flex justify-between items-start mb-4">
+                <div className="w-12 h-12 bg-slate-100 text-slate-500 rounded-xl flex items-center justify-center">
+                  <span className="material-symbols-outlined text-2xl">shield_person</span>
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  {role.userCount} membre{role.userCount !== 1 ? 's' : ''}
+                </span>
+              </div>
+              <h4 className="text-base font-bold text-slate-800">{role.label}</h4>
+              <p className="text-slate-500 text-xs mt-2 mb-4 leading-relaxed flex-1">{role.description || 'Aucune description.'}</p>
+              <div className="flex flex-wrap gap-1.5 mb-5">
+                {granted(role).length === 0
+                  ? <span className="text-[11px] text-slate-400">Aucune page autorisée</span>
+                  : granted(role).map((k) => (
+                    <span key={k} className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-semibold">{MODULE_LABELS[k]}</span>
+                  ))}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setRoleModal({ id: role.id, name: role.name, label: role.label || '', description: role.description || '', permissions: { ...emptyPerms(), ...role.permissions } })}
+                  className="flex-1 py-2 rounded-lg border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-50"
+                >
+                  Modifier
+                </button>
+                {editable(role) && (
+                  <button onClick={() => setDeletingRole(role)} className="py-2 px-3 rounded-lg border border-red-200 text-red-500 hover:bg-red-50">
+                    <span className="material-symbols-outlined text-[16px]">delete</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+          {!platform && roles.length === 0 && (
+            <button
+              onClick={() => setRoleModal({ label: '', description: '', permissions: emptyPerms() })}
+              className="rounded-custom border-2 border-dashed border-slate-200 p-6 text-left text-slate-500 hover:border-brand hover:text-brand transition-colors"
+            >
+              <span className="material-symbols-outlined text-3xl">add_moderator</span>
+              <p className="font-bold mt-2">Créer votre premier rôle</p>
+              <p className="text-xs mt-1">Par exemple « Préparateur de commandes » avec accès aux commandes et aux retours.</p>
+            </button>
+          )}
         </div>
       </section>
 
-      {/* ── Permissions Matrix ── */}
-      <section className="bg-white rounded-custom border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-          <h4 className="font-bold text-slate-800 text-base">Matrice des Permissions</h4>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead className="bg-slate-50 text-slate-500 text-[11px] uppercase tracking-wider font-bold">
-              <tr>
-                <th className="px-5 py-3 text-left" style={{ width: '40%' }}>Page</th>
-                {matrixRoles.map((r) => (
-                  <th key={r.id} className="px-3 py-3 text-center" style={{ width: `${60 / Math.max(matrixRoles.length, 1)}%` }}>
-                    {r.label || r.name}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {MODULE_SECTIONS.map((section) => (
-                <>
-                  <tr key={section.title} className="bg-slate-50/50">
-                    <td colSpan={matrixRoles.length + 1} className="px-5 py-2">
-                      <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-slate-400" style={{ fontSize: '15px' }}>{section.icon}</span>
+      {/* ── Matrix ── */}
+      {roles.length > 0 && (
+        <section className="bg-white rounded-custom border border-slate-200 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100">
+            <h4 className="font-bold text-slate-800 text-base">Matrice des permissions</h4>
+            <p className="text-xs text-slate-400 mt-0.5">Cochez les pages que chaque rôle peut ouvrir. Les changements s’appliquent à la prochaine connexion du membre.</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead className="bg-slate-50 text-slate-500 text-[11px] uppercase tracking-wider font-bold">
+                <tr>
+                  <th className="px-5 py-3">Page</th>
+                  {roles.map((r) => <th key={r.id} className="px-3 py-3 text-center">{r.label}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {MODULE_SECTIONS.map((section) => (
+                  <Fragment key={section.title}>
+                    <tr className="bg-slate-50/50">
+                      <td colSpan={roles.length + 1} className="px-5 py-2">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{section.title}</span>
-                      </div>
-                    </td>
-                  </tr>
-                  {section.keys.map((moduleKey) => (
-                    <tr key={moduleKey} className="border-t border-slate-100/80 hover:bg-slate-50/60 transition-colors">
-                      <td className="px-5 py-2 text-[13px] font-medium text-slate-700">{MODULE_LABELS[moduleKey]}</td>
-                      {matrixRoles.map((r) => (
-                        <td key={r.id} className="px-3 py-2">
-                          <div className="flex items-center justify-center">
-                            {r.name === 'SUPER_ADMIN' ? (
-                              <span className="material-symbols-outlined text-brand" style={{ fontSize: '18px' }}>check_circle</span>
-                            ) : (
+                      </td>
+                    </tr>
+                    {section.keys.map((key) => (
+                      <tr key={key} className="border-t border-slate-100/80 hover:bg-slate-50/60">
+                        <td className="px-5 py-2 text-[13px] font-medium text-slate-700">{MODULE_LABELS[key]}</td>
+                        {roles.map((r) => (
+                          <td key={r.id} className="px-3 py-2">
+                            <div className="flex items-center justify-center">
                               <button
                                 type="button"
-                                onClick={() => togglePerm(r.id, moduleKey)}
-                                className={`w-[18px] h-[18px] rounded border-2 flex items-center justify-center transition-all ${matrix[r.id]?.[moduleKey] ? 'bg-brand border-brand' : 'border-slate-300 hover:border-slate-400'}`}
+                                onClick={() => togglePerm(r, key)}
+                                disabled={!editable(r)}
+                                className={`w-[18px] h-[18px] rounded border-2 flex items-center justify-center transition-all ${matrix[r.id]?.[key] ? 'bg-brand border-brand' : 'border-slate-300 hover:border-slate-400'}`}
                               >
-                                {matrix[r.id]?.[moduleKey] && (
-                                  <span className="material-symbols-outlined text-white" style={{ fontSize: '13px' }}>check</span>
-                                )}
+                                {matrix[r.id]?.[key] && <span className="material-symbols-outlined text-white" style={{ fontSize: '13px' }}>check</span>}
                               </button>
-                            )}
-                          </div>
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-          <span className="text-[11px] text-slate-400">{moduleKeys.length} pages · {matrixRoles.length} rôles</span>
-          <button
-            onClick={handleSaveMatrix}
-            disabled={savingMatrix}
-            className="bg-brand text-white px-5 py-2 rounded-custom font-bold text-xs hover:bg-brand-dark transition-all shadow-sm disabled:opacity-50"
-          >
-            {savingMatrix ? 'Sauvegarde…' : 'Sauvegarder les modifications'}
-          </button>
-        </div>
-      </section>
-
-      {/* ── Users Table ── */}
-      <section className="bg-white rounded-custom border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <h4 className="font-bold text-slate-800 text-base">Liste des Utilisateurs</h4>
-          <div className="flex gap-3 w-full md:w-auto">
-            <div className="relative flex-1 md:w-64">
-              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
-                <span className="material-symbols-outlined text-xl">search</span>
-              </span>
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Rechercher..."
-                className="block w-full pl-11 pr-4 py-2.5 border border-slate-200 bg-slate-50/50 rounded-custom text-sm focus:ring-brand focus:border-brand transition-all placeholder:text-slate-400 outline-none"
-              />
-            </div>
-          </div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="bg-slate-50 text-slate-500 text-[11px] uppercase tracking-wider font-bold">
-              <tr>
-                <th className="px-8 py-4">Utilisateur</th>
-                <th className="px-8 py-4">Rôle</th>
-                <th className="px-8 py-4">Dernière connexion</th>
-                <th className="px-8 py-4 text-center">Statut</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filteredUsers.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="py-12 text-center text-slate-400 text-sm">Aucun utilisateur trouvé.</td>
-                </tr>
-              )}
-              {filteredUsers.map((user) => {
-                const sta = statusCfg[user.status] || defaultStatus
-                const initials = `${(user.firstName || '')[0] || ''}${(user.lastName || '')[0] || ''}`.toUpperCase()
-                return (
-                  <tr key={user.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="px-8 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs ${
-                          user.roleName === 'SUPER_ADMIN' ? 'bg-badge/10 text-badge' : 'bg-slate-100 text-slate-500'
-                        }`}>
-                          {initials}
-                        </div>
-                        <div>
-                          <p className="font-bold text-slate-800 text-sm">{user.firstName} {user.lastName}</p>
-                          <p className="text-[10px] text-slate-400">{user.email}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-8 py-4">
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold font-badge ${roleBadgeClass(user.roleName)}`}>
-                        {user.roleLabel || user.roleName}
-                      </span>
-                    </td>
-                    <td className="px-8 py-4 text-xs text-slate-500 font-medium">
-                      {user.lastLogin
-                        ? new Date(user.lastLogin).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-                        : 'Jamais'}
-                    </td>
-                    <td className="px-8 py-4 text-center">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold font-badge ${sta.cls}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${sta.dot}`} />
-                        {sta.label}
-                      </span>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-        <div className="px-8 py-4 bg-slate-50 border-t border-slate-100 text-[11px] font-medium text-slate-500">
-          Affichage de {filteredUsers.length} sur {users.length} utilisateurs
-        </div>
-      </section>
-
-      {/* ── Create / Edit Role Modal ── */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
-            <form onSubmit={handleSaveRole}>
-              <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-                <h3 className="font-bold text-slate-800 text-base">
-                  {editingRole ? `Modifier le rôle : ${editingRole.label || editingRole.name}` : 'Créer un nouveau rôle'}
-                </h3>
-                <button type="button" onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600">
-                  <span className="material-symbols-outlined">close</span>
-                </button>
-              </div>
-
-              <div className="px-6 py-5 space-y-4">
-                {/* Name */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Nom (clé système)</label>
-                  <input
-                    type="text"
-                    value={roleForm.name}
-                    onChange={(e) => setRoleForm((f) => ({ ...f, name: e.target.value }))}
-                    placeholder="EX: MANAGER"
-                    required
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:ring-1 focus:ring-brand focus:border-brand outline-none"
-                  />
-                </div>
-                {/* Label */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Libellé</label>
-                  <input
-                    type="text"
-                    value={roleForm.label}
-                    onChange={(e) => setRoleForm((f) => ({ ...f, label: e.target.value }))}
-                    placeholder="Ex: Gestionnaire"
-                    required
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:ring-1 focus:ring-brand focus:border-brand outline-none"
-                  />
-                </div>
-                {/* Description */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Description</label>
-                  <textarea
-                    value={roleForm.description}
-                    onChange={(e) => setRoleForm((f) => ({ ...f, description: e.target.value }))}
-                    rows={2}
-                    placeholder="Description du rôle..."
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:ring-1 focus:ring-brand focus:border-brand outline-none resize-none"
-                  />
-                </div>
-                {/* Permissions */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-3">Permissions par page</label>
-                  <div className="space-y-4">
-                    {MODULE_SECTIONS.map((section) => (
-                      <div key={section.title}>
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="material-symbols-outlined text-slate-400" style={{ fontSize: '14px' }}>{section.icon}</span>
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{section.title}</span>
-                        </div>
-                        <div className="space-y-1.5 pl-1">
-                          {section.keys.map((key) => (
-                            <label key={key} className="flex items-center gap-3 cursor-pointer group py-1">
-                              <input
-                                type="checkbox"
-                                checked={!!roleForm.permissions[key]}
-                                onChange={() =>
-                                  setRoleForm((f) => ({
-                                    ...f,
-                                    permissions: { ...f.permissions, [key]: !f.permissions[key] },
-                                  }))
-                                }
-                                className="rounded border-slate-300 text-brand focus:ring-brand/30 size-4 cursor-pointer"
-                              />
-                              <span className="text-sm text-slate-700 group-hover:text-slate-900">{MODULE_LABELS[key]}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
+                            </div>
+                          </td>
+                        ))}
+                      </tr>
                     ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs hover:bg-slate-50"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  disabled={savingRole}
-                  className="px-6 py-2 bg-brand text-white rounded-xl font-bold text-xs hover:bg-brand-dark shadow-sm disabled:opacity-50"
-                >
-                  {savingRole ? 'Enregistrement…' : editingRole ? 'Modifier' : 'Créer'}
-                </button>
-              </div>
-            </form>
+                  </Fragment>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </div>
+          <div className="px-5 py-3 bg-slate-50 border-t border-slate-100 flex justify-end">
+            <button onClick={saveMatrix} disabled={savingMatrix} className="bg-brand text-white px-5 py-2 rounded-custom font-bold text-xs hover:bg-brand-dark disabled:opacity-50">
+              {savingMatrix ? 'Sauvegarde…' : 'Enregistrer les permissions'}
+            </button>
+          </div>
+        </section>
       )}
 
-      {/* ── Delete Confirmation Modal ── */}
-      {deletingRole && (
+      {/* ── Team ── */}
+      {!platform && (
+        <section className="bg-white rounded-custom border border-slate-200 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100 flex flex-col md:flex-row justify-between md:items-center gap-4">
+            <div>
+              <h4 className="font-bold text-slate-800 text-base">Équipe de la boutique</h4>
+              <p className="text-xs text-slate-400 mt-0.5">Seuls les comptes de votre boutique apparaissent ici. Vos clients sont dans « Clients ».</p>
+            </div>
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher…" className={`${inputCls} md:w-64`} />
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead className="bg-slate-50 text-slate-500 text-[11px] uppercase tracking-wider font-bold">
+                <tr>
+                  <th className="px-6 py-3">Membre</th>
+                  <th className="px-6 py-3">Rôle</th>
+                  <th className="px-6 py-3">Dernière connexion</th>
+                  <th className="px-6 py-3 text-center">Statut</th>
+                  <th className="px-6 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {shown.length === 0 && (
+                  <tr><td colSpan={5} className="py-10 text-center text-slate-400 text-sm">Aucun membre.</td></tr>
+                )}
+                {shown.map((u) => {
+                  const st = STATUS[u.status] || STATUS.INACTIVE
+                  const isMe = u.id === me.id
+                  return (
+                    <tr key={u.id} className="hover:bg-slate-50/80">
+                      <td className="px-6 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center font-bold text-xs">
+                            {`${(u.firstName || '')[0] || ''}${(u.lastName || '')[0] || ''}`.toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-800 text-sm">{u.firstName} {u.lastName}{isMe && <span className="text-slate-400 font-normal"> (vous)</span>}</p>
+                            <p className="text-[11px] text-slate-400">{u.email}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-3">
+                        {u.staff ? (
+                          <select value={u.roleId || ''} onChange={(e) => changeRole(u, e.target.value)} className="px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white">
+                            {roles.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
+                          </select>
+                        ) : (
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-brand/10 text-brand">Propriétaire</span>
+                        )}
+                        {u.mustChangePassword && <p className="text-[10px] text-amber-600 mt-1">Invitation pas encore acceptée</p>}
+                      </td>
+                      <td className="px-6 py-3 text-xs text-slate-500">
+                        {u.lastLogin ? new Date(u.lastLogin).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : 'Jamais'}
+                      </td>
+                      <td className="px-6 py-3 text-center">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold ${st.cls}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />{st.label}
+                        </span>
+                      </td>
+                      <td className="px-6 py-3">
+                        {u.staff && !isMe && (
+                          <div className="flex justify-end gap-1">
+                            <button title="Renvoyer un mot de passe temporaire" onClick={() => resendInvite(u)} className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100">
+                              <span className="material-symbols-outlined text-[18px]">forward_to_inbox</span>
+                            </button>
+                            <button title={u.status === 'ACTIVE' ? 'Désactiver l’accès' : 'Réactiver l’accès'} onClick={() => toggleStatus(u)} className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100">
+                              <span className="material-symbols-outlined text-[18px]">{u.status === 'ACTIVE' ? 'block' : 'check_circle'}</span>
+                            </button>
+                            <button title="Retirer de l’équipe" onClick={() => setRemoving(u)} className="p-1.5 rounded-lg text-red-500 hover:bg-red-50">
+                              <span className="material-symbols-outlined text-[18px]">person_remove</span>
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {/* ── Role modal ── */}
+      {roleModal && (
+        <Modal
+          wide
+          title={roleModal.id ? `Modifier « ${roleModal.label} »` : 'Créer un rôle'}
+          onClose={() => setRoleModal(null)}
+          onSubmit={saveRole}
+          footer={<>
+            <button type="button" onClick={() => setRoleModal(null)} className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs">Annuler</button>
+            <button type="submit" disabled={savingRole} className="px-6 py-2 bg-brand text-white rounded-xl font-bold text-xs disabled:opacity-50">{savingRole ? 'Enregistrement…' : 'Enregistrer'}</button>
+          </>}
+        >
+          <div>
+            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Nom du rôle</label>
+            <input required value={roleModal.label} onChange={(e) => setRoleModal((m) => ({ ...m, label: e.target.value }))} placeholder="Ex : Préparateur de commandes" className={inputCls} />
+          </div>
+          {platform && (
+            <div>
+              <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Clé système</label>
+              <input value={roleModal.name || ''} onChange={(e) => setRoleModal((m) => ({ ...m, name: e.target.value }))} placeholder="EX : MANAGER" className={inputCls} />
+            </div>
+          )}
+          <div>
+            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Description</label>
+            <textarea rows={2} value={roleModal.description} onChange={(e) => setRoleModal((m) => ({ ...m, description: e.target.value }))} className={`${inputCls} resize-none`} />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Pages autorisées</label>
+            {MODULE_SECTIONS.map((section) => (
+              <div key={section.title} className="mb-3">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">{section.title}</p>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                  {section.keys.map((key) => (
+                    <label key={key} className="flex items-center gap-2 py-1 cursor-pointer text-sm text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={!!roleModal.permissions[key]}
+                        onChange={() => setRoleModal((m) => ({ ...m, permissions: { ...m.permissions, [key]: !m.permissions[key] } }))}
+                        className="rounded border-slate-300 text-brand size-4"
+                      />
+                      {MODULE_LABELS[key]}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Modal>
+      )}
+
+      {/* ── Invite modal ── */}
+      {inviteModal && (
+        <Modal
+          title="Ajouter un membre à l’équipe"
+          onClose={() => setInviteModal(null)}
+          onSubmit={invite}
+          footer={<>
+            <button type="button" onClick={() => setInviteModal(null)} className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs">Annuler</button>
+            <button type="submit" disabled={inviting} className="px-6 py-2 bg-brand text-white rounded-xl font-bold text-xs disabled:opacity-50">{inviting ? 'Envoi…' : 'Envoyer l’invitation'}</button>
+          </>}
+        >
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Prénom</label>
+              <input required value={inviteModal.firstName} onChange={(e) => setInviteModal((m) => ({ ...m, firstName: e.target.value }))} className={inputCls} />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Nom</label>
+              <input value={inviteModal.lastName} onChange={(e) => setInviteModal((m) => ({ ...m, lastName: e.target.value }))} className={inputCls} />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">E-mail</label>
+            <input type="email" required value={inviteModal.email} onChange={(e) => setInviteModal((m) => ({ ...m, email: e.target.value }))} className={inputCls} />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Téléphone</label>
+            <input value={inviteModal.phone} onChange={(e) => setInviteModal((m) => ({ ...m, phone: e.target.value }))} className={inputCls} />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Rôle</label>
+            <select value={inviteModal.roleId} onChange={(e) => setInviteModal((m) => ({ ...m, roleId: Number(e.target.value) }))} className={inputCls}>
+              {roles.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
+            </select>
+            <p className="text-[11px] text-slate-400 mt-1">
+              Pages : {granted(roles.find((r) => r.id === Number(inviteModal.roleId)) || {}).map((k) => MODULE_LABELS[k]).join(', ') || 'aucune'}
+            </p>
+          </div>
+          <p className="text-xs text-slate-500 bg-slate-50 rounded-lg p-3">
+            Le membre reçoit par e-mail un mot de passe temporaire. Il ne sert qu’une fois : à la première connexion, il choisit le sien.
+          </p>
+        </Modal>
+      )}
+
+      {/* ── Confirmations ── */}
+      {(deletingRole || removing) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 text-center">
             <div className="w-14 h-14 mx-auto mb-4 bg-red-50 rounded-full flex items-center justify-center">
               <span className="material-symbols-outlined text-3xl text-red-500">warning</span>
             </div>
-            <h3 className="font-bold text-slate-800 text-base mb-2">Supprimer le rôle</h3>
+            <h3 className="font-bold text-slate-800 text-base mb-2">{deletingRole ? 'Supprimer le rôle' : 'Retirer de l’équipe'}</h3>
             <p className="text-sm text-slate-500 mb-6">
-              Voulez-vous vraiment supprimer le rôle <strong>{deletingRole.label || deletingRole.name}</strong> ?
-              Cette action est irréversible.
+              {deletingRole
+                ? <>Supprimer le rôle <strong>{deletingRole.label}</strong> ? Les membres doivent d’abord changer de rôle.</>
+                : <><strong>{removing.firstName} {removing.lastName}</strong> perdra l’accès au backoffice et son compte sera supprimé.</>}
             </p>
             <div className="flex gap-3 justify-center">
-              <button
-                onClick={() => setDeletingRole(null)}
-                className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs hover:bg-slate-50"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={handleDeleteRole}
-                className="px-6 py-2 bg-red-500 text-white rounded-xl font-bold text-xs hover:bg-red-600 shadow-sm"
-              >
-                Supprimer
+              <button onClick={() => { setDeletingRole(null); setRemoving(null) }} className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs">Annuler</button>
+              <button onClick={deletingRole ? deleteRole : removeMember} className="px-6 py-2 bg-red-500 text-white rounded-xl font-bold text-xs hover:bg-red-600">
+                {deletingRole ? 'Supprimer' : 'Retirer'}
               </button>
             </div>
           </div>

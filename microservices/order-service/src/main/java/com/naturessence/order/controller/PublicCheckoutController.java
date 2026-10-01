@@ -6,6 +6,9 @@ import com.naturessence.shared.dto.request.OrderRequest;
 import com.naturessence.shared.dto.response.OrderResponse;
 import com.naturessence.shared.dto.response.ShippingZoneResponse;
 import com.naturessence.shared.dto.response.TvaConfigResponse;
+import com.naturessence.shared.entity.User;
+import com.naturessence.shared.repository.UserRepository;
+import org.springframework.security.core.Authentication;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -21,6 +24,7 @@ public class PublicCheckoutController {
 
     private final TvaShippingService tvaShippingService;
     private final OrderService orderService;
+    private final UserRepository userRepository;
 
     @GetMapping("/shipping-zones")
     public ResponseEntity<List<ShippingZoneResponse>> getOpenShippingZones(
@@ -38,7 +42,18 @@ public class PublicCheckoutController {
     }
 
     @PostMapping("/orders")
-    public ResponseEntity<OrderResponse> placeOrder(@Valid @RequestBody OrderRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(orderService.createOrder(request));
+    public ResponseEntity<OrderResponse> placeOrder(@Valid @RequestBody OrderRequest request,
+                                                    Authentication authentication) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(orderService.createOrder(request, signedInUser(authentication)));
+    }
+
+    /** The customer is taken from the JWT, never from the request body (userId is ignored). */
+    private User signedInUser(Authentication authentication) {
+        if (authentication == null || authentication.getName() == null
+                || "anonymousUser".equals(authentication.getName())) {
+            return null;
+        }
+        return userRepository.findByEmailIgnoreCase(authentication.getName()).orElse(null);
     }
 }

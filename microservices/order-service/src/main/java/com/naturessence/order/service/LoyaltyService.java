@@ -5,6 +5,7 @@ import com.naturessence.shared.dto.response.LoyaltyInfoResponse;
 import com.naturessence.shared.dto.response.PointsTransactionResponse;
 import com.naturessence.shared.dto.response.SegmentResponse;
 import com.naturessence.shared.entity.LoyaltyConfig;
+import com.naturessence.shared.entity.Order;
 import com.naturessence.shared.entity.PointsTransaction;
 import com.naturessence.shared.entity.Segment;
 import com.naturessence.shared.entity.User;
@@ -63,6 +64,44 @@ public class LoyaltyService {
         recordTransaction(user, points, orderId, "COMMANDE",
                 String.format("Points pour commande (%.2f TND × %.1f × %.1f)", orderTotal, rate, multiplier));
         maybePromoteSegment(user, cfg);
+    }
+
+    /**
+     * Points for a delivered order, at most once per order. Guest orders are credited to the shop's
+     * customer account with the same e-mail. Shipping does not earn points.
+     */
+    @Transactional
+    public void awardPointsForDeliveredOrder(Order order) {
+        if (pointsTransactionRepository.existsByOrderIdAndType(order.getId(), "COMMANDE")) return;
+        User user = customerOf(order);
+        if (user == null) return;
+        double shipping = order.getShippingCost() != null ? order.getShippingCost() : 0.0;
+        double eligible = Math.max(0, (order.getTotal() != null ? order.getTotal() : 0.0) - shipping);
+        awardPointsForOrder(user, eligible, order.getId());
+    }
+
+    /** Takes back the points of an order that is cancelled or refunded after delivery. */
+    @Transactional
+    public void revokePointsForOrder(Order order) {
+        if (pointsTransactionRepository.existsByOrderIdAndType(order.getId(), "ANNULATION")) return;
+        List<PointsTransaction> earned = pointsTransactionRepository.findByOrderId(order.getId()).stream()
+                .filter(tx -> "COMMANDE".equals(tx.getType()))
+                .toList();
+        if (earned.isEmpty()) return;
+        User user = earned.get(0).getUser();
+        int points = earned.stream().mapToInt(PointsTransaction::getPoints).sum();
+        if (points <= 0 || user == null) return;
+        recordTransaction(user, -points, order.getId(), "ANNULATION",
+                "Points retirés : commande " + order.getReference() + " annulée ou remboursée");
+    }
+
+    private User customerOf(Order order) {
+        if (order.getUser() != null) return order.getUser();
+        if (order.getEmail() == null) return null;
+        return userRepository.findByEmailIgnoreCase(order.getEmail().trim())
+                .filter(u -> u.getRole() != null && "CLIENT".equals(u.getRole().getName()))
+                .filter(u -> order.getShopId() == null || order.getShopId().equals(u.getShopId()))
+                .orElse(null);
     }
 
     @Transactional

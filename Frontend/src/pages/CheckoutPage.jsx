@@ -5,7 +5,7 @@ import { lineKeyOf } from '../utils/cartLines';
 import { track } from '../tracking/tracker';
 import { useShop } from '../context/ShopContext';
 import { loadStripe } from '@stripe/stripe-js';
-import { getUser } from '../api/tokenStorage';
+import { getAccessToken, getUser } from '../api/tokenStorage';
 import { Elements } from '@stripe/react-stripe-js';
 import StripePaymentForm from '../components/StripePaymentForm';
 import { fetchMyProfile } from '../api/apiClient';
@@ -41,11 +41,18 @@ function extractApiError(payload, fallback) {
   return fallback;
 }
 
-async function createPaymentIntent(amount, orderReference) {
+/** Signed-in customers send their token: the server links the order to their account (never a userId from the page). */
+function jsonHeaders() {
+  const token = getAccessToken();
+  return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+}
+
+/** The server prices the cart (catalogue prices, stock, coupon, shipping) and returns the amount to pay. */
+async function createPaymentIntent(orderPayload) {
   const res = await fetch(`${API}/stripe/payment-intent`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ amount, orderReference }),
+    headers: jsonHeaders(),
+    body: JSON.stringify(orderPayload),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
@@ -68,7 +75,7 @@ async function validateCouponCode(code, userId) {
 async function placeOrder(payload) {
   const res = await fetch(`${API}/checkout/orders`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: jsonHeaders(),
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
@@ -93,6 +100,8 @@ export default function CheckoutPage() {
   const [step, setStep] = useState('info'); // 'info' | 'payment'
   const [paymentMethod, setPaymentMethod] = useState('ESPECES_LIVRAISON');
   const [clientSecret, setClientSecret] = useState(null);
+  const [paymentIntentId, setPaymentIntentId] = useState(null);
+  const [serverTotal, setServerTotal] = useState(null);
   const [orderRef, setOrderRef] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -277,19 +286,37 @@ export default function CheckoutPage() {
     }));
   };
 
+  // Only ids, quantities and the chosen size/colour: prices are read from the catalogue by the server.
+  const orderPayload = (method, extra = {}) => ({
+    ...form,
+    shopSlug: window.location.pathname.split('/').filter(Boolean)[0],
+    paymentMethod: method,
+    couponCode: appliedCoupon?.code || null,
+    items: items.map((i) => ({
+      productId: i.id,
+      productName: i.name,
+      productSlug: i.slug,
+      image: i.image,
+      size: i.size || i.volume || '',
+      color: i.couleur || '',
+      quantity: i.qty,
+    })),
+    ...extra,
+  });
+
   const handleInfoSubmit = async (e) => {
     e.preventDefault();
     if (items.length === 0) return;
     setError('');
     setLoading(true);
-
-    const ref = `ORDER-${Date.now()}`;
-    setOrderRef(ref);
+    setOrderRef(`ORDER-${Date.now()}`);
 
     if (paymentMethod === 'CARTE' && stripePromise) {
       try {
-        const { clientSecret: cs } = await createPaymentIntent(orderTotal, ref);
-        setClientSecret(cs);
+        const intent = await createPaymentIntent(orderPayload('CARTE'));
+        setClientSecret(intent.clientSecret);
+        setPaymentIntentId(intent.paymentIntentId);
+        setServerTotal(intent.total);
         setStep('payment');
       } catch (err) {
         setError(err.message || 'Erreur lors de la création du paiement. Veuillez réessayer.');
@@ -299,24 +326,7 @@ export default function CheckoutPage() {
     } else {
       // Cash on delivery — place order immediately
       try {
-        const user = getUser();
-        await placeOrder({
-          ...form,
-          shopSlug: window.location.pathname.split('/').filter(Boolean)[0],
-          paymentMethod: 'ESPECES_LIVRAISON',
-          userId: user?.id || null,
-          couponCode: appliedCoupon?.code || null,
-          items: items.map((i) => ({
-            productId: i.id,
-            productName: i.name,
-            productSlug: i.slug,
-            image: i.image,
-            size: i.size || i.volume || '',
-            color: i.couleur || '',
-            unitPrice: i.price,
-            quantity: i.qty,
-          })),
-        });
+        await placeOrder(orderPayload('ESPECES_LIVRAISON'));
         trackPurchase(items);
         clearCart();
         navigate('/confirmation');
@@ -330,24 +340,7 @@ export default function CheckoutPage() {
 
   const handleStripeSuccess = async () => {
     try {
-      const user = getUser();
-      await placeOrder({
-        ...form,
-        shopSlug: window.location.pathname.split('/').filter(Boolean)[0],
-        paymentMethod: 'CARTE',
-        userId: user?.id || null,
-        couponCode: appliedCoupon?.code || null,
-        items: items.map((i) => ({
-          productId: i.id,
-          productName: i.name,
-          productSlug: i.slug,
-          image: i.image,
-          size: i.size || i.volume || '',
-            color: i.couleur || '',
-          unitPrice: i.price,
-          quantity: i.qty,
-        })),
-      });
+      await placeOrder(orderPayload('CARTE', { paymentIntentId }));
       trackPurchase(items);
       clearCart();
       navigate('/confirmation');
@@ -640,7 +633,7 @@ export default function CheckoutPage() {
                   <StripePaymentForm
                     onSuccess={handleStripeSuccess}
                     onBack={() => setStep('info')}
-                    total={orderTotal}
+                    total={serverTotal ?? orderTotal}
                     error={error}
                     setError={setError}
                   />

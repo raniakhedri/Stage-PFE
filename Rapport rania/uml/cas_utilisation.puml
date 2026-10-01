@@ -1,0 +1,379 @@
+@startuml cu_admin_sellio
+!include style.iuml
+left to right direction
+actor "Administrateur\nSellio" as A
+rectangle "Sellio -- Console plateforme" {
+  usecase "S'authentifier" as UC0
+  usecase "Consulter les statistiques\nde la plateforme" as UC1
+  usecase "Consulter les boutiques\net leurs propriétaires" as UC2
+  usecase "Consulter un dossier\nde vérification (KYC)" as UC3
+  usecase "Valider un dossier" as UC4
+  usecase "Refuser un dossier\navec motif" as UC5
+  usecase "Suspendre / réactiver\nune boutique" as UC6
+  usecase "Bloquer / débloquer\nun commerçant" as UC7
+  usecase "Étendre les listes\nd'attributs partagées" as UC8
+}
+A --> UC1
+A --> UC2
+A --> UC3
+A --> UC6
+A --> UC7
+A --> UC8
+UC4 .> UC3 : <<extend>>
+UC5 .> UC3 : <<extend>>
+UC1 ..> UC0 : <<include>>
+UC2 ..> UC0 : <<include>>
+UC3 ..> UC0 : <<include>>
+@enduml
+
+@startuml cu_commercant
+!include style.iuml
+left to right direction
+actor "Commerçant" as M
+actor "Collaborateur\nde boutique" as COL
+actor "Stripe" as ST
+actor "Brevo" as BR
+actor "Moteur ML" as ML
+COL -|> M
+rectangle "Sellio -- Back-office" {
+  usecase "Créer sa boutique\net la faire vérifier" as U1
+  usecase "Gérer les rôles\net l'équipe" as U2
+  usecase "Gérer le catalogue\n(produits, catégories, collections)" as U3
+  usecase "Personnaliser la vitrine\n(gabarit, thème)" as U4
+  usecase "Gérer les commandes\net les retours" as U5
+  usecase "Paramétrer TVA\net livraison" as U6
+  usecase "Modérer les avis" as U7
+  usecase "Gérer les promotions" as U8
+  usecase "Publier des bannières" as U9
+  usecase "Envoyer des e-mails" as U10
+  usecase "Gérer le programme\nde fidélité" as U11
+  usecase "Consulter l'analyse\ncomportementale" as U12
+  usecase "Identifier les clients\nà risque d'attrition" as U13
+  usecase "Consulter le tableau\nde bord des ventes" as U14
+}
+M --> U1
+M --> U2
+M --> U3
+M --> U4
+M --> U5
+M --> U6
+M --> U7
+M --> U8
+M --> U9
+M --> U10
+M --> U11
+M --> U12
+M --> U13
+M --> U14
+U1 --> ST
+U10 --> BR
+U12 --> ML
+U13 --> ML
+@enduml
+
+@startuml cu_client
+!include style.iuml
+left to right direction
+actor "Visiteur" as V
+actor "Client" as C
+actor "Stripe" as ST
+actor "Decart" as DC
+actor "Moteur ML" as ML
+C -|> V
+rectangle "Sellio -- Vitrine d'une boutique" {
+  usecase "Parcourir la vitrine\net rechercher" as U1
+  usecase "Consulter un produit" as U2
+  usecase "Essayer un vêtement\nvirtuellement" as U3
+  usecase "Recevoir des\nrecommandations" as U4
+  usecase "Gérer son panier" as U5
+  usecase "S'inscrire /\nse connecter" as U6
+  usecase "Passer commande" as U7
+  usecase "Payer par carte" as U8
+  usecase "Suivre ses commandes" as U9
+  usecase "Demander un retour" as U10
+  usecase "Publier un avis" as U11
+  usecase "Consulter ses points\nde fidélité" as U12
+}
+V --> U1
+V --> U2
+V --> U3
+V --> U4
+V --> U5
+V --> U6
+C --> U7
+C --> U9
+C --> U10
+C --> U11
+C --> U12
+U8 .> U7 : <<extend>>
+U3 --> DC
+U8 --> ST
+U4 --> ML
+@enduml
+
+@startuml cu_sprint1
+!include style.iuml
+left to right direction
+actor "Utilisateur" as U
+actor "Client" as C
+actor "Commerçant" as M
+C -|> U
+M -|> U
+rectangle "Sprint 1 -- Authentification et contrôle d'accès" {
+  usecase "Créer un compte" as A1
+  usecase "Se connecter" as A2
+  usecase "Rafraîchir son jeton" as A3
+  usecase "Se déconnecter" as A4
+  usecase "Gérer son profil" as A5
+  usecase "Gérer les rôles\net permissions" as A6
+  usecase "Gérer les comptes\n(équipe, clients)" as A7
+}
+U --> A1
+U --> A2
+U --> A4
+C --> A5
+M --> A6
+M --> A7
+A3 .> A2 : <<extend>>
+A6 ..> A2 : <<include>>
+A7 ..> A2 : <<include>>
+@enduml
+
+@startuml cu_sprint2
+!include style.iuml
+left to right direction
+actor "Commerçant" as M
+actor "Administrateur\nSellio" as A
+actor "Stripe" as ST
+rectangle "Sprint 2 -- Plateforme multi-boutiques et KYC" {
+  usecase "S'inscrire sur Sellio" as B1
+  usecase "Créer sa boutique" as B2
+  usecase "Enregistrer sa\ncarte bancaire" as B3
+  usecase "Soumettre pièce\nd'identité et selfie" as B4
+  usecase "Suivre son dossier" as B5
+  usecase "Ouvrir sa vitrine" as B6
+  usecase "Valider / refuser\nun dossier" as B7
+  usecase "Consulter boutiques\net propriétaires" as B8
+  usecase "Suspendre une boutique /\nbloquer un commerçant" as B9
+}
+M --> B1
+M --> B2
+M --> B5
+M --> B6
+B2 ..> B3 : <<include>>
+B2 ..> B4 : <<include>>
+B3 --> ST
+A --> B7
+A --> B8
+A --> B9
+@enduml
+
+@startuml cu_sprint3
+!include style.iuml
+left to right direction
+actor "Commerçant" as M
+actor "Administrateur\nSellio" as A
+rectangle "Sprint 3 -- Catalogue et attributs" {
+  usecase "Gérer les produits" as C1
+  usecase "Téléverser des images" as C2
+  usecase "Choisir tailles, couleurs,\ntissus dans des listes" as C3
+  usecase "Ajouter une valeur\nd'attribut" as C4
+  usecase "Gérer les catégories" as C5
+  usecase "Réordonner les catégories" as C6
+  usecase "Gérer les collections" as C7
+}
+M --> C1
+M --> C5
+M --> C7
+C1 ..> C2 : <<include>>
+C1 ..> C3 : <<include>>
+C4 .> C3 : <<extend>>
+C6 .> C5 : <<extend>>
+A --> C4
+@enduml
+
+@startuml cu_sprint4
+!include style.iuml
+left to right direction
+actor "Commerçant" as M
+actor "Visiteur" as V
+rectangle "Sprint 4 -- Vitrine et personnalisation" {
+  usecase "Choisir un gabarit\n(Minimal, Bold, Luxury)" as D1
+  usecase "Prévisualiser un gabarit" as D2
+  usecase "Choisir la palette" as D3
+  usecase "Personnaliser le thème\n(boutons, navigation, pied de page)" as D4
+  usecase "Parcourir la vitrine\net ses menus" as D5
+  usecase "Filtrer une catégorie" as D6
+  usecase "Consulter un produit" as D7
+}
+M --> D1
+M --> D3
+M --> D4
+D2 .> D1 : <<extend>>
+V --> D5
+V --> D7
+D6 .> D5 : <<extend>>
+@enduml
+
+@startuml cu_sprint5
+!include style.iuml
+left to right direction
+actor "Visiteur" as V
+actor "Client" as C
+actor "Stripe" as ST
+C -|> V
+rectangle "Sprint 5 -- Panier, commande et paiement" {
+  usecase "Gérer son panier" as E1
+  usecase "Choisir la taille" as E2
+  usecase "Passer commande" as E3
+  usecase "Appliquer un code promo" as E4
+  usecase "Payer par carte" as E5
+  usecase "Payer à la livraison" as E6
+  usecase "Retrouver son panier\nsur un autre appareil" as E7
+}
+V --> E1
+E1 ..> E2 : <<include>>
+C --> E3
+C --> E7
+E4 .> E3 : <<extend>>
+E5 .> E3 : <<extend>>
+E6 .> E3 : <<extend>>
+E5 --> ST
+@enduml
+
+@startuml cu_sprint6
+!include style.iuml
+left to right direction
+actor "Commerçant" as M
+actor "Client" as C
+rectangle "Sprint 6 -- Après-vente et paramétrage" {
+  usecase "Gérer les commandes\net leurs statuts" as F1
+  usecase "Consulter le tableau\nde bord des ventes" as F2
+  usecase "Suivre ses commandes" as F3
+  usecase "Demander un retour" as F4
+  usecase "Traiter un retour" as F5
+  usecase "Définir la politique\nde retour" as F6
+  usecase "Paramétrer TVA\net zones de livraison" as F7
+  usecase "Publier un avis" as F8
+  usecase "Modérer / répondre\naux avis" as F9
+}
+M --> F1
+M --> F2
+M --> F5
+M --> F6
+M --> F7
+M --> F9
+C --> F3
+C --> F4
+C --> F8
+@enduml
+
+@startuml cu_sprint7
+!include style.iuml
+left to right direction
+actor "Commerçant" as M
+actor "Brevo" as BR
+rectangle "Sprint 7 -- Promotions, bannières et e-mailing" {
+  usecase "Gérer les codes promo" as G1
+  usecase "Cibler un segment,\ndes catégories, des produits" as G2
+  usecase "Gérer les remises\nautomatiques" as G3
+  usecase "Publier une bannière" as G4
+  usecase "Cibler segment\net appareil" as G5
+  usecase "Envoyer une newsletter" as G6
+  usecase "Contacter un client" as G7
+  usecase "Consulter les statistiques" as G8
+}
+M --> G1
+M --> G3
+M --> G4
+M --> G6
+M --> G7
+M --> G8
+G2 .> G1 : <<extend>>
+G5 .> G4 : <<extend>>
+G6 --> BR
+G7 --> BR
+@enduml
+
+@startuml cu_sprint8
+!include style.iuml
+left to right direction
+actor "Commerçant" as M
+actor "Client" as C
+rectangle "Sprint 8 -- Fidélité et segments" {
+  usecase "Configurer le gain\nde points" as H1
+  usecase "Gérer les niveaux\net leurs avantages" as H2
+  usecase "Consulter le classement" as H3
+  usecase "Ajuster les points\nd'un client" as H4
+  usecase "Consulter ses points\net son niveau" as H5
+}
+M --> H1
+M --> H2
+M --> H3
+M --> H4
+C --> H5
+@enduml
+
+@startuml cu_sprint9
+!include style.iuml
+left to right direction
+actor "Visiteur" as V
+actor "Decart" as DC
+rectangle "Sprint 9 -- Essayage virtuel" {
+  usecase "Essayer un vêtement\nvirtuellement" as I1
+  usecase "Autoriser la caméra" as I2
+  usecase "Obtenir un jeton\néphémère" as I3
+  usecase "Voir le rendu en direct" as I4
+}
+V --> I1
+I1 ..> I2 : <<include>>
+I1 ..> I3 : <<include>>
+I1 ..> I4 : <<include>>
+I3 --> DC
+I4 --> DC
+@enduml
+
+@startuml cu_sprint10
+!include style.iuml
+left to right direction
+actor "Visiteur" as V
+actor "Moteur ML" as ML
+rectangle "Sprint 10 -- Suivi et recommandation" {
+  usecase "Naviguer sur la vitrine\n(événements collectés)" as J1
+  usecase "Voir des produits similaires" as J2
+  usecase "Voir des recommandations\n« pour vous »" as J3
+  usecase "Voir les produits souvent\nachetés ensemble" as J4
+  usecase "Voir les produits populaires" as J5
+  usecase "Entraîner le modèle\n(chaque nuit)" as J6
+}
+V --> J1
+V --> J2
+V --> J3
+V --> J4
+J5 .> J3 : <<extend>>
+ML --> J6
+@enduml
+
+@startuml cu_sprint11
+!include style.iuml
+left to right direction
+actor "Commerçant" as M
+actor "Moteur ML" as ML
+rectangle "Sprint 11 -- Segmentation et attrition" {
+  usecase "Consulter le tableau\nde bord « Comportement »" as K1
+  usecase "Consulter les segments\nde visiteurs" as K2
+  usecase "Identifier les clients\nà risque d'attrition" as K3
+  usecase "Consulter les variables\nd'un score" as K4
+  usecase "Ré-entraîner les modèles" as K5
+  usecase "Générer / supprimer des\ndonnées de démonstration" as K6
+}
+M --> K1
+M --> K3
+M --> K5
+M --> K6
+K2 .> K1 : <<extend>>
+K4 .> K3 : <<extend>>
+K2 --> ML
+K3 --> ML
+K5 --> ML
+@enduml

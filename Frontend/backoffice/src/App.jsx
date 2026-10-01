@@ -41,8 +41,11 @@ import NouvelleBoutique from './pages/NouvelleBoutique'
 import SellioConsole from './pages/SellioConsole'
 import SellioHome from './pages/SellioHome'
 import VerificationBoutique from './pages/VerificationBoutique'
+import MotDePasseOublie from './pages/MotDePasseOublie'
+import ChangerMotDePasse from './pages/ChangerMotDePasse'
+import { RESERVED_PATHS } from './lib/sellio'
 
-const RESERVED = new Set(['login', 'inscription', 'auth-callback', 'nouvelle-boutique', 'verification', 'sellio'])
+const RESERVED = RESERVED_PATHS
 
 function App() {
   useEffect(() => {
@@ -75,6 +78,8 @@ function App() {
         <Route path="/auth-callback" element={<AuthCallback />} />
         <Route path="/login" element={<SellioLogin />} />
         <Route path="/inscription" element={<SellioInscription />} />
+        <Route path="/mot-de-passe-oublie" element={<MotDePasseOublie />} />
+        <Route path="/changer-mot-de-passe" element={<ChangerMotDePasse />} />
         {/* Port 3000 root: the public Sellio home page (sign in / sign up live at /login and /inscription). */}
         <Route path="/" element={basename ? <Navigate to="/dashboard" replace /> : <SellioHome />} />
 

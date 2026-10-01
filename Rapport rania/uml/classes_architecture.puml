@@ -1,0 +1,359 @@
+@startuml diagramme_classes
+!include style.iuml
+hide circle
+hide methods
+skinparam linetype ortho
+class Shop {
+  name, slug : String
+  businessType : String
+  templateKey : String
+  theme : String
+  status : String
+  primaryColor, accentColor : String
+  customOptions : String
+}
+class User {
+  email : String
+  password : String
+  firstName, lastName : String
+  status : AccountStatus
+  loyaltyPoints : int
+}
+class Role {
+  name : String
+}
+class Permission {
+  code : String
+}
+class MerchantVerification {
+  documentType : String
+  documentNumber : String
+  selfie : String
+  cardBrand, cardLast4 : String
+  stripePaymentMethodId : String
+  status : String
+  rejectionReason : String
+}
+class Segment {
+  name : String
+  seuilPoints : int
+  multiplicateurPoints : double
+}
+class Product {
+  nom, slug : String
+  salePrice : double
+  stock : int
+  tailles, couleur, tissu : String
+  statut : String
+}
+class ProductVariant {
+  size, color : String\n stock : int
+}
+class Category {
+  name, slug : String\n ordre : int
+}
+class Collection {
+  name, slug : String
+}
+class Order {
+  reference : String
+  status : OrderStatus
+  paymentMethod : String
+  total : double
+}
+class OrderItem {
+  quantity : int\n unitPrice : double\n size, color : String
+}
+class ReturnRequest {
+  motif : String\n status : String
+}
+class Review {
+  note : int\n commentaire : String
+}
+class Coupon {
+  code, type : String\n valeur : double
+}
+class Discount {
+  type : String\n valeur : double
+}
+class Banner {
+  titre : String\n audience : String
+}
+class LoyaltyConfig {
+  pointsParTnd : double
+}
+class PointsTransaction {
+  points : int\n motif : String
+}
+class ShippingZone {
+  nom : String\n tarif : double
+}
+class TvaRate {
+  taux : double
+}
+class UserEvent <<analytics>> {
+  visitorId, sessionId : String
+  eventType : String
+  productId : Long
+  createdAt : Timestamp
+}
+
+Shop "1" -- "*" User
+Shop "1" -- "0..1" MerchantVerification
+User "*" -- "1" Role
+Role "*" -- "*" Permission
+User "*" -- "0..1" Segment
+Shop "1" -- "*" Product
+Product "*" -- "1" Category
+Category "0..1" -- "*" Category : parent
+Collection "*" -- "*" Product
+Product "1" *-- "*" ProductVariant
+User "1" -- "*" Order
+Order "1" *-- "*" OrderItem
+OrderItem "*" -- "1" Product
+Order "1" -- "*" ReturnRequest
+User "1" -- "*" Review
+Review "*" -- "1" Product
+Shop "1" -- "*" Coupon
+Discount "*" -- "0..1" Product
+Shop "1" -- "*" Banner
+User "1" -- "*" PointsTransaction
+Shop "1" -- "1" LoyaltyConfig
+Shop "1" -- "*" ShippingZone
+Shop "1" -- "*" TvaRate
+Shop "1" -- "*" UserEvent
+@enduml
+
+@startuml classes_analytics
+!include style.iuml
+skinparam linetype ortho
+class TrackingController {
+  +ingest(batch) : ResponseEntity
+}
+class TrackingService {
+  +TYPES : Set<String>
+  +record(batch)
+  -rateLimit(visitorId)
+}
+class EventStore {
+  +ensurePartitions()
+  +insert(events)
+  +dailyAggregates()
+  +dropExpired()
+}
+class MlTrainingService {
+  +nightly() <<@Scheduled 03:40>>
+  +trainShop(shopId)
+  -saveRecommendations()
+  -saveSegments()
+  -saveRun(metrics)
+}
+class PythonRunner {
+  +run(task, input) : JSON
+}
+class RecommendationController {
+  +similar()
+  +forYou()
+  +boughtTogether()
+  +popular()
+}
+class RecommendationService {
+  +similar(shop, product, limit)
+  +forVisitor(shop, visitor, user, limit)
+  +boughtTogether(shop, products, limit)
+  +popular(shop, limit, exclude)
+  -blendWithPopularity()
+}
+class BehaviorController {
+  +overview()
+  +train()
+  +demoData()
+}
+class ShopAccess {
+  +require(shop, user)
+}
+class ChurnController
+class ChurnPredictionService {
+  +modelFor(userId) : String
+  +predictAll(features) : List<Double>
+  +riskLabel(score, model) : String
+}
+class "ml_train.py\n(recommender, segmentation)" as PYT <<Python>>
+class "predict.py\n(churn_model*.pkl)" as PYP <<Python>>
+
+TrackingController --> TrackingService
+TrackingService --> EventStore
+MlTrainingService --> EventStore
+MlTrainingService --> PythonRunner
+PythonRunner ..> PYT
+RecommendationController --> RecommendationService
+BehaviorController --> ShopAccess
+BehaviorController --> MlTrainingService
+ChurnController --> ChurnPredictionService
+ChurnPredictionService ..> PYP
+@enduml
+
+@startuml architecture_logique
+!include style.iuml
+skinparam componentStyle rectangle
+package "Couche présentation" {
+  [Application Sellio :3000\n(site plateforme, console,\nback-office)] as FE1
+  [Vitrine :3001\n(gabarits Minimal / Bold / Luxury)] as FE2
+}
+package "Couche passerelle" {
+  [Spring Cloud Gateway :8080] as GW
+}
+package "Couche métier (microservices Spring Boot)" {
+  [auth-service :8081\ncomptes, JWT, rôles,\nboutiques, KYC, fidélité] as AS
+  [catalog-service :8082\nproduits, catégories,\navis, jeton d'essayage] as CS
+  [order-service :8083\ncommandes, Stripe, retours,\nTVA, promotions] as OS
+  [marketing-service :8084\nbannières, apparence,\ne-mailing] as MS
+  [analytics-service :8085\nsuivi, recommandations,\nsegments, attrition] as AN
+  [shared-lib\n(entités, DTO, sécurité JWT)] as SL
+}
+package "Couche intelligence" {
+  [Scripts Python\npandas, scikit-learn] as PY
+}
+database "PostgreSQL" as DB
+cloud "Services externes" {
+  [Stripe] as ST
+  [Decart] as DC
+  [Brevo] as BR
+}
+FE1 --> GW : REST / JSON
+FE2 --> GW : REST / JSON
+GW --> AS
+GW --> CS
+GW --> OS
+GW --> MS
+GW --> AN
+AS ..> SL
+CS ..> SL
+OS ..> SL
+MS ..> SL
+AN ..> SL
+AN --> PY : sous-processus
+AS --> DB
+CS --> DB
+OS --> DB
+MS --> DB
+AN --> DB
+OS --> ST
+CS --> DC
+MS --> BR
+FE2 ..> ST : Stripe.js
+FE2 ..> DC : WebRTC
+@enduml
+
+@startuml architecture_physique
+!include style.iuml
+node "Poste client" {
+  node "Navigateur web" {
+    [Application Sellio / Vitrine\n(React)] as B
+  }
+}
+node "Serveur web" {
+  [Serveurs Vite / fichiers statiques\n:3000, :3001] as WEB
+}
+node "Serveur d'application" {
+  [API Gateway :8080] as GW
+  [auth :8081] as A
+  [catalog :8082] as C
+  [order :8083] as O
+  [marketing :8084] as M
+  [analytics :8085] as AN
+  [Python 3 + scikit-learn] as PY
+}
+node "Serveur de base de données" {
+  database "PostgreSQL" as DB
+}
+cloud "Stripe" as ST
+cloud "Decart" as DC
+cloud "Brevo" as BR
+B --> WEB : HTTPS
+B --> GW : HTTPS / REST
+B --> ST : HTTPS (Stripe.js)
+B --> DC : WebRTC (UDP)
+GW --> A
+GW --> C
+GW --> O
+GW --> M
+GW --> AN
+AN --> PY
+A --> DB : JDBC
+C --> DB : JDBC
+O --> DB : JDBC
+M --> DB : JDBC
+AN --> DB : JDBC
+O --> ST : HTTPS
+C --> DC : HTTPS (jeton)
+M --> BR : HTTPS
+@enduml
+
+@startuml architecture_tryon
+!include style.iuml
+left to right direction
+node "Navigateur du client" {
+  [Caméra\n1280×720] as CAM
+  [TryOnModal\n(React)] as UI
+  [SDK Decart] as SDK
+}
+node "Sellio" {
+  [API Gateway] as GW
+  [catalog-service\nDecartTryOnService] as CS
+  [Clé secrète Decart\n(variable d'environnement)] as KEY
+}
+cloud "Decart" {
+  [POST /v1/client/tokens] as TOK
+  [Modèle temps réel\nlucy-vton-latest] as MOD
+}
+UI --> GW : 1. demander un jeton
+GW --> CS
+CS ..> KEY
+CS --> TOK : 2. jeton éphémère (600 s)
+CAM --> UI : 3. flux caméra
+UI --> SDK : 4. flux + consigne + image du vêtement
+SDK --> MOD : WebRTC
+MOD --> SDK : 5. vidéo générée
+SDK --> UI : affichage (45 s)
+@enduml
+
+@startuml architecture_ml
+!include style.iuml
+left to right direction
+node "Vitrine" {
+  [tracker.js] as TR
+  [RecommendedProducts] as RP
+}
+node "Back-office" {
+  [Comportement.jsx\nClients.jsx] as BO
+}
+node "analytics-service" {
+  [TrackingController\nTrackingService] as TC
+  [EventStore] as ES
+  [MlTrainingService\n(chaque nuit 3 h 40)] as MT
+  [PythonRunner] as PR
+  [RecommendationService] as RS
+  [BehaviorController\nChurnPredictionService] as BC
+}
+node "Python" {
+  [ml_train.py\nhybride SVD + TF-IDF,\nrègles d'association, K-Means] as PT
+  [predict.py\nforêt aléatoire /\ngradient boosting] as PP
+}
+database "PostgreSQL" {
+  [user_events\n(partitions mensuelles, BRIN)] as UE
+  [product_recommendations\nbehavior_segments\nml_model_runs] as RT
+}
+TR --> TC : lots d'événements
+TC --> ES
+ES --> UE
+MT --> UE : extraction
+MT --> PR
+PR --> PT
+MT --> RT : résultats
+RS --> RT : lecture indexée
+RP --> RS
+BO --> BC
+BC --> PP
+BC --> RT
+@enduml

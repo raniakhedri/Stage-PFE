@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -38,6 +39,51 @@ public class AdminUserController {
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
             @RequestParam(required = false) String shop) {
         return ResponseEntity.ok(userService.getAllUsers(pageable, shop));
+    }
+
+    // ── Team of the merchant's shop ──────────────────────────────────────────
+
+    @GetMapping("/team")
+    public ResponseEntity<List<UserResponse>> team() {
+        return ResponseEntity.ok(userService.getTeam());
+    }
+
+    /** Body: firstName, lastName, email, phone, roleId. The member receives a one-time password by e-mail. */
+    @PostMapping("/team")
+    public ResponseEntity<UserResponse> inviteTeamMember(@RequestBody Map<String, Object> body) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(userService.inviteTeamMember(
+                str(body.get("firstName")), str(body.get("lastName")), str(body.get("email")),
+                str(body.get("phone")), longOf(body.get("roleId"))));
+    }
+
+    @PatchMapping("/team/{id}/role")
+    public ResponseEntity<UserResponse> changeTeamRole(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        return ResponseEntity.ok(userService.changeTeamRole(id, longOf(body.get("roleId"))));
+    }
+
+    @PostMapping("/team/{id}/resend-invite")
+    public ResponseEntity<MessageResponse> resendInvite(@PathVariable Long id) {
+        userService.resendTeamInvite(id);
+        return ResponseEntity.ok(new MessageResponse("Un nouveau mot de passe temporaire a été envoyé."));
+    }
+
+    @DeleteMapping("/team/{id}")
+    public ResponseEntity<MessageResponse> removeTeamMember(@PathVariable Long id) {
+        userService.removeTeamMember(id);
+        return ResponseEntity.ok(new MessageResponse("Membre retiré de l'équipe"));
+    }
+
+    private static String str(Object value) {
+        return value == null ? null : String.valueOf(value);
+    }
+
+    private static Long longOf(Object value) {
+        if (value == null || String.valueOf(value).isBlank()) return null;
+        try {
+            return Long.valueOf(String.valueOf(value));
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Identifiant invalide");
+        }
     }
 
     @GetMapping("/{id}")
@@ -86,6 +132,7 @@ public class AdminUserController {
     }
 
     @GetMapping("/by-role/{roleName}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<Page<UserResponse>> getUsersByRole(
             @PathVariable String roleName,
             @PageableDefault(size = 10) Pageable pageable) {

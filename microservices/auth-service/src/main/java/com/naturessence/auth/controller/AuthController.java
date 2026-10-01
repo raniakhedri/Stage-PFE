@@ -35,9 +35,45 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(request));
     }
 
+    /** Merchant sign-up, step 1: e-mails a six-digit code. The account exists only after /verify. */
     @PostMapping("/register-merchant")
-    public ResponseEntity<AuthResponse> registerMerchant(@Valid @RequestBody RegisterRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(authService.registerMerchant(request));
+    public ResponseEntity<Map<String, Object>> registerMerchant(@Valid @RequestBody RegisterRequest request) {
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(authService.startMerchantSignup(request));
+    }
+
+    @PostMapping("/register-merchant/verify")
+    public ResponseEntity<AuthResponse> verifyMerchant(@RequestBody Map<String, String> body) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(authService.verifyMerchantSignup(body.get("email"), body.get("code")));
+    }
+
+    @PostMapping("/register-merchant/resend")
+    public ResponseEntity<Map<String, Object>> resendMerchantCode(@RequestBody Map<String, String> body) {
+        return ResponseEntity.ok(authService.resendMerchantSignup(String.valueOf(body.get("email"))));
+    }
+
+    /** Sends a reset code if the account exists. {@code shopSlug} is set from a shop's storefront. */
+    @PostMapping("/forgot-password")
+    public ResponseEntity<MessageResponse> forgotPassword(@RequestBody Map<String, String> body) {
+        authService.forgotPassword(body.get("email"), body.get("shopSlug"));
+        return ResponseEntity.ok(new MessageResponse(
+                "Si un compte existe pour cette adresse, un code de réinitialisation vient d'être envoyé."));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<MessageResponse> resetPassword(@RequestBody Map<String, String> body) {
+        authService.resetPassword(body.get("email"), body.get("code"), body.get("password"));
+        return ResponseEntity.ok(new MessageResponse("Mot de passe modifié. Vous pouvez vous connecter."));
+    }
+
+    /** Signed-in password change; required after signing in with a temporary password. */
+    @PostMapping("/change-password")
+    public ResponseEntity<AuthResponse> changePassword(Authentication authentication,
+                                                       @RequestBody Map<String, String> body) {
+        User user = currentUser(authentication);
+        if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        return ResponseEntity.ok(authService.changePassword(user.getEmail(),
+                body.get("currentPassword"), body.get("newPassword")));
     }
 
     @PostMapping("/my-shop")

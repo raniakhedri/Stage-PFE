@@ -37,9 +37,11 @@ com\naturessence\shared\dto\response\ProductResponse$ProductVariantResponse$Prod
 com\naturessence\shared\dto\response\DashboardStatsResponse.class
 com\naturessence\shared\dto\response\DashboardResponse$RecentOrderItem$RecentOrderItemBuilder.class
 com\naturessence\shared\dto\response\SegmentResponse.class
+com\naturessence\shared\entity\AuthCode.class
 com\naturessence\shared\dto\response\UserResponse$UserResponseBuilder.class
 com\naturessence\shared\enums\PermissionModule.class
 com\naturessence\shared\entity\PointsTransaction.class
+com\naturessence\shared\repository\AuthCodeRepository.class
 com\naturessence\shared\dto\response\OrderItemResponse.class
 com\naturessence\shared\dto\response\PromotionStatsResponse.class
 com\naturessence\shared\entity\LoyaltyConfig$LoyaltyConfigBuilder.class
@@ -107,6 +109,7 @@ com\naturessence\shared\dto\response\ReturnPolicyResponse$ReturnPolicyResponseBu
 com\naturessence\shared\dto\request\RoleRequest.class
 com\naturessence\shared\enums\BannerPosition.class
 com\naturessence\shared\entity\Review$ReviewBuilder.class
+com\naturessence\shared\security\JwtAuthenticationFilter$ShopScopedRequest.class
 com\naturessence\shared\dto\request\ReturnPolicyRequest.class
 com\naturessence\shared\repository\BannerRepository.class
 com\naturessence\shared\dto\response\ProductResponse.class
@@ -194,6 +197,7 @@ com\naturessence\shared\dto\response\AuthResponse.class
 com\naturessence\shared\dto\response\ShopPublicResponse$ShopPublicResponseBuilder.class
 com\naturessence\shared\entity\AppearanceSettings.class
 com\naturessence\shared\dto\response\AppearanceResponse.class
+com\naturessence\shared\entity\AuthCode$AuthCodeBuilder.class
 com\naturessence\shared\entity\RefreshToken$RefreshTokenBuilder.class
 com\naturessence\shared\dto\request\UpdateProfileRequest.class
 com\naturessence\shared\dto\response\BannerResponse$BannerResponseBuilder.class

@@ -135,6 +135,7 @@ public class GlobalExceptionHandler {
     ) {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("error", message);
+        body.put("message", message);
         body.put("status", status.value());
         body.put("timestamp", LocalDateTime.now().toString());
         return ResponseEntity.status(status).body(body);

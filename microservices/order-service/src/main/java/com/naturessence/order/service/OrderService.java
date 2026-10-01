@@ -1,24 +1,17 @@
 package com.naturessence.order.service;
 
-import com.naturessence.shared.dto.request.OrderItemRequest;
 import com.naturessence.shared.dto.request.OrderRequest;
 import com.naturessence.shared.dto.response.OrderItemResponse;
 import com.naturessence.shared.dto.response.OrderResponse;
-import com.naturessence.shared.entity.Coupon;
 import com.naturessence.shared.entity.Order;
 import com.naturessence.shared.entity.OrderItem;
-import com.naturessence.shared.entity.ShippingZone;
-import com.naturessence.shared.entity.TvaConfig;
 import com.naturessence.shared.entity.User;
 import com.naturessence.shared.enums.OrderStatus;
 import com.naturessence.shared.enums.PaymentMethod;
 import com.naturessence.shared.entity.Shop;
-import com.naturessence.shared.repository.CouponRepository;
 import com.naturessence.shared.repository.OrderRepository;
 import com.naturessence.shared.repository.ShopRepository;
 import com.naturessence.shared.repository.ProductRepository;
-import com.naturessence.shared.repository.ShippingZoneRepository;
-import com.naturessence.shared.repository.TvaConfigRepository;
 import com.naturessence.shared.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -36,61 +29,55 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final ShopRepository shopRepository;
-    private final ShippingZoneRepository shippingZoneRepository;
-    private final TvaConfigRepository tvaConfigRepository;
-    private final CouponRepository couponRepository;
     private final CouponService couponService;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
     private final EmailService emailService;
+    private final CheckoutPricingService pricingService;
+    private final StripeService stripeService;
+    private final LoyaltyService loyaltyService;
 
+    /**
+     * Saves an order from a cart. Prices, stock, coupon, shipping and TVA are recomputed on the server
+     * ({@link CheckoutPricingService}); for card payments the Stripe payment is checked first, and it is
+     * refunded if the order cannot be completed (for instance the last item was sold in the meantime).
+     *
+     * @param signedInUser customer resolved from the JWT, or null for a guest checkout
+     */
     @Transactional
-    public OrderResponse createOrder(OrderRequest req) {
-        // 1. Resolve shipping zone
-        ShippingZone zone = shippingZoneRepository
-            .findAllByOrderByIdAsc()
-            .stream()
-            .filter(
-                z ->
-                    z.getNom().equalsIgnoreCase(req.getShippingZoneName()) &&
-                    "Ouverte".equals(z.getStatut())
-            )
-            .findFirst()
-            .orElseThrow(() ->
-                new IllegalArgumentException(
-                    "Zone de livraison introuvable ou fermée: " +
-                        req.getShippingZoneName()
-                )
-            );
-
-        // 2. TVA config
-        TvaConfig tvaConfig = tvaConfigRepository
-            .findAll()
-            .stream()
-            .findFirst()
-            .orElse(TvaConfig.builder().build());
-        double tvaRate = (tvaConfig.getTvaActive() != null &&
-            tvaConfig.getTvaActive())
-            ? tvaConfig.getTauxDefaut()
-            : 0.0;
-
-        // Free shipping threshold (standardSeuil from admin config)
-        Double standardSeuil = (tvaConfig.getStandardEnabled() != null &&
-            tvaConfig.getStandardEnabled())
-            ? tvaConfig.getStandardSeuil()
-            : null;
-
-        // 3. Parse payment method
+    public OrderResponse createOrder(OrderRequest req, User signedInUser) {
         PaymentMethod paymentMethod;
         try {
             paymentMethod = PaymentMethod.valueOf(req.getPaymentMethod());
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException(
-                "Mode de paiement invalide: " + req.getPaymentMethod()
-            );
+        } catch (IllegalArgumentException | NullPointerException e) {
+            throw new IllegalArgumentException("Mode de paiement invalide: " + req.getPaymentMethod());
         }
 
-        // 4. Build order
+        Long userId = signedInUser != null ? signedInUser.getId() : null;
+        CheckoutPricingService.Quote quote = pricingService.quote(req, userId);
+
+        String paymentIntentId = null;
+        if (paymentMethod == PaymentMethod.CARTE) {
+            paymentIntentId = req.getPaymentIntentId();
+            if (paymentIntentId != null && orderRepository.existsByPaymentIntentId(paymentIntentId)) {
+                throw new IllegalArgumentException("Ce paiement a déjà été utilisé pour une commande.");
+            }
+            stripeService.requireSucceeded(paymentIntentId, quote.amountInCents());
+        }
+
+        try {
+            return saveOrder(req, quote, paymentMethod, paymentIntentId, signedInUser);
+        } catch (RuntimeException e) {
+            if (paymentIntentId != null) stripeService.refundQuietly(paymentIntentId);
+            if (e instanceof IllegalArgumentException && paymentIntentId != null) {
+                throw new IllegalArgumentException(e.getMessage() + " Votre paiement a été remboursé.");
+            }
+            throw e;
+        }
+    }
+
+    private OrderResponse saveOrder(OrderRequest req, CheckoutPricingService.Quote quote,
+                                    PaymentMethod paymentMethod, String paymentIntentId, User user) {
         Order order = Order.builder()
             .reference(generateReference())
             .email(req.getEmail().trim())
@@ -101,115 +88,49 @@ public class OrderService {
             .city(req.getCity().trim())
             .postalCode(req.getPostalCode().trim())
             .gouvernorat(req.getGouvernorat())
-            .shippingZoneName(zone.getNom())
-            .shippingCost(zone.getCout())
+            .shippingZoneName(quote.zone().getNom())
+            .shippingCost(quote.shippingCost())
             .paymentMethod(paymentMethod)
-            .tvaRate(tvaRate)
+            .paymentIntentId(paymentIntentId)
+            .tvaRate(quote.tvaRate())
             .status(OrderStatus.EN_ATTENTE)
-            .shopId(resolveShopId(req.getShopSlug()))
+            .shopId(quote.shopId())
+            .user(user)
+            .couponCode(quote.coupon() != null ? quote.coupon().getCode() : null)
+            .couponDiscount(quote.couponDiscount())
+            .subtotal(quote.subtotal())
+            .tvaAmount(quote.tvaAmount())
+            .total(quote.total())
             .build();
 
-        // Link user if logged in
-        if (req.getUserId() != null) {
-            userRepository.findById(req.getUserId()).ifPresent(order::setUser);
-        }
-
-        // 5. Build order items
-        double subtotal = 0.0;
-        for (OrderItemRequest itemReq : req.getItems()) {
-            double lineTotal = itemReq.getUnitPrice() * itemReq.getQuantity();
-            OrderItem item = OrderItem.builder()
+        for (CheckoutPricingService.Line line : quote.lines()) {
+            // Atomic: fails if another customer bought the last units meanwhile.
+            if (productRepository.decrementStockIfAvailable(line.product().getId(), line.quantity()) == 0) {
+                throw new IllegalArgumentException("« " + line.product().getNom() + " » vient d'être épuisé.");
+            }
+            order.getItems().add(OrderItem.builder()
                 .order(order)
-                .productId(itemReq.getProductId())
-                .productName(itemReq.getProductName())
-                .productSlug(itemReq.getProductSlug())
-                .color(itemReq.getColor())
-                .size(itemReq.getSize())
-                .image(itemReq.getImage())
-                .unitPrice(itemReq.getUnitPrice())
-                .quantity(itemReq.getQuantity())
-                .lineTotal(lineTotal)
-                .build();
-            order.getItems().add(item);
-            subtotal += lineTotal;
+                .productId(line.product().getId())
+                .productName(line.product().getNom())
+                .productSlug(line.product().getSlug())
+                .color(line.request().getColor())
+                .size(line.request().getSize())
+                .image(line.request().getImage())
+                .unitPrice(line.unitPrice())
+                .quantity(line.quantity())
+                .lineTotal(line.total())
+                .build());
         }
-
-        // 6. Coupon discount (applied on subtotal, before shipping)
-        double couponDiscount = 0.0;
-        String couponCode = null;
-        if (req.getCouponCode() != null && !req.getCouponCode().isBlank()) {
-            Coupon coupon = couponRepository
-                .findByCode(req.getCouponCode().trim().toUpperCase())
-                .orElse(null);
-            if (coupon != null && "actif".equals(coupon.getStatut())) {
-                couponCode = coupon.getCode();
-                if ("pourcentage".equals(coupon.getType())) {
-                    couponDiscount =
-                        Math.round(subtotal * coupon.getValeur()) / 100.0;
-                } else if ("fixe".equals(coupon.getType())) {
-                    couponDiscount = Math.min(coupon.getValeur(), subtotal);
-                }
-            }
-        }
-
-        double subtotalAfterCoupon = subtotal - couponDiscount;
-
-        // Record coupon usage after subtotalAfterCoupon is known
-        if (couponCode != null) {
-            Coupon coupon = couponRepository
-                .findByCode(couponCode)
-                .orElse(null);
-            if (coupon != null) {
-                couponService.useCoupon(
-                    coupon.getId(),
-                    req.getUserId(),
-                    subtotalAfterCoupon
-                );
-            }
-        }
-
-        // Apply free shipping if subtotal meets the threshold
-        double effectiveShippingCost = zone.getCout();
-        if (
-            standardSeuil != null &&
-            standardSeuil > 0 &&
-            subtotalAfterCoupon >= standardSeuil
-        ) {
-            effectiveShippingCost = 0.0;
-        }
-        order.setShippingCost(effectiveShippingCost);
-
-        // 7. Calculate totals (TVA is INCLUDED in selling price — prices are TTC)
-        double tvaAmount = Math.round(subtotalAfterCoupon * tvaRate) / 100.0;
-        double total = subtotalAfterCoupon + effectiveShippingCost;
-
-        order.setCouponCode(couponCode);
-        order.setCouponDiscount(couponDiscount);
-        order.setSubtotal(subtotal);
-        order.setTvaAmount(tvaAmount);
-        order.setTotal(total);
 
         Order saved = orderRepository.save(order);
 
-        // 8. Decrement stock for each ordered product
-        for (OrderItem item : saved.getItems()) {
-            if (item.getProductId() != null) {
-                productRepository
-                    .findById(item.getProductId())
-                    .ifPresent(product -> {
-                        int newStock = Math.max(
-                            0,
-                            product.getStock() - item.getQuantity()
-                        );
-                        product.setStock(newStock);
-                        productRepository.save(product);
-                    });
-            }
+        if (quote.coupon() != null) {
+            couponService.useCoupon(quote.coupon().getId(), user != null ? user.getId() : null,
+                quote.subtotal() - quote.couponDiscount());
         }
 
-        // 9. Send confirmation email with invoice (async — does not block response)
+        // Confirmation e-mail with invoice (async — does not block the response)
         emailService.sendOrderConfirmation(saved);
-
         return mapToResponse(saved);
     }
 
@@ -329,6 +250,14 @@ public class OrderService {
 
         Order saved = orderRepository.save(order);
 
+        // Loyalty: points when the order is delivered, taken back if it is later cancelled or refunded
+        if (newStatus == OrderStatus.LIVREE && previousStatus != OrderStatus.LIVREE) {
+            loyaltyService.awardPointsForDeliveredOrder(saved);
+        } else if ((newStatus == OrderStatus.ANNULEE || newStatus == OrderStatus.REMBOURSEE)
+                && previousStatus != newStatus) {
+            loyaltyService.revokePointsForOrder(saved);
+        }
+
         // Notify customer by email when order is delivered (only once)
         if (
             newStatus == OrderStatus.LIVREE &&
@@ -345,13 +274,6 @@ public class OrderService {
     private Long shopIdOf(String shopSlug) {
         if (shopSlug == null || shopSlug.isBlank()) return null;
         return shopRepository.findBySlug(shopSlug.trim().toLowerCase()).map(Shop::getId).orElse(-1L);
-    }
-
-    private Long resolveShopId(String shopSlug) {
-        if (shopSlug == null || shopSlug.isBlank()) return null;
-        return shopRepository.findBySlug(shopSlug.trim().toLowerCase())
-                .map(Shop::getId)
-                .orElseThrow(() -> new IllegalArgumentException("Boutique introuvable"));
     }
 
     private String generateReference() {

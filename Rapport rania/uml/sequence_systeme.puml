@@ -1,0 +1,246 @@
+@startuml dss_login
+!include style.iuml
+autonumber
+actor "Utilisateur" as U
+participant "Système Sellio" as S
+U -> S : saisir e-mail et mot de passe
+activate S
+S -> S : vérifier les identifiants (BCrypt)
+alt identifiants invalides
+  S --> U : « Email ou mot de passe incorrect »
+else compte bloqué
+  S --> U : 401 « Votre compte a été bloqué »
+else succès
+  S -> S : générer jeton d'accès (24 h)\net jeton de rafraîchissement (7 j)
+  S --> U : jetons + profil (rôle, boutique)
+  U -> U : redirection selon le rôle
+end
+deactivate S
+@enduml
+
+@startuml dss_kyc
+!include style.iuml
+autonumber
+actor "Commerçant" as M
+participant "Système Sellio" as S
+participant "Stripe" as ST
+actor "Administrateur Sellio" as A
+M -> S : saisir nom, secteur, logo, palette
+M -> S : demander l'enregistrement de la carte
+S -> ST : créer un SetupIntent
+ST --> S : client secret
+S --> M : formulaire de carte sécurisé
+M -> ST : saisir et confirmer la carte
+ST --> M : pm_… (marque, 4 derniers chiffres)
+M -> S : soumettre pièce d'identité, selfie et référence de carte
+S -> S : contrôler le dossier
+alt dossier incomplet
+  S --> M : pièce manquante ou invalide
+else dossier complet
+  S -> S : créer la boutique (PENDING)\net le dossier (en attente)
+  S --> M : « Dossier en cours de vérification »
+end
+A -> S : consulter le dossier
+S --> A : pièces, selfie, carte
+alt validation
+  A -> S : valider
+  S -> S : boutique → ACTIVE
+else refus
+  A -> S : refuser avec motif
+  S -> S : boutique → REJECTED
+end
+S --> M : statut et motif éventuel
+@enduml
+
+@startuml dss_produit
+!include style.iuml
+autonumber
+actor "Commerçant" as M
+participant "Système Sellio" as S
+M -> S : ouvrir « Ajouter un produit »
+S --> M : formulaire adapté au secteur\n+ listes de tailles, couleurs, tissus
+M -> S : téléverser les images
+S --> M : URL des images
+M -> S : saisir les informations et choisir les attributs
+opt valeur absente de la liste
+  M -> S : ajouter une couleur (RVB) ou un tissu
+  S -> S : enregistrer dans les options de la boutique
+end
+M -> S : enregistrer
+S -> S : valider et créer le produit\net ses variantes
+alt données invalides
+  S --> M : champs en erreur
+else succès
+  S --> M : produit créé
+end
+@enduml
+
+@startuml dss_theme
+!include style.iuml
+autonumber
+actor "Commerçant" as M
+participant "Système Sellio" as S
+actor "Visiteur" as V
+M -> S : ouvrir « Votre boutique »
+S --> M : gabarit, palette et thème actuels
+M -> S : prévisualiser un gabarit (?preview=)
+S --> M : vitrine avec le gabarit choisi
+M -> S : enregistrer gabarit, palette et thème
+S -> S : valider les couleurs (#RRGGBB)
+alt couleur invalide
+  S --> M : « Le thème ne peut contenir que des couleurs #RRGGBB »
+else succès
+  S --> M : thème enregistré
+end
+V -> S : ouvrir la vitrine
+S --> V : page rendue avec le gabarit\net les variables de thème
+@enduml
+
+@startuml dss_commande
+!include style.iuml
+autonumber
+actor "Client" as C
+participant "Système Sellio" as S
+participant "Stripe" as ST
+C -> S : ouvrir le tunnel de commande
+S --> C : zones de livraison et TVA
+C -> S : saisir l'adresse et un code promo
+S --> C : remise et total
+C -> S : choisir « Carte bancaire »
+S -> ST : créer un PaymentIntent
+ST --> S : client secret
+S --> C : formulaire de paiement Stripe
+C -> ST : saisir la carte et confirmer
+alt paiement refusé
+  ST --> C : message d'erreur
+else paiement accepté
+  ST --> C : paiement confirmé
+  C -> S : envoyer la commande
+  S -> S : calculer les totaux, enregistrer,\ndécrémenter le stock
+  S --> C : confirmation + e-mail
+end
+@enduml
+
+@startuml dss_retour
+!include style.iuml
+autonumber
+actor "Client" as C
+participant "Système Sellio" as S
+actor "Commerçant" as M
+C -> S : demander un retour (articles, motif)
+S -> S : vérifier le délai de la politique
+alt délai dépassé
+  S --> C : demande refusée
+else dans le délai
+  S -> S : créer la demande (en attente)
+  S --> C : demande enregistrée
+  M -> S : consulter les retours
+  S --> M : liste des demandes
+  alt acceptation
+    M -> S : accepter puis marquer remboursé
+    S -> S : mettre à jour la commande\net l'historique
+  else refus
+    M -> S : refuser avec raison
+  end
+  C -> S : consulter « Mes retours »
+  S --> C : statut de la demande
+end
+@enduml
+
+@startuml dss_coupon
+!include style.iuml
+autonumber
+actor "Commerçant" as M
+participant "Système Sellio" as S
+actor "Client" as C
+M -> S : créer un code (type, valeur, période,\nlimites, segment, catégories)
+S -> S : vérifier que le code n'existe pas
+alt code existant
+  S --> M : « Un coupon avec ce code existe déjà »
+else
+  S -> S : calculer le statut et enregistrer
+  S --> M : code créé
+end
+C -> S : appliquer le code au panier
+S -> S : vérifier dates, minimum, cible,\nlimite par client
+S --> C : remise ou motif du refus
+@enduml
+
+@startuml dss_fidelite
+!include style.iuml
+autonumber
+actor "Commerçant" as M
+participant "Système Sellio" as S
+actor "Client" as C
+M -> S : passer la commande à « livrée »
+S -> S : points = arrondi(montant × points/DT × multiplicateur)
+S -> S : créditer le solde et journaliser
+opt promotion automatique active
+  S -> S : passer au niveau le plus élevé\ndont le seuil est atteint
+end
+S --> M : statut mis à jour
+C -> S : consulter « Mon profil »
+S --> C : solde, niveau, progression
+@enduml
+
+@startuml dss_tryon
+!include style.iuml
+autonumber
+actor "Visiteur" as V
+participant "Système Sellio" as S
+participant "Decart" as D
+V -> S : cliquer sur « Essayer virtuellement »
+S -> D : demander un jeton client (clé secrète)
+D --> S : jeton éphémère (600 s)
+S --> V : jeton
+V -> V : autoriser la caméra
+V -> D : ouvrir la session WebRTC (flux caméra)
+V -> D : envoyer consigne + image du vêtement
+alt vidéo reçue
+  D --> V : flux vidéo généré
+  V -> V : compte à rebours de 45 s
+  V -> D : fermer la session
+else aucune vidéo après 20 s
+  V -> V : message (VPN, crédits)
+end
+@enduml
+
+@startuml dss_reco
+!include style.iuml
+autonumber
+actor "Visiteur" as V
+participant "Système Sellio" as S
+V -> S : consulter des produits
+S -> S : enregistrer les événements
+V -> S : afficher l'accueil ou une fiche produit
+S -> S : lire l'historique pondéré du visiteur
+alt historique disponible
+  S -> S : sommer les similarités pré-calculées\net mélanger à la popularité (α)
+else nouveau visiteur
+  S -> S : produits populaires
+end
+S --> V : produits recommandés
+V -> S : cliquer sur une recommandation
+S -> S : enregistrer RECOMMENDATION_CLICK
+@enduml
+
+@startuml dss_comportement
+!include style.iuml
+autonumber
+actor "Commerçant" as M
+participant "Système Sellio" as S
+M -> S : ouvrir « Comportement »
+S -> S : vérifier que la boutique est la sienne
+alt autre boutique
+  S --> M : 403
+else
+  S --> M : entonnoir, segments, produits consultés,\ndernier entraînement
+end
+M -> S : ouvrir la liste des clients
+S -> S : scorer l'attrition (modèle du secteur)
+S --> M : risque élevé / moyen / faible
+opt ré-entraînement
+  M -> S : ré-entraîner les modèles
+  S --> M : nouvelles métriques
+end
+@enduml

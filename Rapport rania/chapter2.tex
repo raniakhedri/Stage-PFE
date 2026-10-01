@@ -1,0 +1,655 @@
+\thispagestyle{fancy}
+\fancyhead[R]{A.U 2025-2026}
+\fancyhead[L]{ chapitre 2: Analyse et spécification des besoins }
+\chapter{Analyse et spécification des besoins}
+\section*{Introduction}
+Dans ce chapitre, nous analysons en détail les besoins de la plateforme Sellio. Nous identifions d'abord les acteurs, puis les besoins fonctionnels et non fonctionnels. Nous présentons ensuite les diagrammes de cas d'utilisation, l'architecture retenue, le backlog produit et la planification des sprints, et enfin l'environnement de travail.
+
+\section{Analyse et spécification des besoins}
+La spécification des besoins fonctionnels et non fonctionnels est la première étape du cycle de développement : elle fixe ce que la plateforme doit offrir et les qualités qu'elle doit garantir.
+
+\subsection{Identification des acteurs}
+Sellio met en relation une plateforme, des commerçants et les clients de ces commerçants. Chaque acteur y joue un rôle distinct.
+\subsubsection*{\underline{\textbf{Acteurs principaux}}}
+\begin{itemize}[label=\ding{109}]
+\item \textbf{Administrateur Sellio :} gère la plateforme dans son ensemble. Il consulte les statistiques globales, la liste des boutiques et de leurs propriétaires, valide ou refuse les dossiers de vérification (KYC), suspend une boutique ou bloque un commerçant, et enrichit les listes d'attributs partagées (tissus, etc.).
+\item \textbf{Commerçant :} propriétaire d'une boutique. Il s'inscrit, crée sa boutique, soumet son dossier de vérification, puis gère depuis le back-office son catalogue, sa vitrine, ses commandes, ses retours, ses promotions, son programme de fidélité, ses campagnes e-mail et consulte l'analyse du comportement de ses visiteurs.
+\item \textbf{Collaborateur de boutique :} membre de l'équipe d'un commerçant, doté d'un rôle aux permissions limitées (par exemple gestion des commandes uniquement).
+\item \textbf{Visiteur :} internaute non connecté qui parcourt la vitrine d'une boutique, recherche des produits, reçoit des recommandations, remplit son panier et peut utiliser la cabine d'essayage virtuel.
+\item \textbf{Client :} visiteur inscrit sur une boutique. En plus des actions du visiteur, il passe commande, paie en ligne, suit ses commandes, demande un retour, publie des avis et cumule des points de fidélité.
+\end{itemize}
+\subsubsection*{\underline{\textbf{Acteurs secondaires}}}
+\begin{itemize}[label=\ding{109}]
+\item \textbf{Stripe :} prestataire de paiement. Il traite les paiements des commandes (\textit{PaymentIntent}) et l'enregistrement de la carte du commerçant lors de la vérification (\textit{SetupIntent}).
+\item \textbf{Decart :} service d'intelligence artificielle générative qui produit en temps réel la vidéo d'essayage virtuel à partir du flux caméra du client et de l'image du vêtement.
+\item \textbf{Brevo~\cite{brevo} :} service d'envoi d'e-mails transactionnels et marketing (confirmations de commande, newsletters, contact client).
+\item \textbf{Moteur d'apprentissage automatique :} ensemble de scripts Python (scikit-learn) appelés par le microservice d'analyse pour entraîner les modèles et produire recommandations, segments et scores d'attrition.
+\end{itemize}
+
+\subsection{Spécification des besoins}
+Nous classons les besoins en deux familles : les besoins fonctionnels, qui décrivent \textbf{ce que} le système doit faire, et les besoins non fonctionnels, qui décrivent \textbf{comment} il doit le faire.
+\subsubsection*{\underline{\textbf{Besoins fonctionnels}}}
+Les besoins sont regroupés par module, ce qui reflète le découpage de la plateforme en microservices. Pour chaque fonctionnalité, nous précisons le ou les acteurs concernés.
+
+\Needspace{20\baselineskip}
+\paragraph{Module Plateforme, authentification et vérification}
+Le tableau~\ref{tab:besoins-plateforme} présente les besoins de ce module.
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|p{9.5cm}|p{5.5cm}|}
+\hline
+\textbf{Fonctionnalité} & \textbf{Acteur(s) concerné(s)} \\
+\hline
+S'inscrire et s'authentifier de façon sécurisée (JWT et jeton de rafraîchissement) & Commerçant, Client, Administrateur Sellio \\
+\hline
+Créer une boutique (nom, secteur, identité visuelle) & Commerçant \\
+\hline
+Soumettre un dossier de vérification : carte bancaire, pièce d'identité (CIN ou passeport) et selfie & Commerçant \\
+\hline
+Valider ou refuser un dossier de vérification avec motif & Administrateur Sellio \\
+\hline
+Consulter les statistiques, les boutiques et leurs propriétaires & Administrateur Sellio \\
+\hline
+Suspendre une boutique, bloquer un commerçant & Administrateur Sellio \\
+\hline
+Gérer les rôles et permissions de l'équipe de la boutique & Commerçant \\
+\hline
+\end{tabular}
+\caption{Besoins fonctionnels du module Plateforme, authentification et vérification}
+\label{tab:besoins-plateforme}
+\end{table}
+
+\Needspace{20\baselineskip}
+\paragraph{Module Catalogue et vitrine}
+Le tableau~\ref{tab:besoins-catalogue} présente les besoins de ce module.
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|p{9.5cm}|p{5.5cm}|}
+\hline
+\textbf{Fonctionnalité} & \textbf{Acteur(s) concerné(s)} \\
+\hline
+Gérer les produits, leurs images et leurs variantes & Commerçant, Collaborateur \\
+\hline
+Choisir tailles, couleurs (prédéfinies ou RVB), tissus et autres attributs dans des listes normalisées & Commerçant, Collaborateur \\
+\hline
+Étendre les listes d'attributs & Administrateur Sellio, Commerçant \\
+\hline
+Gérer les catégories et les collections & Commerçant, Collaborateur \\
+\hline
+Choisir un gabarit de vitrine (Minimal, Bold, Luxury) et personnaliser le thème & Commerçant \\
+\hline
+Parcourir la vitrine, filtrer et rechercher les produits & Visiteur, Client \\
+\hline
+\end{tabular}
+\caption{Besoins fonctionnels du module Catalogue et vitrine}
+\label{tab:besoins-catalogue}
+\end{table}
+
+\Needspace{20\baselineskip}
+\paragraph{Module Transactions}
+Le tableau~\ref{tab:besoins-transactions} présente les besoins de ce module.
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|p{9.5cm}|p{5.5cm}|}
+\hline
+\textbf{Fonctionnalité} & \textbf{Acteur(s) concerné(s)} \\
+\hline
+Gérer un panier (taille obligatoire pour les articles concernés) & Visiteur, Client \\
+\hline
+Passer commande avec livraison, TVA et code promo & Client \\
+\hline
+Payer en ligne par carte (Stripe) & Client, Stripe \\
+\hline
+Suivre ses commandes et demander un retour & Client \\
+\hline
+Gérer les commandes, leurs statuts et les retours & Commerçant, Collaborateur \\
+\hline
+Paramétrer la TVA, les zones de livraison et la politique de retour & Commerçant \\
+\hline
+Publier un avis ; modérer et répondre aux avis & Client ; Commerçant \\
+\hline
+\end{tabular}
+\caption{Besoins fonctionnels du module Transactions}
+\label{tab:besoins-transactions}
+\end{table}
+
+\Needspace{20\baselineskip}
+\paragraph{Module Marketing et fidélisation}
+Le tableau~\ref{tab:besoins-marketing} présente les besoins de ce module.
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|p{9.5cm}|p{5.5cm}|}
+\hline
+\textbf{Fonctionnalité} & \textbf{Acteur(s) concerné(s)} \\
+\hline
+Créer des codes promo et des remises automatiques & Commerçant \\
+\hline
+Publier des bannières ciblées par segment & Commerçant \\
+\hline
+Envoyer une newsletter ou contacter un client par e-mail & Commerçant, Brevo \\
+\hline
+Configurer le programme de fidélité et ses niveaux & Commerçant \\
+\hline
+Consulter son solde de points et son niveau & Client \\
+\hline
+\end{tabular}
+\caption{Besoins fonctionnels du module Marketing et fidélisation}
+\label{tab:besoins-marketing}
+\end{table}
+
+\Needspace{20\baselineskip}
+\paragraph{Module Intelligence (essayage virtuel et apprentissage automatique)}
+Le tableau~\ref{tab:besoins-ia} présente les besoins de ce module.
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|p{9.5cm}|p{5.5cm}|}
+\hline
+\textbf{Fonctionnalité} & \textbf{Acteur(s) concerné(s)} \\
+\hline
+Essayer virtuellement un vêtement en temps réel avec sa caméra & Visiteur, Client, Decart \\
+\hline
+Collecter les événements de navigation & Visiteur, Client (implicite) \\
+\hline
+Recevoir des recommandations : produits similaires, pour vous, souvent achetés ensemble, populaires & Visiteur, Client, Moteur ML \\
+\hline
+Consulter l'analyse comportementale : entonnoir, segments de visiteurs, produits consultés & Commerçant \\
+\hline
+Identifier les clients à risque d'attrition & Commerçant, Moteur ML \\
+\hline
+Ré-entraîner les modèles de la boutique & Commerçant, Moteur ML \\
+\hline
+\end{tabular}
+\caption{Besoins fonctionnels du module Intelligence}
+\label{tab:besoins-ia}
+\end{table}
+
+\subsubsection*{\underline{\textbf{Besoins non fonctionnels}}}
+Les besoins non fonctionnels définissent les qualités attendues du système. \newline
+\Needspace{20\baselineskip}
+Le tableau~\ref{tab:exigences-non-fonctionnelles} les présente selon le modèle de qualité ISO/IEC 25010~\cite{ISO25010}.
+
+\begin{longtable}{|p{3.2cm}|p{4cm}|p{8cm}|}
+\caption{Exigences non fonctionnelles du système}
+\label{tab:exigences-non-fonctionnelles} \\
+\hline
+\textbf{Caractéristique} & \textbf{Sous-caractéristique} & \textbf{Description} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Caractéristique} & \textbf{Sous-caractéristique} & \textbf{Description} \\
+\hline
+\endhead
+\hline \multicolumn{3}{r}{\textit{Suite à la page suivante}} \\
+\endfoot
+\hline
+\endlastfoot
+
+\multirow{4}{*}{Sécurité} & Authentification & Jeton d'accès JWT (24 h) et jeton de rafraîchissement (7 jours) ; mots de passe hachés avec BCrypt. \\
+\cline{2-3}
+ & Contrôle d'accès & Rôles et permissions vérifiés côté serveur ; un commerçant n'accède qu'aux données de sa propre boutique. \\
+\cline{2-3}
+ & Protection des paiements & Aucune donnée de carte ne transite par nos serveurs ; seuls la marque, les 4 derniers chiffres, l'expiration et la référence Stripe sont stockés (PCI-DSS). \\
+\cline{2-3}
+ & Confiance & Une boutique reste « en attente » tant que son dossier KYC n'est pas validé ; un compte bloqué ne peut plus se connecter. \\
+\hline
+\multirow{2}{*}{Performance} & Temps de réponse & Recommandations servies depuis des modèles pré-entraînés ; les événements sont envoyés par lots pour ne pas ralentir la navigation. \\
+\cline{2-3}
+ & Volume de données & Table d'événements partitionnée par mois, index BRIN sur la date, agrégats quotidiens et rétention de 13 mois. \\
+\hline
+\multirow{2}{*}{Fiabilité} & Tolérance aux pannes & La panne d'un microservice (par exemple l'analyse) n'empêche pas les achats ; la vitrine masque simplement les sections de recommandations. \\
+\cline{2-3}
+ & Intégrité & Transactions ACID pour les commandes et les paiements. \\
+\hline
+\multirow{2}{*}{Utilisabilité} & Ergonomie & Interfaces responsives ; thème sombre par défaut sur l'espace Sellio avec bascule vers le thème clair. \\
+\cline{2-3}
+ & Personnalisation & Toute modification du thème est visible immédiatement sur la vitrine, sans écrire de code. \\
+\hline
+\multirow{2}{*}{Maintenabilité} & Modularité & Un microservice par domaine métier, une bibliothèque partagée pour les entités et DTO. \\
+\cline{2-3}
+ & Évolutivité & Ajout d'un gabarit de vitrine, d'un attribut ou d'un modèle ML sans toucher aux autres services. \\
+\hline
+Portabilité & Compatibilité & Navigateurs modernes (Chrome, Firefox, Edge) ; l'essayage virtuel exige une caméra et WebRTC. \\
+\hline
+Confidentialité & Données personnelles & Le suivi comportemental repose sur un identifiant de visiteur anonyme ; les pièces d'identité ne sont visibles que par l'administrateur Sellio. \\
+\hline
+\end{longtable}
+
+\subsection{Diagramme de cas d'utilisation général}
+Le système est utilisé par cinq acteurs principaux : \textbf{l'Administrateur Sellio}, \textbf{le Commerçant}, \textbf{le Collaborateur de boutique}, \textbf{le Visiteur} et \textbf{le Client}. Les sous-sections suivantes présentent les cas d'utilisation de chacun.
+
+\subsubsection{Cas d'utilisation de l'Administrateur Sellio}
+La figure~\ref{fig:cu-admin} présente les cas d'utilisation de l'administrateur de la plateforme.
+\begin{figure}[H]
+    \centering
+    \img{0.9}{cu_admin_sellio.png}
+    \caption{Diagramme de cas d'utilisation de l'Administrateur Sellio}
+    \label{fig:cu-admin}
+\end{figure}
+
+\subsubsection{Cas d'utilisation du Commerçant}
+La figure~\ref{fig:cu-commercant} présente les cas d'utilisation du commerçant. Le collaborateur de boutique hérite d'une partie de ces cas, selon les permissions de son rôle.
+\begin{figure}[H]
+    \centering
+    \img{1}{cu_commercant.png}
+    \caption{Diagramme de cas d'utilisation du Commerçant}
+    \label{fig:cu-commercant}
+\end{figure}
+
+\subsubsection{Cas d'utilisation du Visiteur et du Client}
+La figure~\ref{fig:cu-client} présente les cas d'utilisation du visiteur et du client. Le client hérite de tous les cas du visiteur.
+\begin{figure}[H]
+    \centering
+    \img{0.9}{cu_client.png}
+    \caption{Diagramme de cas d'utilisation du Visiteur et du Client}
+    \label{fig:cu-client}
+\end{figure}
+
+\section{Analyse globale}
+\subsection{Diagramme de classes d'analyse}
+La figure~\ref{fig:classes} présente le diagramme de classes d'analyse. La classe centrale est \texttt{Shop} : chaque utilisateur, produit, catégorie, commande, promotion ou événement comportemental est rattaché à une boutique, ce qui matérialise l'isolation multi-boutiques. Une boutique possède un dossier de vérification (\texttt{MerchantVerification}), un statut (\texttt{PENDING}, \texttt{ACTIVE}, \texttt{REJECTED}, \texttt{SUSPENDED}), un gabarit et un thème.
+\begin{figure}[H]
+    \centering
+    \img{1}{diagramme_classes.png}
+    \caption{Diagramme de classes d'analyse}
+    \label{fig:classes}
+\end{figure}
+
+\subsection{Architecture globale}
+L'architecture influence directement les performances, la maintenabilité et l'évolutivité de la plateforme. Trois approches ont été comparées : \textbf{l'architecture monolithique}, \textbf{l'architecture N-tiers} et \textbf{l'architecture microservices}.\newline
+\Needspace{20\baselineskip}
+Le tableau~\ref{tab:comparaison_architectures} présente leurs avantages et leurs limites.
+
+\begin{longtable}{|>{\raggedright\arraybackslash}p{3.2cm}|>{\raggedright\arraybackslash}p{11cm}|}
+\hline
+\textbf{Architecture} & \textbf{Caractéristiques} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Architecture} & \textbf{Caractéristiques} \\
+\hline
+\endhead
+Monolithique &
+\begin{itemize}[leftmargin=*, nosep]
+    \item Présentation, logique métier et accès aux données dans une seule unité de déploiement.
+    \item \textbf{Avantages} : simplicité de développement et de déploiement, débogage facile, cohérence transactionnelle native.
+    \item \textbf{Limites} : mise à l'échelle uniquement globale, un défaut dans un module peut affecter tout le système, maintenance difficile quand le code grossit.
+\end{itemize} \\
+\hline
+Client--serveur N-tiers &
+\begin{itemize}[leftmargin=*, nosep]
+    \item Séparation en couches : présentation, logique métier, données.
+    \item \textbf{Avantages} : séparation claire des responsabilités, plusieurs clients peuvent consommer la même couche métier.
+    \item \textbf{Limites} : le serveur d'application reste une unité de déploiement unique, avec un couplage interne entre modules.
+\end{itemize} \\
+\hline
+Microservices &
+\begin{itemize}[leftmargin=*, nosep]
+    \item Décomposition en services indépendants, chacun responsable d'un domaine métier, déployés séparément et communiquant par API REST derrière une passerelle.
+    \item \textbf{Avantages} : mise à l'échelle service par service, isolation des pannes, déploiements indépendants, liberté technologique par service.
+    \item \textbf{Limites} : complexité opérationnelle, latence réseau entre services, cohérence des données distribuées plus difficile.
+\end{itemize} \\
+\hline
+\caption{Comparaison des architectures logicielles étudiées}
+\label{tab:comparaison_architectures}
+\end{longtable}
+
+L'\textbf{architecture microservices} a été retenue, pour trois raisons. D'abord, le sujet lui-même demande une plateforme distribuée. Ensuite, les domaines de Sellio ont des charges très différentes : le service d'analyse reçoit un flux continu d'événements et lance des entraînements de modèles coûteux, alors que le service d'identité traite peu de requêtes ; les séparer permet de dimensionner chacun selon sa charge et d'éviter qu'un entraînement ne ralentisse les achats. Enfin, le projet est né d'un monolithe (NaturEssence) dont la croissance rendait les évolutions de plus en plus risquées ; la migration vers des services séparés a rendu chaque domaine plus facile à faire évoluer.
+
+Par pragmatisme, les services partagent une même instance PostgreSQL, chaque service restant propriétaire de ses tables, et une bibliothèque commune (\texttt{shared-lib}) regroupe les entités et les DTO. Ce compromis, adapté à une équipe réduite, est discuté dans les perspectives (base de données par service).
+
+\subsubsection{Choix du système de gestion de base de données}
+Le plan de travail initial prévoyait MongoDB. Le tableau~\ref{tab:choix-sgbd} résume la comparaison qui nous a conduits à retenir PostgreSQL.
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{|p{4cm}|p{5.3cm}|p{5.3cm}|}
+\hline
+\textbf{Critère} & \textbf{MongoDB} & \textbf{PostgreSQL} \\
+\hline
+Transactions (commande + paiement + stock) & Multi-documents possibles mais plus coûteuses & ACID natives \\
+\hline
+Intégrité référentielle (boutique, client, commande) & À gérer dans l'application & Clés étrangères et contraintes \\
+\hline
+Données flexibles (attributs, thème) & Natif & Type JSONB \\
+\hline
+Volume d'événements & Bon & Partitionnement déclaratif et index BRIN \\
+\hline
+Requêtes analytiques (agrégats, jointures) & Pipeline d'agrégation & SQL standard, fonctions de fenêtre \\
+\hline
+\end{tabular}
+\caption{Comparaison MongoDB / PostgreSQL}
+\label{tab:choix-sgbd}
+\end{table}
+Les données de Sellio sont avant tout relationnelles et transactionnelles (une commande relie un client, des produits, une boutique et un paiement) ; PostgreSQL couvre en outre le besoin de flexibilité (JSONB) et de volume (partitionnement), d'où ce choix~\cite{postgresql2026}.
+
+\subsubsection{Architecture logique de la plateforme}
+La figure~\ref{fig:archi_logique} présente l'architecture logique de Sellio et ses couches.
+\begin{figure}[H]
+\centering
+\img{1}{architecture_logique.png}
+\caption{Architecture logique de la plateforme Sellio}
+\label{fig:archi_logique}
+\end{figure}
+
+\subsubsection*{La couche présentation (front-end) :}
+Elle se compose de deux applications React :
+\begin{itemize}
+  \item \textbf{l'application Sellio} (port 3000), qui regroupe le site de la plateforme (accueil, inscription, connexion), la console de l'administrateur Sellio et le back-office de chaque commerçant ;
+  \item \textbf{la vitrine} (port 3001), commune à toutes les boutiques : la boutique affichée est déterminée par son identifiant (\textit{slug}) et son gabarit, sa palette et son thème sont chargés dynamiquement.
+\end{itemize}
+
+\subsubsection*{La couche passerelle :}
+Une passerelle \textbf{Spring Cloud Gateway} (port 8080) est le point d'entrée unique des API. Elle route chaque requête vers le bon microservice selon son chemin (\texttt{/api/v1/auth/**} vers le service d'identité, \texttt{/api/v1/public/products/**} vers le catalogue, etc.).
+
+\subsubsection*{La couche métier (back-end) :}
+Elle est composée de cinq microservices Spring Boot :
+\begin{itemize}
+  \item \textbf{auth-service} (8081) : comptes, JWT, rôles et permissions, boutiques, vérification KYC, console plateforme, fidélité et segments ;
+  \item \textbf{catalog-service} (8082) : produits, variantes, catégories, collections, avis, téléversement d'images et jeton d'essayage virtuel ;
+  \item \textbf{order-service} (8083) : tunnel de commande, paiement Stripe, commandes, retours, TVA, livraison, promotions et tableau de bord ;
+  \item \textbf{marketing-service} (8084) : bannières, apparence de la vitrine, profil de la boutique et e-mailing ;
+  \item \textbf{analytics-service} (8085) : collecte des événements, recommandations, analyse comportementale et prédiction de l'attrition.
+\end{itemize}
+
+\subsubsection*{La couche intelligence :}
+Des scripts \textbf{Python} (pandas, scikit-learn) entraînent et appliquent les modèles. Le service d'analyse les exécute comme sous-processus et stocke les modèles entraînés par boutique.
+
+\subsubsection*{La couche données :}
+\textbf{PostgreSQL} stocke l'ensemble des données ; les images de produits sont stockées sur disque et servies par le catalogue.
+
+\subsubsection*{Les services externes :}
+\textbf{Stripe} (paiements), \textbf{Decart} (essayage virtuel) et \textbf{Brevo} (e-mails).
+
+\subsubsection{Architecture physique de la plateforme}
+La figure~\ref{fig:archi_physique} présente le déploiement physique : le navigateur du client communique en HTTPS avec les serveurs web des applications React et avec la passerelle ; celle-ci relaie les appels vers les microservices, qui accèdent au serveur de base de données. Le navigateur communique directement avec Stripe (saisie de carte) et avec Decart (flux vidéo WebRTC), les jetons nécessaires étant délivrés par nos services.
+\begin{figure}[H]
+    \centering
+    \img{1}{architecture_physique.png}
+    \caption{Architecture physique de la plateforme Sellio}
+    \label{fig:archi_physique}
+\end{figure}
+
+\section{Pilotage du projet avec Scrum}
+\subsection{Backlog du produit}
+Le tableau~\ref{tab:backlog-produit} présente le backlog du produit Sellio. Les fonctionnalités sont organisées par module et décrites sous forme de user stories.
+\small
+\begin{longtable}{|p{0.9cm}|p{3cm}|p{1.3cm}|p{6.6cm}|p{1.9cm}|}
+\hline
+\textbf{ID} & \textbf{Module} & \textbf{ID US} & \textbf{User Story} & \textbf{Complexité} \\
+\hline
+\endfirsthead
+\hline
+\textbf{ID} & \textbf{Module} & \textbf{ID US} & \textbf{User Story} & \textbf{Complexité} \\
+\hline
+\endhead
+\hline \multicolumn{5}{r}{\textit{Suite à la page suivante}} \\
+\endfoot
+\hline
+\endlastfoot
+
+\multirow{5}{*}{M1} & \multirow{5}{3cm}{Authentification} & M1.1 & En tant qu'utilisateur, je souhaite créer un compte. & Moyenne \\
+\cline{3-5}
+ & & M1.2 & En tant qu'utilisateur, je souhaite me connecter. & Moyenne \\
+\cline{3-5}
+ & & M1.3 & En tant qu'utilisateur, je souhaite rester connecté grâce au rafraîchissement de mon jeton. & Moyenne \\
+\cline{3-5}
+ & & M1.4 & En tant qu'utilisateur, je souhaite me déconnecter. & Faible \\
+\cline{3-5}
+ & & M1.5 & En tant que client, je souhaite consulter et modifier mon profil. & Faible \\
+\hline
+\multirow{3}{*}{M2} & \multirow{3}{3cm}{Rôles et utilisateurs} & M2.1 & En tant que commerçant, je souhaite créer des rôles et leur associer des permissions. & Moyenne \\
+\cline{3-5}
+ & & M2.2 & En tant que commerçant, je souhaite gérer les comptes de mon équipe et de mes clients. & Moyenne \\
+\cline{3-5}
+ & & M2.3 & En tant que système, je veux restreindre chaque endpoint selon les permissions. & Élevée \\
+\hline
+\multirow{4}{*}{M3} & \multirow{4}{3cm}{Plateforme et boutiques} & M3.1 & En tant que visiteur, je souhaite découvrir Sellio sur une page d'accueil. & Faible \\
+\cline{3-5}
+ & & M3.2 & En tant que commerçant, je souhaite m'inscrire sur Sellio. & Moyenne \\
+\cline{3-5}
+ & & M3.3 & En tant que commerçant, je souhaite créer ma boutique avec un assistant. & Élevée \\
+\cline{3-5}
+ & & M3.4 & En tant que commerçant, je souhaite ouvrir ma vitrine depuis le back-office. & Faible \\
+\hline
+\multirow{5}{*}{M4} & \multirow{5}{3cm}{Vérification KYC et console} & M4.1 & En tant que commerçant, je souhaite enregistrer ma carte bancaire. & Élevée \\
+\cline{3-5}
+ & & M4.2 & En tant que commerçant, je souhaite soumettre ma pièce d'identité et un selfie. & Moyenne \\
+\cline{3-5}
+ & & M4.3 & En tant qu'administrateur Sellio, je souhaite valider ou refuser un dossier. & Moyenne \\
+\cline{3-5}
+ & & M4.4 & En tant qu'administrateur Sellio, je souhaite consulter les boutiques et leurs propriétaires. & Moyenne \\
+\cline{3-5}
+ & & M4.5 & En tant qu'administrateur Sellio, je souhaite suspendre une boutique ou bloquer un commerçant. & Moyenne \\
+\hline
+\multirow{3}{*}{M5} & \multirow{3}{3cm}{Catalogue} & M5.1 & En tant que commerçant, je souhaite gérer mes produits. & Élevée \\
+\cline{3-5}
+ & & M5.2 & En tant que commerçant, je souhaite gérer mes catégories. & Moyenne \\
+\cline{3-5}
+ & & M5.3 & En tant que commerçant, je souhaite gérer mes collections. & Moyenne \\
+\hline
+\multirow{3}{*}{M6} & \multirow{3}{3cm}{Attributs de variantes} & M6.1 & En tant que commerçant, je souhaite choisir les tailles dans une liste. & Moyenne \\
+\cline{3-5}
+ & & M6.2 & En tant que commerçant, je souhaite choisir des couleurs prédéfinies ou libres (RVB). & Moyenne \\
+\cline{3-5}
+ & & M6.3 & En tant que commerçant, je souhaite choisir le tissu et d'autres attributs, et en ajouter. & Moyenne \\
+\hline
+\multirow{3}{*}{M7} & \multirow{3}{3cm}{Vitrine} & M7.1 & En tant que commerçant, je souhaite choisir un gabarit Minimal, Bold ou Luxury. & Élevée \\
+\cline{3-5}
+ & & M7.2 & En tant que visiteur, je souhaite parcourir la vitrine, ses menus et ses catégories. & Élevée \\
+\cline{3-5}
+ & & M7.3 & En tant que visiteur, je souhaite consulter la fiche d'un produit. & Moyenne \\
+\hline
+\multirow{2}{*}{M8} & \multirow{2}{3cm}{Personnalisation} & M8.1 & En tant que commerçant, je souhaite choisir la palette de couleurs de ma boutique. & Moyenne \\
+\cline{3-5}
+ & & M8.2 & En tant que commerçant, je souhaite personnaliser boutons, survols, navigation, textes et pied de page. & Élevée \\
+\hline
+\multirow{3}{*}{M9} & \multirow{3}{3cm}{Panier et commande} & M9.1 & En tant que visiteur, je souhaite gérer mon panier en choisissant la taille. & Moyenne \\
+\cline{3-5}
+ & & M9.2 & En tant que client, je souhaite passer commande avec livraison et code promo. & Élevée \\
+\cline{3-5}
+ & & M9.3 & En tant que client, je souhaite retrouver mon panier sur un autre appareil. & Faible \\
+\hline
+M10 & Paiement & M10.1 & En tant que client, je souhaite payer ma commande par carte. & Élevée \\
+\hline
+\multirow{3}{*}{M11} & \multirow{3}{3cm}{Commandes et tableau de bord} & M11.1 & En tant que commerçant, je souhaite gérer mes commandes et leurs statuts. & Moyenne \\
+\cline{3-5}
+ & & M11.2 & En tant que client, je souhaite suivre mes commandes. & Faible \\
+\cline{3-5}
+ & & M11.3 & En tant que commerçant, je souhaite consulter un tableau de bord des ventes. & Moyenne \\
+\hline
+\multirow{3}{*}{M12} & \multirow{3}{3cm}{Retours, TVA et livraison} & M12.1 & En tant que client, je souhaite demander un retour. & Moyenne \\
+\cline{3-5}
+ & & M12.2 & En tant que commerçant, je souhaite traiter les retours et définir ma politique de retour. & Moyenne \\
+\cline{3-5}
+ & & M12.3 & En tant que commerçant, je souhaite paramétrer la TVA et les zones de livraison. & Moyenne \\
+\hline
+\multirow{2}{*}{M13} & \multirow{2}{3cm}{Avis} & M13.1 & En tant que client, je souhaite publier un avis sur un produit acheté. & Faible \\
+\cline{3-5}
+ & & M13.2 & En tant que commerçant, je souhaite modérer les avis et y répondre. & Faible \\
+\hline
+\multirow{2}{*}{M14} & \multirow{2}{3cm}{Promotions} & M14.1 & En tant que commerçant, je souhaite créer des codes promo. & Moyenne \\
+\cline{3-5}
+ & & M14.2 & En tant que commerçant, je souhaite créer des remises automatiques. & Moyenne \\
+\hline
+\multirow{2}{*}{M15} & \multirow{2}{3cm}{Bannières et e-mailing} & M15.1 & En tant que commerçant, je souhaite publier des bannières ciblées. & Moyenne \\
+\cline{3-5}
+ & & M15.2 & En tant que commerçant, je souhaite envoyer des e-mails à mes clients. & Moyenne \\
+\hline
+\multirow{3}{*}{M16} & \multirow{3}{3cm}{Fidélité et segments} & M16.1 & En tant que commerçant, je souhaite configurer le gain de points. & Moyenne \\
+\cline{3-5}
+ & & M16.2 & En tant que commerçant, je souhaite gérer les niveaux et ajuster les points d'un client. & Moyenne \\
+\cline{3-5}
+ & & M16.3 & En tant que client, je souhaite consulter mes points et mon niveau. & Faible \\
+\hline
+\multirow{2}{*}{M17} & \multirow{2}{3cm}{Essayage virtuel} & M17.1 & En tant que visiteur, je souhaite essayer un vêtement en direct avec ma caméra. & Élevée \\
+\cline{3-5}
+ & & M17.2 & En tant que système, je veux délivrer des jetons Decart à durée limitée sans exposer la clé. & Moyenne \\
+\hline
+M18 & Suivi comportemental & M18.1 & En tant que système, je veux collecter les événements de navigation. & Élevée \\
+\hline
+\multirow{2}{*}{M19} & \multirow{2}{3cm}{Recommandation} & M19.1 & En tant que visiteur, je souhaite voir des produits similaires et « pour vous ». & Élevée \\
+\cline{3-5}
+ & & M19.2 & En tant que visiteur, je souhaite voir les produits souvent achetés ensemble. & Moyenne \\
+\hline
+\multirow{3}{*}{M20} & \multirow{3}{3cm}{Analyse comportementale et attrition} & M20.1 & En tant que commerçant, je souhaite voir les segments de mes visiteurs. & Élevée \\
+\cline{3-5}
+ & & M20.2 & En tant que commerçant, je souhaite identifier les clients à risque d'attrition. & Élevée \\
+\cline{3-5}
+ & & M20.3 & En tant que commerçant, je souhaite consulter le tableau de bord « Comportement » et ré-entraîner les modèles. & Moyenne \\
+\hline
+\caption{Backlog du produit Sellio}
+\label{tab:backlog-produit}
+\end{longtable}
+\normalsize
+
+\subsection{Planification des sprints}
+Après l'élaboration du backlog, le projet a été réparti en \textbf{six releases} et \textbf{onze sprints} de deux semaines. Les deux premières semaines du stage (du 2 au 13 février 2026) ont été consacrées à l'étude du projet NaturEssence existant, à l'étude de l'existant et à la préparation du backlog ; les dernières semaines, à la consolidation, aux tests et à la rédaction de ce rapport.\newline
+Le tableau~\ref{tab:planification-sprints} présente la planification globale des sprints.
+\begin{longtable}{|p{1.6cm}|p{4.2cm}|p{6.5cm}|p{1.6cm}|}
+\hline
+\textbf{Sprint} & \textbf{Modules développés} & \textbf{Objectif du sprint} & \textbf{Charge (pts)} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Sprint} & \textbf{Modules développés} & \textbf{Objectif du sprint} & \textbf{Charge (pts)} \\
+\hline
+\endhead
+\hline \multicolumn{4}{r}{\textit{Suite à la page suivante}} \\
+\endfoot
+\hline
+\endlastfoot
+\multicolumn{4}{|c|}{\textbf{Release 1 : Fondations de la plateforme}} \\
+\hline
+\textbf{Sprint 1} & M1 -- Authentification \newline M2 -- Rôles et utilisateurs & Découper le projet en microservices derrière une passerelle et sécuriser l'accès (JWT, rôles, permissions). & 22 \\
+\hline
+\textbf{Sprint 2} & M3 -- Plateforme et boutiques \newline M4 -- Vérification KYC et console & Transformer la boutique unique en plateforme multi-boutiques : inscription des commerçants, création de boutique, vérification KYC, console d'administration. & 25 \\
+\hline
+\multicolumn{4}{|c|}{\textbf{Release 2 : Catalogue et vitrine}} \\
+\hline
+\textbf{Sprint 3} & M5 -- Catalogue \newline M6 -- Attributs de variantes & Offrir un catalogue adapté aux cosmétiques et aux vêtements, avec des attributs normalisés. & 19 \\
+\hline
+\textbf{Sprint 4} & M7 -- Vitrine \newline M8 -- Personnalisation & Livrer trois gabarits de vitrine complets et un éditeur de thème appliqué en direct. & 18 \\
+\hline
+\multicolumn{4}{|c|}{\textbf{Release 3 : Parcours transactionnel}} \\
+\hline
+\textbf{Sprint 5} & M9 -- Panier et commande \newline M10 -- Paiement & Permettre d'acheter : panier, tunnel de commande et paiement Stripe. & 17 \\
+\hline
+\textbf{Sprint 6} & M11 -- Commandes et tableau de bord \newline M12 -- Retours, TVA et livraison \newline M13 -- Avis & Gérer l'après-vente et le paramétrage fiscal et logistique. & 17 \\
+\hline
+\multicolumn{4}{|c|}{\textbf{Release 4 : Marketing et fidélisation}} \\
+\hline
+\textbf{Sprint 7} & M14 -- Promotions \newline M15 -- Bannières et e-mailing & Outiller le commerçant pour attirer et relancer ses clients. & 15 \\
+\hline
+\textbf{Sprint 8} & M16 -- Fidélité et segments & Fidéliser les clients par un programme à points et des niveaux. & 11 \\
+\hline
+\multicolumn{4}{|c|}{\textbf{Release 5 : Essayage virtuel}} \\
+\hline
+\textbf{Sprint 9} & M17 -- Essayage virtuel & Intégrer la cabine d'essayage en temps réel fondée sur l'API Decart. & 12 \\
+\hline
+\multicolumn{4}{|c|}{\textbf{Release 6 : Intelligence comportementale}} \\
+\hline
+\textbf{Sprint 10} & M18 -- Suivi comportemental \newline M19 -- Recommandation & Collecter les événements et servir des recommandations hybrides. & 15 \\
+\hline
+\textbf{Sprint 11} & M20 -- Analyse comportementale et attrition & Segmenter les visiteurs, prédire l'attrition et restituer l'analyse au commerçant. & 16 \\
+\hline
+\multicolumn{3}{|r|}{\textbf{Total}} & \textbf{187} \\
+\hline
+\caption{Planification des sprints -- Sellio}
+\label{tab:planification-sprints}
+\end{longtable}
+
+\section{Environnement de travail}
+\subsection{Environnement matériel de développement}
+Le développement a été réalisé sur un ordinateur portable présentant les caractéristiques suivantes :
+\begin{itemize}
+    \item \textbf{Modèle :} \textit{[modèle de l'ordinateur]}
+    \item \textbf{Système d'exploitation :} Windows 11 Professionnel (64 bits)
+    \item \textbf{Processeur :} \textit{[processeur]}
+    \item \textbf{Mémoire RAM :} \textit{[mémoire]}
+    \item \textbf{Stockage :} \textit{[stockage]}
+\end{itemize}
+
+\subsection{Environnement logiciel de développement}
+\Needspace{20\baselineskip}
+Le tableau~\ref{tab:outils} présente les principaux outils utilisés.
+\vspace{0.5em}
+\renewcommand{\arraystretch}{1.3}
+\begin{center}
+\begin{tabular}{|l|p{9cm}|c|}
+\hline
+\textbf{Outil} & \textbf{Description} & \textbf{Logo} \\
+\hline
+Visual Studio Code~\cite{vscode} & Éditeur principal pour le front-end React, le back-end Spring Boot et les scripts Python. & \logo{25pt}{vscode.jpeg} \\
+\hline
+Git et GitHub~\cite{github} & Gestion de versions et hébergement du dépôt du projet. & \logo{25pt}{github.png} \\
+\hline
+PlantUML~\cite{plantuml} & Génération des diagrammes UML à partir de descriptions textuelles. & \logo{25pt}{plantuml.png} \\
+\hline
+PostgreSQL~\cite{postgresql2026} & Système de gestion de base de données relationnelle. & \logo{25pt}{postgresql.png} \\
+\hline
+Maven~\cite{maven} & Construction et gestion des dépendances des microservices Java. & \logo{25pt}{maven.png} \\
+\hline
+Stripe Dashboard~\cite{stripe} & Suivi des paiements et des cartes en mode test. & \logo{25pt}{stripe.png} \\
+\hline
+\end{tabular}
+\captionof{table}{Outils utilisés pour la modélisation, le développement et le suivi}
+\label{tab:outils}
+\end{center}
+
+\subsubsection{Langages de programmation}
+\Needspace{16\baselineskip}
+Le tableau~\ref{tab:langages} présente les langages utilisés.
+\vspace{0.5em}
+\begin{center}
+\begin{tabular}{|l|p{9cm}|c|}
+\hline
+\textbf{Langage} & \textbf{Usage} & \textbf{Logo} \\
+\hline
+Java 17~\cite{java17} & Microservices (API REST, logique métier, sécurité). & \logo{25pt}{java.png} \\
+\hline
+JavaScript (JSX)~\cite{javascript} & Applications React : Sellio, back-office et vitrine. & \logo{25pt}{javascript.png} \\
+\hline
+Python 3~\cite{python} & Nettoyage des données, entraînement et évaluation des modèles. & \logo{25pt}{python.png} \\
+\hline
+SQL & Requêtes, partitionnement et agrégats PostgreSQL. & \logo{25pt}{sql.png} \\
+\hline
+\end{tabular}
+\captionof{table}{Langages de programmation utilisés}
+\label{tab:langages}
+\end{center}
+
+\subsubsection{Frameworks et bibliothèques}
+\Needspace{24\baselineskip}
+Le tableau~\ref{tab:frameworks} présente les frameworks et bibliothèques utilisés.
+\vspace{0.5em}
+\begin{center}
+\begin{tabular}{|l|p{9cm}|c|}
+\hline
+\textbf{Framework} & \textbf{Rôle} & \textbf{Logo} \\
+\hline
+Spring Boot 3.2~\cite{springboot} & Socle des microservices (Spring Web, Spring Data JPA, Spring Security). & \logo{25pt}{springboot.png} \\
+\hline
+Spring Cloud Gateway~\cite{springcloudgateway} & Passerelle API : point d'entrée unique et routage vers les services. & \logo{25pt}{springcloud.png} \\
+\hline
+React 18~\cite{react} et Vite~\cite{vite} & Interfaces web à base de composants ; serveur de développement et compilation. & \logo{25pt}{react.png} \\
+\hline
+Tailwind CSS~\cite{tailwind} & Mise en forme utilitaire ; variables CSS pour les thèmes des vitrines. & \logo{25pt}{tailwind.png} \\
+\hline
+scikit-learn~\cite{scikitlearn}, pandas, NumPy & Modèles d'apprentissage automatique et préparation des données. & \logo{25pt}{scikitlearn.png} \\
+\hline
+Stripe.js~\cite{stripe} & Saisie sécurisée de la carte et confirmation des paiements. & \logo{25pt}{stripe.png} \\
+\hline
+SDK Decart~\cite{decart} & Connexion WebRTC au modèle d'essayage virtuel en temps réel. & \logo{25pt}{decart.png} \\
+\hline
+\end{tabular}
+\captionof{table}{Frameworks et bibliothèques utilisés}
+\label{tab:frameworks}
+\end{center}
+
+\section*{Conclusion}
+Dans ce chapitre, nous avons identifié les acteurs, spécifié les besoins fonctionnels et non fonctionnels, justifié l'architecture microservices et le choix de PostgreSQL, puis présenté le backlog produit et la planification en six releases et onze sprints. Le chapitre suivant présente la première release.

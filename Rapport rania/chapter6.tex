@@ -1,0 +1,385 @@
+\thispagestyle{fancy}
+\fancyhead[R]{A.U 2025-2026}
+\fancyhead[L]{ chapitre 6: Release 4 : Marketing et fidélisation }
+\chapter{Release 4 : Marketing et fidélisation}
+\section*{Introduction}
+Vendre ne suffit pas : un commerçant doit aussi attirer de nouveaux clients et faire revenir les anciens. Ce chapitre présente la quatrième release, qui lui en donne les moyens. Le Sprint 7 couvre les promotions, les bannières ciblées et l'e-mailing ; le Sprint 8 couvre le programme de fidélité à points et ses niveaux.
+
+%==================================================================
+\section{Backlog du Sprint 7}
+\Needspace{18\baselineskip}
+Le tableau~\ref{tab:backlog-sprint7} présente le \textbf{backlog du Sprint 7}.
+
+\renewcommand{\arraystretch}{1.05}
+\setlength{\tabcolsep}{3pt}
+\begin{longtable}{|>{\raggedright\arraybackslash}p{4cm}|>{\raggedright\arraybackslash}p{9cm}|>{\centering\arraybackslash}p{1.2cm}|}
+\hline
+\textbf{User Story} & \textbf{Tâches} & \textbf{Estimation} \\
+\hline
+\endfirsthead
+\hline
+\textbf{User Story} & \textbf{Tâches} & \textbf{Estimation} \\
+\hline
+\endhead
+\hline
+\multicolumn{3}{r}{\textit{Suite à la page suivante}} \\
+\endfoot
+\hline
+\endlastfoot
+
+\textbf{En tant que commerçant, je souhaite créer des codes promo}
+& Développer l'entité \texttt{Coupon} : type (pourcentage, montant fixe, livraison offerte, cadeau, « un acheté, un offert »), valeur, montant minimum, période et plage horaire, limites globale et par client, segment, catégories et produits ciblés. & 1 \\
+\cline{2-3}
+& Développer l'API CRUD, l'activation / désactivation et le suivi des utilisations. & 1 \\
+\cline{2-3}
+& Calculer les statistiques par code (commandes, revenus, taux de conversion). & 1 \\
+\cline{2-3}
+& Développer l'interface « Promotions ». & 1 \\
+\cline{2-3}
+& Tester la fonctionnalité. & 1 \\
+\hline
+
+\textbf{En tant que commerçant, je souhaite créer des remises automatiques}
+& Développer l'API des remises sur un produit ou une catégorie, avec période de validité. & 1 \\
+\cline{2-3}
+& Afficher le prix barré et le badge de remise sur la vitrine. & 1 \\
+\cline{2-3}
+& Tester la fonctionnalité. & 1 \\
+\hline
+
+\textbf{En tant que commerçant, je souhaite publier des bannières ciblées}
+& Développer l'API des bannières : titre, images ordinateur et mobile, vidéo, bouton d'action, alignement, animation, durée, planning. & 1 \\
+\cline{2-3}
+& Cibler une bannière par segment de clientèle et par type d'appareil. & 1 \\
+\cline{2-3}
+& Développer le formulaire de bannière avec aperçu ordinateur et mobile. & 1 \\
+\cline{2-3}
+& Afficher les bannières dans le carrousel d'accueil de chaque gabarit. & 1 \\
+\hline
+
+\textbf{En tant que commerçant, je souhaite envoyer des e-mails à mes clients}
+& Intégrer l'API d'envoi transactionnel de Brevo (clé en variable d'environnement). & 1 \\
+\cline{2-3}
+& Développer l'envoi d'une newsletter à un segment et le contact individuel d'un client. & 1 \\
+\cline{2-3}
+& Développer l'interface « E-mail marketing » et ses statistiques. & 1 \\
+\hline
+
+\multicolumn{2}{|r|}{\textbf{Total}} & \textbf{15} \\
+\hline
+\caption{Backlog du Sprint 7}
+\label{tab:backlog-sprint7}
+\end{longtable}
+
+\section{Diagramme de cas d'utilisation du Sprint 7}
+\Needspace{20\baselineskip}
+\begin{figure}[H]
+    \centering
+    \img{0.8}{cu_sprint7.png}
+    \caption{Diagramme de cas d'utilisation du Sprint 7}
+    \label{fig:cu-sprint7}
+\end{figure}
+
+\section{Services web du Sprint 7}
+Le tableau~\ref{tab:ws-sprint7} présente les services web du Sprint 7.
+\renewcommand{\arraystretch}{1.15}
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{|p{1.5cm}|p{6.8cm}|p{6.2cm}|}
+\hline
+\textbf{Méthode} & \textbf{URL} & \textbf{Description} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Méthode} & \textbf{URL} & \textbf{Description} \\
+\hline
+\endhead
+\multicolumn{3}{|c|}{\textbf{Promotions --- /api/v1/admin/promotions (order-service)}} \\
+\hline
+GET & /api/v1/admin/promotions/stats & Statistiques des promotions. \\
+\hline
+GET, POST & /api/v1/admin/promotions/coupons & Lister, créer un code promo. \\
+\hline
+PUT, DELETE & /api/v1/admin/promotions/coupons/\{id\} & Modifier, supprimer un code promo. \\
+\hline
+PATCH & /api/v1/admin/promotions/coupons/\{id\}/toggle & Activer ou désactiver un code. \\
+\hline
+GET, POST & /api/v1/admin/promotions/discounts & Lister, créer une remise. \\
+\hline
+PUT, DELETE & /api/v1/admin/promotions/discounts/\{id\} & Modifier, supprimer une remise. \\
+\hline
+PATCH & /api/v1/admin/promotions/discounts/\{id\}/toggle & Activer ou désactiver une remise. \\
+\hline
+\multicolumn{3}{|c|}{\textbf{Bannières --- marketing-service}} \\
+\hline
+GET, POST & /api/v1/admin/banners & Lister, créer une bannière. \\
+\hline
+PUT, DELETE & /api/v1/admin/banners/\{id\} & Modifier, supprimer une bannière. \\
+\hline
+PATCH & /api/v1/admin/banners/\{id\}/toggle & Activer ou désactiver une bannière. \\
+\hline
+GET & /api/v1/public/banners?position=\&segment= & Bannières actives pour une position et un segment. \\
+\hline
+\multicolumn{3}{|c|}{\textbf{E-mail marketing --- /api/v1/admin/email}} \\
+\hline
+GET & /api/v1/admin/email/stats & Statistiques d'envoi. \\
+\hline
+POST & /api/v1/admin/email/newsletter & Envoyer une newsletter. \\
+\hline
+POST & /api/v1/admin/email/contact/\{userId\} & Contacter un client. \\
+\hline
+\caption{Services web du Sprint 7}
+\label{tab:ws-sprint7}
+\end{longtable}
+
+\section{Les cas d'utilisation du Sprint 7}
+\subsection{Cas d'utilisation « Créer un code promo ciblé »}
+\subsubsection{Description textuelle}
+Le tableau~\ref{tab:uc-coupon} présente la description textuelle de ce cas.
+\renewcommand{\arraystretch}{1.5}
+\begin{longtable}{|p{4cm}|p{11cm}|}
+\hline
+\textbf{Acteurs} & Commerçant \\
+\hline
+\textbf{Objectif} & Créer une offre réservée à une cible et en mesurer l'efficacité. \\
+\hline
+\textbf{Pré-condition} & Le commerçant est connecté et sa boutique est active. \\
+\hline
+\textbf{Scénario principal} &
+1. Le commerçant ouvre « Promotions » puis « Nouveau code ».\newline
+2. Il saisit le code (par exemple \texttt{VIP20}), le type et la valeur de la remise, et le montant minimum de commande.\newline
+3. Il définit la période, éventuellement une plage horaire, et les limites d'utilisation.\newline
+4. Il restreint le code à un segment (par exemple VIP) et, s'il le souhaite, à des catégories ou des produits.\newline
+5. Le système vérifie que le code n'existe pas déjà, calcule son statut (programmé, actif ou expiré) à partir des dates, et l'enregistre.\newline
+6. Lorsqu'un client l'utilise, le système enregistre l'utilisation et met à jour le nombre de commandes, les revenus et le taux de conversion du code. \\
+\hline
+\textbf{Scénario alternatif} &
+\textbf{Code déjà existant :} à l'étape 5, le système demande un autre code.\newline
+\textbf{Limite atteinte :} à l'étape 6, si le client a déjà utilisé le code le nombre maximal de fois autorisé, le système refuse la remise avec un message explicite. \\
+\hline
+\caption{Description textuelle du cas « Créer un code promo ciblé »}
+\label{tab:uc-coupon}
+\end{longtable}
+
+\subsubsection{Diagramme de séquence système}
+\Needspace{18\baselineskip}
+\begin{figure}[H]
+    \centering
+    \img{0.65}{dss_coupon.png}
+    \caption{Diagramme de séquence système du cas « Créer un code promo ciblé »}
+    \label{fig:dss-coupon}
+\end{figure}
+
+\subsubsection{Diagramme de séquence objet}
+\Needspace{20\baselineskip}
+\begin{figure}[H]
+    \centering
+    \img{0.9}{dso_coupon.png}
+    \caption{Diagramme de séquence objet du cas « Créer un code promo ciblé »}
+    \label{fig:dso-coupon}
+\end{figure}
+
+\section{Réalisation du Sprint 7}
+\Needspace{20\baselineskip}
+\textbf{Promotions :} la figure~\ref{fig:ui-promotions} présente la gestion des codes promo et des remises, avec leurs indicateurs.
+\begin{figure}[H]
+    \centering
+    \img{0.85}{ui_promotions.png}
+    \caption{Gestion des promotions}
+    \label{fig:ui-promotions}
+\end{figure}
+
+\Needspace{20\baselineskip}
+\textbf{Bannières :} la figure~\ref{fig:ui-bannieres} présente le formulaire de bannière, avec aperçu sur ordinateur et sur mobile.
+\begin{figure}[H]
+    \centering
+    \img{0.85}{ui_bannieres.png}
+    \caption{Création d'une bannière ciblée}
+    \label{fig:ui-bannieres}
+\end{figure}
+
+\Needspace{20\baselineskip}
+\textbf{E-mail marketing :} la figure~\ref{fig:ui-email} présente l'envoi d'une newsletter.
+\begin{figure}[H]
+    \centering
+    \img{0.85}{ui_email_marketing.png}
+    \caption{E-mail marketing}
+    \label{fig:ui-email}
+\end{figure}
+
+%==================================================================
+\section{Backlog du Sprint 8}
+\Needspace{18\baselineskip}
+Le tableau~\ref{tab:backlog-sprint8} présente le \textbf{backlog du Sprint 8}, consacré au programme de fidélité.
+
+\renewcommand{\arraystretch}{1.05}
+\setlength{\tabcolsep}{3pt}
+\begin{longtable}{|>{\raggedright\arraybackslash}p{4cm}|>{\raggedright\arraybackslash}p{9cm}|>{\centering\arraybackslash}p{1.2cm}|}
+\hline
+\textbf{User Story} & \textbf{Tâches} & \textbf{Estimation} \\
+\hline
+\endfirsthead
+\hline
+\textbf{User Story} & \textbf{Tâches} & \textbf{Estimation} \\
+\hline
+\endhead
+\hline
+\multicolumn{3}{r}{\textit{Suite à la page suivante}} \\
+\endfoot
+\hline
+\endlastfoot
+
+\textbf{En tant que commerçant, je souhaite configurer le gain de points}
+& Développer l'entité \texttt{LoyaltyConfig} (points par dinar, bienvenue, avis, anniversaire, promotion automatique). & 1 \\
+\cline{2-3}
+& Attribuer les points à la livraison d'une commande, à l'inscription et à la publication d'un avis, avec le multiplicateur du niveau. & 1 \\
+\cline{2-3}
+& Journaliser chaque mouvement de points (\texttt{PointsTransaction}). & 1 \\
+\cline{2-3}
+& Développer l'onglet « Configuration ». & 1 \\
+\hline
+
+\textbf{En tant que commerçant, je souhaite gérer les niveaux et ajuster les points d'un client}
+& Développer l'API CRUD des segments (seuil de points, multiplicateur, avantages). & 1 \\
+\cline{2-3}
+& Développer la montée de niveau automatique après chaque attribution de points. & 1 \\
+\cline{2-3}
+& Développer l'ajustement manuel (le solde ne peut pas devenir négatif) et le classement des clients. & 1 \\
+\cline{2-3}
+& Développer les onglets « Avantages / Niveaux », « Classement » et « Ajustement manuel ». & 1 \\
+\cline{2-3}
+& Tester la fonctionnalité. & 1 \\
+\hline
+
+\textbf{En tant que client, je souhaite consulter mes points et mon niveau}
+& Développer l'API \texttt{/profile/loyalty} (solde, niveau, historique, progression vers le niveau suivant). & 1 \\
+\cline{2-3}
+& Afficher la carte de fidélité dans « Mon profil ». & 1 \\
+\hline
+
+\multicolumn{2}{|r|}{\textbf{Total}} & \textbf{11} \\
+\hline
+\caption{Backlog du Sprint 8}
+\label{tab:backlog-sprint8}
+\end{longtable}
+
+\section{Diagramme de cas d'utilisation du Sprint 8}
+\Needspace{20\baselineskip}
+\begin{figure}[H]
+    \centering
+    \img{0.8}{cu_sprint8.png}
+    \caption{Diagramme de cas d'utilisation du Sprint 8}
+    \label{fig:cu-sprint8}
+\end{figure}
+
+\section{Services web du Sprint 8}
+Le tableau~\ref{tab:ws-sprint8} présente les services web du Sprint 8.
+\renewcommand{\arraystretch}{1.15}
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{|p{1.5cm}|p{6.8cm}|p{6.2cm}|}
+\hline
+\textbf{Méthode} & \textbf{URL} & \textbf{Description} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Méthode} & \textbf{URL} & \textbf{Description} \\
+\hline
+\endhead
+\multicolumn{3}{|c|}{\textbf{Fidélité --- /api/v1/admin/loyalty (auth-service)}} \\
+\hline
+GET & /api/v1/admin/loyalty/config & Consulter la configuration du programme. \\
+\hline
+PUT & /api/v1/admin/loyalty/config & Modifier la configuration. \\
+\hline
+GET & /api/v1/admin/loyalty/leaderboard & Classement des clients par points. \\
+\hline
+POST & /api/v1/admin/loyalty/users/\{userId\}/adjust-points & Ajuster les points d'un client (positif ou négatif). \\
+\hline
+\multicolumn{3}{|c|}{\textbf{Segments --- /api/v1/admin/segments}} \\
+\hline
+GET, POST & /api/v1/admin/segments & Lister, créer un niveau. \\
+\hline
+PUT, DELETE & /api/v1/admin/segments/\{id\} & Modifier, supprimer un niveau. \\
+\hline
+GET & /api/v1/admin/users/by-segment/\{segmentName\} & Clients d'un niveau. \\
+\hline
+\multicolumn{3}{|c|}{\textbf{Espace client}} \\
+\hline
+GET & /api/v1/profile/loyalty & Solde, niveau et historique du client connecté. \\
+\hline
+\caption{Services web du Sprint 8}
+\label{tab:ws-sprint8}
+\end{longtable}
+
+\section{Les cas d'utilisation du Sprint 8}
+\subsection{Cas d'utilisation « Gagner des points et changer de niveau »}
+\subsubsection{Description textuelle}
+Le tableau~\ref{tab:uc-fidelite} présente la description textuelle de ce cas.
+\renewcommand{\arraystretch}{1.5}
+\begin{longtable}{|p{4cm}|p{11cm}|}
+\hline
+\textbf{Acteurs} & Client, Commerçant \\
+\hline
+\textbf{Objectif} & Récompenser automatiquement les achats et faire progresser le client dans les niveaux du programme. \\
+\hline
+\textbf{Pré-condition} & Le client est inscrit ; le programme de fidélité est configuré. \\
+\hline
+\textbf{Scénario principal} &
+1. Le commerçant passe une commande du client au statut « livrée ».\newline
+2. Le système calcule les points : $\text{points} = \text{arrondi}(\text{montant} \times \text{points par dinar} \times \text{multiplicateur du niveau})$. Par exemple, 120 DT avec 1 point par dinar et un multiplicateur de 1,5 donnent 180 points.\newline
+3. Le système crédite le solde et journalise le mouvement.\newline
+4. Si la promotion automatique est active, le système cherche le niveau le plus élevé dont le seuil est atteint et y fait passer le client.\newline
+5. Le client consulte son solde, son niveau et sa progression dans « Mon profil ». \\
+\hline
+\textbf{Scénario alternatif} &
+\textbf{Ajustement manuel :} le commerçant retire des points ; le solde est borné à zéro.\newline
+\textbf{Pas de rétrogradation automatique :} une baisse du solde ne fait pas redescendre le client ; le niveau « Inactif » n'est attribué que manuellement. \\
+\hline
+\caption{Description textuelle du cas « Gagner des points et changer de niveau »}
+\label{tab:uc-fidelite}
+\end{longtable}
+
+\subsubsection{Diagramme de séquence système}
+\Needspace{18\baselineskip}
+\begin{figure}[H]
+    \centering
+    \img{0.65}{dss_fidelite.png}
+    \caption{Diagramme de séquence système du cas « Gagner des points et changer de niveau »}
+    \label{fig:dss-fidelite}
+\end{figure}
+
+\subsubsection{Diagramme de séquence objet}
+\Needspace{20\baselineskip}
+\begin{figure}[H]
+    \centering
+    \img{0.9}{dso_fidelite.png}
+    \caption{Diagramme de séquence objet du cas « Gagner des points et changer de niveau »}
+    \label{fig:dso-fidelite}
+\end{figure}
+
+\section{Réalisation du Sprint 8}
+\Needspace{20\baselineskip}
+\textbf{Programme de fidélité :} les figures~\ref{fig:ui-fidelite-config} et~\ref{fig:ui-fidelite-niveaux} présentent la configuration du programme et la gestion des niveaux (Nouveau, Fidèle, VIP, Inactif).
+\begin{figure}[H]
+    \centering
+    \img{0.85}{ui_fidelite_config.png}
+    \caption{Configuration du programme de fidélité}
+    \label{fig:ui-fidelite-config}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \img{0.85}{ui_fidelite_niveaux.png}
+    \caption{Niveaux et avantages du programme de fidélité}
+    \label{fig:ui-fidelite-niveaux}
+\end{figure}
+
+\Needspace{20\baselineskip}
+\textbf{Espace client :} la figure~\ref{fig:ui-fidelite-client} présente la carte de fidélité du client dans son profil.
+\begin{figure}[H]
+    \centering
+    \img{0.75}{ui_fidelite_client.png}
+    \caption{Carte de fidélité dans l'espace client}
+    \label{fig:ui-fidelite-client}
+\end{figure}
+
+\subsection*{Conclusion}
+Cette release a donné au commerçant les leviers classiques du marketing en ligne : promotions ciblées, bannières, e-mails et fidélité. Ces outils reposent toutefois sur des segments définis à la main (Nouveau, Fidèle, VIP). Les deux dernières releases vont plus loin grâce à l'intelligence artificielle : l'essayage virtuel d'abord, puis l'analyse automatique du comportement des visiteurs.

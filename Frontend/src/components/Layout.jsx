@@ -1,4 +1,5 @@
-import { Outlet, useLocation } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { getUser } from '../api/tokenStorage';
 import { useEffect } from 'react';
 import Navbar from './Navbar';
 import Footer from './Footer';
@@ -13,6 +14,8 @@ export default function Layout() {
   }, [pathname]);
 
   if (!ready) return null
+  // A temporary password (account created by the shop) must be replaced before shopping.
+  if (getUser()?.mustChangePassword) return <Navigate to="/changer-mot-de-passe" replace />
   if (missing) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6">

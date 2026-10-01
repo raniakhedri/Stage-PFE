@@ -27,6 +27,9 @@ public class Role {
 
     private String description;
 
+    /** Null for platform roles (SUPER_ADMIN, ADMIN, CLIENT); set for the roles a merchant creates for their team. */
+    private Long shopId;
+
     @Builder.Default
     @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<Permission> permissions = new ArrayList<>();

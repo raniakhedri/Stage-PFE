@@ -1,0 +1,39 @@
+!pragma layout smetana
+skinparam dpi 170
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam defaultFontSize 13
+skinparam shadowing false
+skinparam ArrowColor #1f2a44
+skinparam actorStyle awesome
+skinparam actor {
+  BorderColor #1f2a44
+  BackgroundColor #ffffff
+}
+skinparam usecase {
+  BackgroundColor #eef2fb
+  BorderColor #1f2a44
+}
+skinparam rectangle {
+  BorderColor #1f2a44
+  BackgroundColor #ffffff
+}
+skinparam package {
+  BorderColor #8a94a6
+}
+skinparam sequence {
+  ParticipantBackgroundColor #eef2fb
+  ParticipantBorderColor #1f2a44
+  LifeLineBorderColor #8a94a6
+  ActorBorderColor #1f2a44
+  BoxBorderColor #8a94a6
+}
+skinparam class {
+  BackgroundColor #ffffff
+  BorderColor #1f2a44
+  HeaderBackgroundColor #eef2fb
+}
+skinparam note {
+  BackgroundColor #fffbe6
+  BorderColor #c9a227
+}

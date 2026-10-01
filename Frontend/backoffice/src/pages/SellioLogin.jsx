@@ -47,7 +47,7 @@ export default function SellioLogin() {
         <Field label="E-mail">
           <input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="vous@marque.tn" className={inputClass} />
         </Field>
-        <Field label="Mot de passe">
+        <Field label={<span className="flex items-center justify-between">Mot de passe<Link to="/mot-de-passe-oublie" className="text-xs text-white/50 hover:text-white">Mot de passe oublié ?</Link></span>}>
           <div className="relative">
             <input
               type={showPassword ? 'text' : 'password'}

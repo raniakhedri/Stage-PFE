@@ -1,0 +1,284 @@
+\thispagestyle{fancy}
+\fancyhead[R]{A.U 2025-2026}
+\fancyhead[L]{ chapitre 7: Release 5 : Essayage virtuel }
+\chapter{Release 5 : Essayage virtuel en temps réel par IA générative}
+\section*{Introduction}
+Dans la mode en ligne, la première source d'hésitation est simple : le client ne sait pas à quoi ressemblera le vêtement sur lui. Cette incertitude freine l'achat et multiplie les retours. Ce chapitre présente la cinquième release, qui répond à ce problème par une cabine d'essayage virtuel : depuis la fiche d'un vêtement, le client active sa caméra et se voit, en direct, portant l'article. Nous présentons d'abord l'architecture de la fonctionnalité, puis le choix du modèle et sa configuration, avant de détailler le Sprint 9.
+
+\section{Architecture de l'essayage virtuel}
+\subsection{Flux d'architecture}
+La figure~\ref{fig:archi-tryon} présente le flux de l'essayage virtuel. Il fait intervenir trois parties : le navigateur du client, notre microservice catalogue et l'API de Decart.
+\begin{figure}[H]
+    \centering
+    \img{0.95}{architecture_tryon.png}
+    \caption{Architecture de l'essayage virtuel}
+    \label{fig:archi-tryon}
+\end{figure}
+
+Le flux se déroule en quatre temps :
+\begin{enumerate}
+  \item \textbf{Obtention d'un jeton :} le navigateur demande un jeton à \texttt{catalog-service} (\texttt{POST /api/v1/public/tryon/token}). Le service, seul détenteur de la clé secrète Decart, demande à Decart un \textbf{jeton client éphémère} valable dix minutes et le renvoie au navigateur. La clé secrète n'est donc jamais exposée côté client.
+  \item \textbf{Préparation des entrées :} le navigateur ouvre la caméra (1280 × 720) et télécharge l'image du vêtement, qu'il redimensionne (768 pixels au plus sur le grand côté) et compresse en JPEG pour limiter la latence.
+  \item \textbf{Connexion temps réel :} le SDK Decart ouvre une connexion \textbf{WebRTC} vers le modèle \textit{Lucy VTON}. Le flux caméra part vers Decart ; l'image du vêtement et une consigne textuelle sont envoyées sur la même session.
+  \item \textbf{Restitution :} Decart renvoie un flux vidéo dans lequel le haut porté par le client est remplacé par le vêtement ; le navigateur l'affiche à côté de l'image de la caméra.
+\end{enumerate}
+
+\subsection{Couche de présentation}
+Le composant React \texttt{TryOnModal} gère l'ensemble de la session : états successifs (« Jeton Decart… », « Caméra… », « Connexion au modèle… », « Essayage en direct »), affichage des deux vidéos, compte à rebours de la session et messages d'erreur compréhensibles. Le bouton « Essayer virtuellement » n'apparaît que sur les fiches des boutiques du secteur vêtements.
+
+\subsection{Couche d'intermédiation}
+Le service \texttt{DecartTryOnService} du microservice catalogue appelle \texttt{POST https://api.decart.ai/v1/client/tokens} avec la clé secrète lue dans une variable d'environnement, et renvoie au navigateur le jeton, sa date d'expiration et la durée de session autorisée. Si la clé n'est pas configurée, il répond \texttt{503}, et en cas d'échec de Decart, \texttt{502}, ce qui permet à l'interface d'afficher un message adapté.
+
+\subsection{Couche de génération}
+La génération est entièrement réalisée par Decart. Le modèle \textit{Lucy VTON} est un modèle vidéo génératif temps réel : il transforme chaque image du flux caméra en conservant la personne, sa posture et l'arrière-plan, et en remplaçant le vêtement ciblé par celui de l'image de référence.
+
+\section{Mise en œuvre de l'essayage virtuel}
+\subsection{Critères de choix}
+Le choix de la technologie a été guidé par cinq critères :
+\begin{itemize}
+  \item \textbf{Réalisme :} le rendu doit être crédible (plis, éclairage, morphologie), faute de quoi il dessert la vente ;
+  \item \textbf{Interactivité :} un essayage en direct, où le client bouge et se tourne, est bien plus convaincant qu'une photo retouchée ;
+  \item \textbf{Infrastructure :} la plateforme ne dispose pas de serveur GPU ;
+  \item \textbf{Intégration :} la solution doit s'intégrer à une application web, sans installation côté client ;
+  \item \textbf{Coût et sécurité :} coût maîtrisé par session et clé secrète jamais exposée.
+\end{itemize}
+
+\subsection{Comparaison des solutions candidates}
+Le tableau~\ref{tab:comparaison-tryon} compare les quatre familles de solutions étudiées.
+\renewcommand{\arraystretch}{1.4}
+\begin{longtable}{|p{3.2cm}|p{4.2cm}|p{4.2cm}|p{2.6cm}|}
+\hline
+\textbf{Solution} & \textbf{Avantages} & \textbf{Contraintes} & \textbf{Décision} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Solution} & \textbf{Avantages} & \textbf{Contraintes} & \textbf{Décision} \\
+\hline
+\endhead
+Superposition 2D par détection de pose (MediaPipe~\cite{mediapipe}) &
+Gratuit, exécuté dans le navigateur, temps réel. &
+Rendu peu réaliste : le vêtement est « collé » sur l'image, sans plis ni occlusions ; image détourée à préparer pour chaque produit. &
+Écartée (réalisme insuffisant). \\
+\hline
+Modèles de diffusion open source auto-hébergés (IDM-VTON~\cite{idmvton}, OOTDiffusion~\cite{ootdiffusion}) &
+Très bon réalisme sur photo ; aucun coût de licence ; données maîtrisées. &
+Nécessitent un GPU puissant ; plusieurs secondes par image ; photo statique, pas de vidéo. &
+Écartée (pas de GPU, pas de temps réel). \\
+\hline
+API d'essayage image par image hébergées (par exemple FASHN~\cite{fashn}) &
+Bon réalisme ; aucune infrastructure ; intégration simple par API REST. &
+Photo statique : le client doit téléverser une photo et attendre le résultat ; facturation à l'image. &
+Écartée (expérience moins interactive). \\
+\hline
+Decart \textit{Lucy VTON} temps réel~\cite{decart} &
+Vidéo en direct via WebRTC ; aucune infrastructure ; SDK JavaScript ; jetons clients éphémères. &
+Facturation à la seconde de génération ; dépendance à un fournisseur ; WebRTC bloqué par certains VPN ou réseaux. &
+\textbf{Retenue.} \\
+\hline
+\caption{Comparaison des solutions d'essayage virtuel}
+\label{tab:comparaison-tryon}
+\end{longtable}
+
+\subsection{Solution retenue}
+Nous avons retenu \textbf{Decart} et son modèle \textbf{\textit{Lucy VTON}}. C'est la seule option qui combine un rendu génératif réaliste et un essayage \textbf{en direct}, sans serveur GPU de notre côté. Le mécanisme de jetons clients éphémères répond en outre au critère de sécurité : la clé secrète reste sur notre serveur. Ses contraintes, coût à la seconde et dépendance au fournisseur, ont été encadrées par la configuration décrite ci-dessous.
+
+\subsection{Configuration du modèle}
+Le tableau~\ref{tab:config-tryon} résume la configuration retenue et sa justification.
+\renewcommand{\arraystretch}{1.3}
+\begin{longtable}{|p{4.2cm}|p{3.6cm}|p{6.6cm}|}
+\hline
+\textbf{Paramètre} & \textbf{Valeur} & \textbf{Justification} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Paramètre} & \textbf{Valeur} & \textbf{Justification} \\
+\hline
+\endhead
+Modèle & \texttt{lucy-vton-latest} & Modèle d'essayage virtuel temps réel de Decart. \\
+\hline
+Résolution de la caméra & 1280 × 720 & Résolution attendue par le modèle ; lue dans sa description pour s'y adapter. \\
+\hline
+Image du vêtement & JPEG, 768 px max., qualité 0,85 & Réduit le volume envoyé sans perte visible de détails. \\
+\hline
+Consigne (\textit{prompt}) & « Substitute the current top with a \textit{<nom du produit>}, matching the color, knit, round neck and long sleeves of the reference garment image » & Indique au modèle quelle pièce remplacer et quelles caractéristiques respecter ; le nom du produit est inséré automatiquement. \\
+\hline
+Amélioration du prompt & désactivée & Garder une consigne prévisible et identique d'un produit à l'autre. \\
+\hline
+Durée d'une session & 45 secondes & Plafonne le coût par essai ; le compte à rebours ne démarre qu'à la première image générée. \\
+\hline
+Validité du jeton client & 600 secondes & Suffisant pour une session, inutilisable au-delà. \\
+\hline
+Délai de détection d'absence de vidéo & 20 secondes & Au-delà, un message explique la cause probable (VPN bloquant WebRTC, crédits épuisés). \\
+\hline
+\caption{Configuration de l'essayage virtuel}
+\label{tab:config-tryon}
+\end{longtable}
+
+\subsection{Gestion des erreurs}
+Une fonctionnalité qui dépend d'une caméra, d'un réseau temps réel et d'un service externe peut échouer de nombreuses manières. Chaque cause est traduite en un message clair : caméra refusée, crédits Decart épuisés, image refusée par la modération, session coupée pour violation de politique, ou absence de vidéo (souvent due à un VPN, WebRTC ayant besoin d'UDP). Un problème rencontré pendant le développement mérite d'être signalé : un module interne du SDK, chargé seulement de mesurer la latence, faisait échouer le flux vidéo avec le serveur de développement Vite ; il a été neutralisé par un module de substitution (\textit{stub}) sans effet sur la génération.
+
+%==================================================================
+\section{Backlog du Sprint 9}
+\Needspace{18\baselineskip}
+Le tableau~\ref{tab:backlog-sprint9} présente le \textbf{backlog du Sprint 9}.
+
+\renewcommand{\arraystretch}{1.05}
+\setlength{\tabcolsep}{3pt}
+\begin{longtable}{|>{\raggedright\arraybackslash}p{4cm}|>{\raggedright\arraybackslash}p{9cm}|>{\centering\arraybackslash}p{1.2cm}|}
+\hline
+\textbf{User Story} & \textbf{Tâches} & \textbf{Estimation} \\
+\hline
+\endfirsthead
+\hline
+\textbf{User Story} & \textbf{Tâches} & \textbf{Estimation} \\
+\hline
+\endhead
+\hline
+\multicolumn{3}{r}{\textit{Suite à la page suivante}} \\
+\endfoot
+\hline
+\endlastfoot
+
+\textbf{En tant que visiteur, je souhaite essayer un vêtement en direct avec ma caméra}
+& Étudier et comparer les solutions d'essayage virtuel. & 1 \\
+\cline{2-3}
+& Ouvrir la caméra à la résolution du modèle et gérer le refus d'autorisation. & 1 \\
+\cline{2-3}
+& Préparer l'image du vêtement (téléchargement, redimensionnement, compression). & 1 \\
+\cline{2-3}
+& Connecter le SDK Decart en WebRTC et afficher le flux généré. & 1 \\
+\cline{2-3}
+& Construire la consigne à partir du nom du produit. & 1 \\
+\cline{2-3}
+& Limiter la session à 45 secondes avec compte à rebours et fermeture automatique. & 1 \\
+\cline{2-3}
+& Traduire les erreurs (caméra, crédits, modération, réseau) en messages clairs. & 1 \\
+\cline{2-3}
+& Afficher le bouton « Essayer virtuellement » sur les fiches des boutiques de vêtements. & 1 \\
+\cline{2-3}
+& Tester sur plusieurs vêtements et conditions d'éclairage. & 1 \\
+\hline
+
+\textbf{En tant que système, je veux délivrer des jetons Decart à durée limitée sans exposer la clé}
+& Développer \texttt{DecartTryOnService} et l'API \texttt{/api/v1/public/tryon/token}. & 1 \\
+\cline{2-3}
+& Ajouter la route à la passerelle et un intermédiaire de secours dans le serveur de développement. & 1 \\
+\cline{2-3}
+& Tester la fonctionnalité (clé absente, erreur Decart). & 1 \\
+\hline
+
+\multicolumn{2}{|r|}{\textbf{Total}} & \textbf{12} \\
+\hline
+\caption{Backlog du Sprint 9}
+\label{tab:backlog-sprint9}
+\end{longtable}
+
+\section{Diagramme de cas d'utilisation du Sprint 9}
+\Needspace{20\baselineskip}
+\begin{figure}[H]
+    \centering
+    \img{0.75}{cu_sprint9.png}
+    \caption{Diagramme de cas d'utilisation du Sprint 9}
+    \label{fig:cu-sprint9}
+\end{figure}
+
+\section{Services web du Sprint 9}
+Le tableau~\ref{tab:ws-sprint9} présente les services web du Sprint 9, y compris les appels à l'API externe de Decart.
+\renewcommand{\arraystretch}{1.15}
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{|p{1.7cm}|p{6.6cm}|p{6.2cm}|}
+\hline
+\textbf{Méthode} & \textbf{URL} & \textbf{Description} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Méthode} & \textbf{URL} & \textbf{Description} \\
+\hline
+\endhead
+\multicolumn{3}{|c|}{\textbf{API Sellio --- catalog-service}} \\
+\hline
+POST & /api/v1/public/tryon/token & Obtenir un jeton client Decart éphémère, sa date d'expiration et la durée de session. \\
+\hline
+\multicolumn{3}{|c|}{\textbf{API externe Decart}} \\
+\hline
+POST & https://api.decart.ai/v1/client/tokens & Créer un jeton client (appelé par le serveur avec la clé secrète). \\
+\hline
+WebRTC & \texttt{client.realtime.connect(stream, \{model\})} (SDK) & Ouvrir la session temps réel et envoyer le flux caméra. \\
+\hline
+SDK & \texttt{realtime.set(\{prompt, image\})} & Envoyer la consigne et l'image du vêtement. \\
+\hline
+\caption{Services web du Sprint 9}
+\label{tab:ws-sprint9}
+\end{longtable}
+
+\section{Les cas d'utilisation du Sprint 9}
+\subsection{Cas d'utilisation « Essayer un vêtement virtuellement »}
+\subsubsection{Description textuelle}
+Le tableau~\ref{tab:uc-tryon} présente la description textuelle de ce cas.
+\renewcommand{\arraystretch}{1.5}
+\begin{longtable}{|p{4cm}|p{11cm}|}
+\hline
+\textbf{Acteurs} & Visiteur ou Client, Decart \\
+\hline
+\textbf{Objectif} & Voir en direct le vêtement porté sur soi avant de l'acheter. \\
+\hline
+\textbf{Pré-condition} & La boutique est du secteur vêtements ; le produit a une image ; l'appareil dispose d'une caméra. \\
+\hline
+\textbf{Scénario principal} &
+1. Le visiteur clique sur « Essayer virtuellement » depuis la fiche produit.\newline
+2. Le système demande un jeton éphémère au service catalogue, qui l'obtient auprès de Decart.\newline
+3. Le navigateur demande l'accès à la caméra ; le visiteur l'autorise.\newline
+4. Le système prépare l'image du vêtement et ouvre la session WebRTC avec le modèle \textit{Lucy VTON}.\newline
+5. Le système envoie la consigne et l'image du vêtement.\newline
+6. Decart renvoie la vidéo générée ; le système l'affiche et lance le compte à rebours de 45 secondes.\newline
+7. Le visiteur bouge et se tourne pour observer le rendu.\newline
+8. À la fin du compte à rebours ou à la fermeture, le système coupe la session et libère la caméra. \\
+\hline
+\textbf{Scénario alternatif} &
+\textbf{Caméra refusée :} à l'étape 3, le système affiche « Caméra refusée. Autorisez-la dans le navigateur, puis réessayez. »\newline
+\textbf{Service indisponible :} à l'étape 2, si la clé n'est pas configurée ou si Decart échoue, le système affiche que l'essayage est indisponible.\newline
+\textbf{Aucune vidéo après 20 secondes :} à l'étape 6, le système suggère de désactiver le VPN ou signale des crédits épuisés. \\
+\hline
+\caption{Description textuelle du cas « Essayer un vêtement virtuellement »}
+\label{tab:uc-tryon}
+\end{longtable}
+
+\subsubsection{Diagramme de séquence système}
+\Needspace{18\baselineskip}
+\begin{figure}[H]
+    \centering
+    \img{0.7}{dss_tryon.png}
+    \caption{Diagramme de séquence système du cas « Essayer un vêtement virtuellement »}
+    \label{fig:dss-tryon}
+\end{figure}
+
+\subsubsection{Diagramme de séquence objet}
+\Needspace{20\baselineskip}
+\begin{figure}[H]
+    \centering
+    \img{0.95}{dso_tryon.png}
+    \caption{Diagramme de séquence objet du cas « Essayer un vêtement virtuellement »}
+    \label{fig:dso-tryon}
+\end{figure}
+
+\section{Réalisation du Sprint 9}
+\Needspace{20\baselineskip}
+\textbf{Bouton d'essayage :} la figure~\ref{fig:ui-tryon-btn} présente la fiche d'un vêtement avec le bouton « Essayer virtuellement ».
+\begin{figure}[H]
+    \centering
+    \img{0.8}{ui_tryon_bouton.png}
+    \caption{Accès à l'essayage virtuel depuis la fiche produit}
+    \label{fig:ui-tryon-btn}
+\end{figure}
+
+\Needspace{20\baselineskip}
+\textbf{Cabine d'essayage :} la figure~\ref{fig:ui-tryon} présente la cabine en fonctionnement : à gauche l'image de la caméra, à droite la vidéo générée par Decart, avec le compte à rebours.
+\begin{figure}[H]
+    \centering
+    \img{0.9}{ui_tryon_session.png}
+    \caption{Essayage virtuel en direct}
+    \label{fig:ui-tryon}
+\end{figure}
+
+\section*{Conclusion}
+Cette release a ajouté à Sellio une fonctionnalité rarement proposée par défaut par les plateformes de boutiques en ligne : un essayage virtuel en direct, fondé sur un modèle génératif temps réel et intégré de façon sécurisée grâce aux jetons éphémères. Le chapitre suivant présente l'autre volet intelligent de la plateforme : l'analyse du comportement des visiteurs par apprentissage automatique.

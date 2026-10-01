@@ -17,7 +17,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/admin/roles")
-@PreAuthorize("hasRole('SUPER_ADMIN')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
 @RequiredArgsConstructor
 public class AdminRoleController {
 
@@ -37,7 +37,7 @@ public class AdminRoleController {
     public ResponseEntity<ApiResponse<RoleResponse>> createRole(@Valid @RequestBody RoleRequest request) {
         try {
             return ResponseEntity.ok(ApiResponse.ok("Rôle créé avec succès", roleService.createRole(request)));
-        } catch (RuntimeException e) {
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -48,7 +48,7 @@ public class AdminRoleController {
             @Valid @RequestBody RoleRequest request) {
         try {
             return ResponseEntity.ok(ApiResponse.ok("Rôle modifié avec succès", roleService.updateRole(id, request)));
-        } catch (RuntimeException e) {
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -58,7 +58,7 @@ public class AdminRoleController {
         try {
             roleService.deleteRole(id);
             return ResponseEntity.ok(ApiResponse.ok("Rôle supprimé avec succès"));
-        } catch (RuntimeException e) {
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
@@ -70,7 +70,7 @@ public class AdminRoleController {
         try {
             return ResponseEntity
                     .ok(ApiResponse.ok("Permissions mises à jour", roleService.updatePermissions(id, request)));
-        } catch (RuntimeException e) {
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }

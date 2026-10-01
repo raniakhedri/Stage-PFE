@@ -47,6 +47,9 @@ public class OrderRequest {
 
     private String shopSlug;
 
+    /** Stripe PaymentIntent id (pi_...) for card payments; checked with Stripe before the order is saved. */
+    private String paymentIntentId;
+
     @NotEmpty
     @Valid
     private List<OrderItemRequest> items;

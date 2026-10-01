@@ -7,8 +7,10 @@ C:\Users\alloa\Desktop\Stage-PFE\microservices\auth-service\src\main\java\com\na
 C:\Users\alloa\Desktop\Stage-PFE\microservices\auth-service\src\main\java\com\naturessence\auth\controller\PublicShopController.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\auth-service\src\main\java\com\naturessence\auth\service\RoleService.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\auth-service\src\main\java\com\naturessence\auth\config\SecurityConfig.java
+C:\Users\alloa\Desktop\Stage-PFE\microservices\auth-service\src\main\java\com\naturessence\auth\security\CallerContext.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\auth-service\src\main\java\com\naturessence\auth\service\RefreshTokenService.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\auth-service\src\main\java\com\naturessence\auth\service\UserService.java
+C:\Users\alloa\Desktop\Stage-PFE\microservices\auth-service\src\main\java\com\naturessence\auth\service\AuthCodeService.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\auth-service\src\main\java\com\naturessence\auth\config\DataSeeder.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\auth-service\src\main\java\com\naturessence\auth\security\UserPrincipal.java
 C:\Users\alloa\Desktop\Stage-PFE\microservices\auth-service\src\main\java\com\naturessence\auth\service\SegmentService.java

@@ -21,8 +21,12 @@ import com.naturessence.shared.repository.SegmentRepository;
 import com.naturessence.shared.repository.ShopRepository;
 import com.naturessence.shared.repository.UserRepository;
 
+import com.naturessence.auth.security.CallerContext;
+import java.security.SecureRandom;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -47,6 +51,11 @@ public class UserService {
     private final PointsTransactionRepository pointsTransactionRepository;
     private final ReviewRepository reviewRepository;
     private final OrderRepository orderRepository;
+    private final CallerContext caller;
+    private final RoleService roleService;
+
+    private static final SecureRandom RANDOM = new SecureRandom();
+    private static final String PASSWORD_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
 
 
     // ── Admin: Create user ────────────────────────────────────────────────────
@@ -55,9 +64,17 @@ public class UserService {
         if (userRepository.existsByEmailIgnoreCase(request.getEmail())) {
             throw new IllegalArgumentException("Cet email est déjà utilisé");
         }
+        User me = caller.require();
+        boolean platform = CallerContext.isPlatformAdmin(me);
 
-        Role role = roleRepository.findByName(request.getRole().toUpperCase().trim())
-                .orElseThrow(() -> new RuntimeException("Rôle non trouvé: " + request.getRole()));
+        String roleName = request.getRole() == null || request.getRole().isBlank()
+                ? "CLIENT" : request.getRole().toUpperCase().trim();
+        Role role = roleRepository.findByName(roleName)
+                .orElseThrow(() -> new IllegalArgumentException("Rôle non trouvé: " + request.getRole()));
+        if (!platform && !"CLIENT".equals(role.getName())
+                && (role.getShopId() == null || !role.getShopId().equals(me.getShopId()))) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Vous ne pouvez attribuer que les rôles de votre boutique");
+        }
 
         Segment segment;
         if (request.getSegment() != null && !request.getSegment().isBlank()) {
@@ -68,14 +85,9 @@ public class UserService {
                     .orElseThrow(() -> new RuntimeException("Segment par défaut NOUVEAU introuvable"));
         }
 
-        String rawTempPassword = null;
-        String encodedPassword;
-        if (request.isSendInvite() || request.getPassword() == null || request.getPassword().isBlank()) {
-            rawTempPassword = "NaturEssence@" + (System.currentTimeMillis() % 100000);
-            encodedPassword = passwordEncoder.encode(rawTempPassword);
-        } else {
-            encodedPassword = passwordEncoder.encode(request.getPassword());
-        }
+        // Accounts created from the backoffice always get a one-time password by e-mail.
+        String rawTempPassword = temporaryPassword();
+        String encodedPassword = passwordEncoder.encode(rawTempPassword);
 
         User user = User.builder()
                 .firstName(request.getFirstName())
@@ -93,21 +105,130 @@ public class UserService {
                 .segment(segment)
                 .note(request.getNote())
                 .status(AccountStatus.ACTIVE)
+                .mustChangePassword(true)
+                .shopId(platform ? null : me.getShopId())
                 .build();
 
         user = userRepository.save(user);
-
-        if (request.isSendInvite() && rawTempPassword != null) {
-            emailService.sendAccountInvite(user, rawTempPassword);
-        }
-
+        sendInvite(user, rawTempPassword, role.getShopId() != null);
         return authService.mapToUserResponse(user);
+    }
+
+    // ── Team (merchant's staff) ───────────────────────────────────────────────
+
+    /** Owner and team members of the caller's shop. */
+    @Transactional(readOnly = true)
+    public List<UserResponse> getTeam() {
+        User me = caller.require();
+        Long shopId = caller.requireShopId(me);
+        return userRepository.findTeamByShopId(shopId).stream().map(authService::mapToUserResponse).toList();
+    }
+
+    /** Adds a team member with one of the shop's roles and e-mails a one-time password. */
+    @Transactional
+    public UserResponse inviteTeamMember(String firstName, String lastName, String email, String phone, Long roleId) {
+        User me = caller.require();
+        Long shopId = caller.requireShopId(me);
+        if (email == null || email.isBlank() || firstName == null || firstName.isBlank()) {
+            throw new IllegalArgumentException("Prénom et e-mail sont obligatoires");
+        }
+        if (userRepository.existsByEmailIgnoreCase(email.trim())) {
+            throw new IllegalArgumentException("Cet email est déjà utilisé");
+        }
+        if (roleId == null) throw new IllegalArgumentException("Choisissez un rôle");
+        Role role = roleService.ownedRole(me, roleId);
+        Segment segment = segmentRepository.findByName("NOUVEAU").orElse(null);
+
+        String rawTempPassword = temporaryPassword();
+        User member = userRepository.save(User.builder()
+                .firstName(firstName.trim())
+                .lastName(lastName == null ? "" : lastName.trim())
+                .email(email.toLowerCase().trim())
+                .phone(phone)
+                .password(passwordEncoder.encode(rawTempPassword))
+                .role(role)
+                .segment(segment)
+                .status(AccountStatus.ACTIVE)
+                .mustChangePassword(true)
+                .shopId(shopId)
+                .build());
+        sendInvite(member, rawTempPassword, true);
+        return authService.mapToUserResponse(member);
+    }
+
+    /** Gives a team member another role of the shop; their pages change at their next sign-in. */
+    @Transactional
+    public UserResponse changeTeamRole(Long userId, Long roleId) {
+        User me = caller.require();
+        User member = teamMemberOf(me, userId);
+        member.setRole(roleService.ownedRole(me, roleId));
+        refreshTokenRepository.deleteByUserId(member.getId()); // forces a fresh token with the new permissions
+        return authService.mapToUserResponse(userRepository.save(member));
+    }
+
+    /** New one-time password for a team member who lost the invitation. */
+    @Transactional
+    public void resendTeamInvite(Long userId) {
+        User me = caller.require();
+        User member = teamMemberOf(me, userId);
+        String rawTempPassword = temporaryPassword();
+        member.setPassword(passwordEncoder.encode(rawTempPassword));
+        member.setMustChangePassword(true);
+        userRepository.save(member);
+        sendInvite(member, rawTempPassword, true);
+    }
+
+    @Transactional
+    public void removeTeamMember(Long userId) {
+        User me = caller.require();
+        User member = teamMemberOf(me, userId);
+        deleteUser(member.getId());
+    }
+
+    /** A team member (not the owner, not the caller, not a customer) of the caller's shop. */
+    private User teamMemberOf(User me, Long userId) {
+        Long shopId = caller.requireShopId(me);
+        User member = findUserOrThrow(userId);
+        if (!shopId.equals(member.getShopId())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Membre introuvable");
+        }
+        if (member.getRole() == null || member.getRole().getShopId() == null) {
+            throw new IllegalArgumentException("Seuls les membres ajoutés à l'équipe peuvent être modifiés ici");
+        }
+        if (member.getId().equals(me.getId())) {
+            throw new IllegalArgumentException("Vous ne pouvez pas modifier votre propre accès");
+        }
+        return member;
+    }
+
+    private void sendInvite(User user, String rawTempPassword, boolean teamMember) {
+        Shop shop = user.getShopId() == null ? null : shopRepository.findById(user.getShopId()).orElse(null);
+        emailService.sendAccountInvite(user, rawTempPassword,
+                shop != null ? shop.getName() : null, shop != null ? shop.getSlug() : null, teamMember);
+    }
+
+    private static String temporaryPassword() {
+        StringBuilder sb = new StringBuilder("Tmp-");
+        for (int i = 0; i < 8; i++) sb.append(PASSWORD_CHARS.charAt(RANDOM.nextInt(PASSWORD_CHARS.length())));
+        return sb.toString();
+    }
+
+    /** Merchants and team members only reach accounts of their own shop. */
+    private User accessibleUser(Long id) {
+        User me = caller.require();
+        User target = findUserOrThrow(id);
+        if (CallerContext.isPlatformAdmin(me)) return target;
+        if (me.getShopId() == null || !me.getShopId().equals(target.getShopId())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Utilisateur introuvable");
+        }
+        return target;
     }
 
     // ── Admin: Update user ────────────────────────────────────────────────────
     @Transactional
     public UserResponse updateUser(Long id, UpdateUserRequest request) {
-        User user = findUserOrThrow(id);
+        User user = accessibleUser(id);
+        boolean platform = CallerContext.isPlatformAdmin(caller.require());
 
         if (request.getFirstName() != null) user.setFirstName(request.getFirstName());
         if (request.getLastName() != null) user.setLastName(request.getLastName());
@@ -130,9 +251,14 @@ public class UserService {
                     .orElseThrow(() -> new RuntimeException("Segment non trouvé: " + request.getSegment()));
             user.setSegment(segment);
         }
-        if (request.getRole() != null) {
+        if (request.getRole() != null && !platform
+                && !request.getRole().equalsIgnoreCase(user.getRole().getName())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Le rôle d'un membre se change depuis « Rôles & Permissions »");
+        }
+        if (request.getRole() != null && platform) {
             Role newRole = roleRepository.findByName(request.getRole().toUpperCase().trim())
-                    .orElseThrow(() -> new RuntimeException("Rôle non trouvé: " + request.getRole()));
+                    .orElseThrow(() -> new IllegalArgumentException("Rôle non trouvé: " + request.getRole()));
             user.setRole(newRole);
         }
         if (request.getNote() != null) user.setNote(request.getNote());
@@ -144,9 +270,14 @@ public class UserService {
     // ── Admin: Change user status ───────────────────────────────────────────────
     @Transactional
     public UserResponse changeStatus(Long id, AccountStatus newStatus) {
-        User user = findUserOrThrow(id);
+        User user = accessibleUser(id);
+        Shop shop = user.getShopId() == null ? null : shopRepository.findById(user.getShopId()).orElse(null);
+        if (shop != null && user.getId().equals(shop.getOwnerId()) && !CallerContext.isPlatformAdmin(caller.require())) {
+            throw new IllegalArgumentException("Le compte du propriétaire ne peut pas être désactivé");
+        }
         user.setStatus(newStatus);
         user = userRepository.save(user);
+        if (newStatus != AccountStatus.ACTIVE) refreshTokenRepository.deleteByUserId(user.getId());
         return authService.mapToUserResponse(user);
     }
 
@@ -186,7 +317,7 @@ public class UserService {
     // ── Admin: Get user by ID ─────────────────────────────────────────────────
     @Transactional(readOnly = true)
     public UserResponse getUserById(Long id) {
-        return authService.mapToUserResponse(findUserOrThrow(id));
+        return authService.mapToUserResponse(accessibleUser(id));
     }
 
     // ── Admin: List all users with pagination ─────────────────────────────────
@@ -268,9 +399,20 @@ public class UserService {
     @Transactional(readOnly = true)
     public DashboardStatsResponse getDashboardStats(String shopSlug) {
         Long shopId = shopIdOf(shopSlug);
-        long totalAdmins = userRepository.countByRoleName("ADMIN")
-                + userRepository.countByRoleName("SUPER_ADMIN");
-        long rolesCount = roleRepository.count();
+        long totalAdmins;
+        long rolesCount;
+        long teamActive = 0;
+        if (shopId == null) {
+            totalAdmins = userRepository.countByRoleName("ADMIN") + userRepository.countByRoleName("SUPER_ADMIN");
+            rolesCount = roleRepository.findByShopIdIsNullOrderByIdAsc().size();
+        } else if (shopId < 0) {
+            totalAdmins = 0;
+            rolesCount = 0;
+        } else {
+            totalAdmins = userRepository.countTeamByShop(shopId);
+            rolesCount = roleRepository.findByShopIdOrderByIdAsc(shopId).size();
+            teamActive = userRepository.countTeamByShopAndStatus(shopId, AccountStatus.ACTIVE);
+        }
         LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
         long totalClients;
         long activeClients;
@@ -300,6 +442,7 @@ public class UserService {
                 .fideleClients(fideleClients)
                 .totalAdmins(totalAdmins)
                 .rolesCount(rolesCount)
+                .activeTeamMembers(teamActive)
                 .build();
     }
 

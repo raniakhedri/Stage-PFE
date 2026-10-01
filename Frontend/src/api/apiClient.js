@@ -198,10 +198,19 @@ function parseSizes(raw) {
   return list
 }
 
+/** Same rule as the server: the promo price applies while the promotion is on and within its dates. */
+function promoIsOn(p) {
+  if (!p.promoActive || !p.promoPrice || !p.salePrice || p.promoPrice >= p.salePrice) return false
+  const today = new Date().toISOString().slice(0, 10)
+  if (p.promoStart && today < p.promoStart) return false
+  if (p.promoEnd && today > p.promoEnd) return false
+  return true
+}
+
 function mapProduct(p) {
   const badge = p.badgeNouveau ? 'Nouveau'
     : p.badgeBestSeller ? 'Best-Seller'
-    : (p.promoActive && p.promoPrice && p.salePrice && p.promoPrice < p.salePrice)
+    : promoIsOn(p)
       ? `-${Math.round(((p.salePrice - p.promoPrice) / p.salePrice) * 100)}%`
     : null;
 
@@ -213,8 +222,8 @@ function mapProduct(p) {
     category: p.subCategory || p.categoryNom || '',
     parentCategory: p.parentCategoryNom || '',
     categorySlug: p.parentCategoryId ? slugifyCategory(p.parentCategoryNom) : '',
-    price: p.promoActive && p.promoPrice ? p.promoPrice : p.salePrice,
-    oldPrice: p.promoActive && p.promoPrice ? p.salePrice : null,
+    price: promoIsOn(p) ? p.promoPrice : p.salePrice,
+    oldPrice: promoIsOn(p) ? p.salePrice : null,
     volume: (p.volumes || '').split(',')[0]?.trim() || '',
     rating: 5,
     reviews: 0,

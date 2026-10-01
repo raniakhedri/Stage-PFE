@@ -11,7 +11,10 @@ import com.naturessence.shared.entity.RefreshToken;
 import com.naturessence.shared.entity.Role;
 import com.naturessence.shared.entity.Segment;
 import com.naturessence.shared.entity.Shop;
+import com.naturessence.shared.entity.AuthCode;
 import com.naturessence.shared.entity.User;
+import com.naturessence.shared.enums.PermissionModule;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.naturessence.shared.enums.AccountStatus;
 import com.naturessence.shared.repository.RoleRepository;
 import com.naturessence.shared.repository.SegmentRepository;
@@ -55,6 +58,11 @@ public class AuthService {
     private final RefreshTokenService refreshTokenService;
     private final LoyaltyService loyaltyService;
     private final MerchantVerificationService verificationService;
+    private final AuthCodeService authCodeService;
+    private final EmailService emailService;
+
+    private static final ObjectMapper JSON = new ObjectMapper();
+    private static final int MIN_PASSWORD = 8;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -95,20 +103,63 @@ public class AuthService {
             // LoyaltyConfig may be absent — registration must not fail because of it
         }
 
-        String accessToken = jwtUtil.generateAccessToken(user);
-        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
-
-        return AuthResponse.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken.getToken())
-                .user(mapToUserResponse(user))
-                .build();
+        return issueTokens(user);
     }
 
+    // ── Merchant sign-up, confirmed by an e-mailed code ──────────────────────
+
+    /** Step 1: checks the form, keeps it (password hashed) and e-mails a six-digit code. Nothing is created yet. */
     @Transactional
-    public AuthResponse registerMerchant(RegisterRequest request) {
-        if (userRepository.existsByEmailIgnoreCase(request.getEmail())) {
+    public Map<String, Object> startMerchantSignup(RegisterRequest request) {
+        String email = request.getEmail().toLowerCase().trim();
+        if (userRepository.existsByEmailIgnoreCase(email)) {
             throw new IllegalArgumentException("Cet email est déjà utilisé");
+        }
+        requireStrongPassword(request.getPassword());
+        Map<String, String> pending = new HashMap<>();
+        pending.put("firstName", request.getFirstName());
+        pending.put("lastName", request.getLastName());
+        pending.put("phone", request.getPhone());
+        pending.put("passwordHash", passwordEncoder.encode(request.getPassword()));
+        String code;
+        try {
+            code = authCodeService.issue(email, AuthCode.SIGNUP, JSON.writeValueAsString(pending));
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            throw new IllegalStateException(e);
+        }
+        emailService.sendSignupCode(email, request.getFirstName(), code);
+        return Map.of("email", email, "otpRequired", true);
+    }
+
+    /** Sends a new code for a pending sign-up (same data). */
+    @Transactional
+    public Map<String, Object> resendMerchantSignup(String email) {
+        AuthCode pending = authCodeService.pending(email, AuthCode.SIGNUP);
+        String code = authCodeService.issue(email, AuthCode.SIGNUP, pending.getPayload());
+        String firstName = "";
+        try {
+            firstName = String.valueOf(JSON.readValue(pending.getPayload(), Map.class).get("firstName"));
+        } catch (Exception ignored) {
+            // the greeting is cosmetic
+        }
+        emailService.sendSignupCode(email.trim().toLowerCase(), firstName, code);
+        return Map.of("email", email.trim().toLowerCase(), "otpRequired", true);
+    }
+
+    /** Step 2: the code is right, the merchant account is created and signed in. */
+    @Transactional(noRollbackFor = IllegalArgumentException.class)
+    @SuppressWarnings("unchecked")
+    public AuthResponse verifyMerchantSignup(String email, String code) {
+        String key = email == null ? "" : email.toLowerCase().trim();
+        if (userRepository.existsByEmailIgnoreCase(key)) {
+            throw new IllegalArgumentException("Cet email est déjà utilisé");
+        }
+        AuthCode entry = authCodeService.consume(key, AuthCode.SIGNUP, code);
+        Map<String, String> pending;
+        try {
+            pending = JSON.readValue(entry.getPayload(), Map.class);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Inscription introuvable. Recommencez.");
         }
 
         Role adminRole = roleRepository.findByName("ADMIN")
@@ -118,26 +169,97 @@ public class AuthService {
                 .orElseThrow(() -> new RuntimeException("Segment NOUVEAU non trouvé"));
 
         User user = User.builder()
-                .firstName(request.getFirstName())
-                .lastName(request.getLastName())
-                .email(request.getEmail().toLowerCase().trim())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .phone(request.getPhone())
+                .firstName(pending.get("firstName"))
+                .lastName(pending.get("lastName"))
+                .email(key)
+                .password(pending.get("passwordHash"))
+                .phone(pending.get("phone"))
                 .role(adminRole)
                 .segment(nouveauSegment)
                 .status(AccountStatus.ACTIVE)
                 .build();
 
         user = userRepository.save(user);
+        return issueTokens(user);
+    }
 
-        String accessToken = jwtUtil.generateAccessToken(user);
+    // ── Passwords ────────────────────────────────────────────────────────────
+
+    /**
+     * Forgot password, for merchants and for a shop's customers. Always answers the same way so the
+     * form cannot be used to find out which e-mails have an account.
+     */
+    @Transactional
+    public void forgotPassword(String email, String shopSlug) {
+        String key = email == null ? "" : email.toLowerCase().trim();
+        User user = userRepository.findByEmailIgnoreCase(key).orElse(null);
+        if (user == null || user.getStatus() == AccountStatus.BLOCKED) return;
+        Shop shop = null;
+        if (shopSlug != null && !shopSlug.isBlank()) {
+            shop = shopRepository.findBySlug(shopSlug.trim().toLowerCase()).orElse(null);
+            // A shop's page only resets that shop's customer accounts.
+            if (shop == null || !shop.getId().equals(user.getShopId())) return;
+        }
+        String code;
+        try {
+            code = authCodeService.issue(key, AuthCode.RESET, null);
+        } catch (IllegalArgumentException tooSoon) {
+            return; // a code was sent less than a minute ago; answer as usual
+        }
+        emailService.sendPasswordResetCode(user, code, shop != null ? shop.getName() : null);
+    }
+
+    @Transactional(noRollbackFor = IllegalArgumentException.class)
+    public void resetPassword(String email, String code, String newPassword) {
+        requireStrongPassword(newPassword);
+        String key = email == null ? "" : email.toLowerCase().trim();
+        authCodeService.consume(key, AuthCode.RESET, code);
+        User user = userRepository.findByEmailIgnoreCase(key)
+                .orElseThrow(() -> new IllegalArgumentException("Code invalide ou expiré."));
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setMustChangePassword(false);
+        userRepository.save(user);
+        refreshTokenService.deleteByUserId(user.getId());
+    }
+
+    /** Signed-in password change; also clears the "temporary password" flag. Returns fresh tokens. */
+    @Transactional
+    public AuthResponse changePassword(String email, String currentPassword, String newPassword) {
+        User user = userRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé"));
+        if (currentPassword == null || !passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new IllegalArgumentException("Le mot de passe actuel est incorrect.");
+        }
+        requireStrongPassword(newPassword);
+        if (passwordEncoder.matches(newPassword, user.getPassword())) {
+            throw new IllegalArgumentException("Choisissez un mot de passe différent de l'actuel.");
+        }
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setMustChangePassword(false);
+        userRepository.save(user);
+        refreshTokenService.deleteByUserId(user.getId());
+        return issueTokens(user);
+    }
+
+    private void requireStrongPassword(String password) {
+        if (password == null || password.length() < MIN_PASSWORD) {
+            throw new IllegalArgumentException("Le mot de passe doit contenir au moins " + MIN_PASSWORD + " caractères.");
+        }
+    }
+
+    /** Access + refresh tokens; the access token carries the shop so every service can scope requests. */
+    public AuthResponse issueTokens(User user) {
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
-
         return AuthResponse.builder()
-                .accessToken(accessToken)
+                .accessToken(jwtUtil.generateAccessToken(user, shopSlugOf(user)))
                 .refreshToken(refreshToken.getToken())
                 .user(mapToUserResponse(user))
                 .build();
+    }
+
+    private String shopSlugOf(User user) {
+        if (user.getShopId() == null) return null;
+        return shopRepository.findById(user.getShopId()).map(Shop::getSlug).orElse(null);
     }
 
     @Transactional
@@ -247,18 +369,14 @@ public class AuthService {
             if (user.getStatus() == AccountStatus.BLOCKED) {
                 throw new LockedException("Votre compte a été bloqué. Contactez l'équipe Sellio.");
             }
+            if (user.getStatus() == AccountStatus.INACTIVE) {
+                throw new LockedException("Votre accès a été désactivé. Contactez le responsable de la boutique.");
+            }
 
             user.setLastLogin(LocalDateTime.now());
             userRepository.save(user);
 
-            String accessToken = jwtUtil.generateAccessToken(user);
-            RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
-
-            return AuthResponse.builder()
-                    .accessToken(accessToken)
-                    .refreshToken(refreshToken.getToken())
-                    .user(mapToUserResponse(user))
-                    .build();
+            return issueTokens(user);
 
         } catch (BadCredentialsException e) {
             throw new BadCredentialsException("Email ou mot de passe incorrect");
@@ -270,10 +388,12 @@ public class AuthService {
         RefreshToken refreshToken = refreshTokenService.verifyRefreshToken(token);
         User user = refreshToken.getUser();
 
-        String accessToken = jwtUtil.generateAccessToken(user);
+        if (user.getStatus() == AccountStatus.BLOCKED || user.getStatus() == AccountStatus.INACTIVE) {
+            throw new LockedException("Votre accès a été désactivé.");
+        }
 
         return AuthResponse.builder()
-                .accessToken(accessToken)
+                .accessToken(jwtUtil.generateAccessToken(user, shopSlugOf(user)))
                 .refreshToken(refreshToken.getToken())
                 .user(mapToUserResponse(user))
                 .build();
@@ -286,7 +406,12 @@ public class AuthService {
 
     public UserResponse mapToUserResponse(User user) {
         Map<String, Boolean> permissionsMap = new HashMap<>();
-        if (user.getRole() != null && user.getRole().getPermissions() != null) {
+        String roleName = user.getRole() != null ? user.getRole().getName() : "";
+        boolean staff = user.getRole() != null && user.getRole().getShopId() != null;
+        if ("ADMIN".equals(roleName) || "SUPER_ADMIN".equals(roleName)) {
+            // The merchant owns the shop: every page of their backoffice is theirs.
+            for (PermissionModule module : PermissionModule.values()) permissionsMap.put(module.name(), true);
+        } else if (user.getRole() != null && user.getRole().getPermissions() != null) {
             user.getRole().getPermissions()
                     .forEach(p -> permissionsMap.put(p.getModule().name(), p.isGranted()));
         }
@@ -322,6 +447,10 @@ public class AuthService {
                 .businessType(shop != null ? shop.getBusinessType() : null)
                 .templateKey(shop != null ? shop.getTemplateKey() : null)
                 .shopStatus(shop != null ? Shop.statusOf(shop) : null)
+                .roleId(user.getRole() != null ? user.getRole().getId() : null)
+                .staff(staff)
+                .shopOwner(shop != null && user.getId().equals(shop.getOwnerId()))
+                .mustChangePassword(Boolean.TRUE.equals(user.getMustChangePassword()))
                 .build();
     }
 

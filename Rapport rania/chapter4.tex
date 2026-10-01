@@ -1,0 +1,444 @@
+\thispagestyle{fancy}
+\fancyhead[R]{A.U 2025-2026}
+\fancyhead[L]{ chapitre 4: Release 2 : Catalogue et vitrine }
+\chapter{Release 2 : Catalogue produit et vitrine personnalisable}
+\section*{Introduction}
+Ce chapitre présente la deuxième release, qui donne à chaque boutique son contenu et son apparence. Le Sprint 3 met en place un catalogue adapté aux deux secteurs visés, cosmétiques et vêtements, avec des attributs de variantes normalisés. Le Sprint 4 livre trois gabarits de vitrine complets et un éditeur de thème dont chaque réglage s'applique en direct à la vitrine.
+
+%==================================================================
+\section{Backlog du Sprint 3}
+\Needspace{18\baselineskip}
+Le tableau~\ref{tab:backlog-sprint3} présente le \textbf{backlog du Sprint 3}.
+
+\renewcommand{\arraystretch}{1.05}
+\setlength{\tabcolsep}{3pt}
+\begin{longtable}{|>{\raggedright\arraybackslash}p{4cm}|>{\raggedright\arraybackslash}p{9cm}|>{\centering\arraybackslash}p{1.2cm}|}
+\hline
+\textbf{User Story} & \textbf{Tâches} & \textbf{Estimation} \\
+\hline
+\endfirsthead
+\hline
+\textbf{User Story} & \textbf{Tâches} & \textbf{Estimation} \\
+\hline
+\endhead
+\hline
+\multicolumn{3}{r}{\textit{Suite à la page suivante}} \\
+\endfoot
+\hline
+\endlastfoot
+
+\textbf{En tant que commerçant, je souhaite gérer mes produits}
+& Développer les entités \texttt{Product} et \texttt{ProductVariant} (prix, stock, statut, images). & 1 \\
+\cline{2-3}
+& Développer l'API CRUD des produits, avec archivage, désactivation et statistiques. & 1 \\
+\cline{2-3}
+& Développer l'API de téléversement d'images. & 1 \\
+\cline{2-3}
+& Développer les interfaces « Produits », « Ajouter un produit » et « Modifier un produit ». & 1 \\
+\cline{2-3}
+& Adapter le formulaire au secteur de la boutique (champs cosmétiques ou vêtements). & 1 \\
+\cline{2-3}
+& Tester la fonctionnalité. & 1 \\
+\hline
+
+\textbf{En tant que commerçant, je souhaite gérer mes catégories}
+& Développer l'API des catégories hiérarchiques (parent, enfants, ordre d'affichage). & 1 \\
+\cline{2-3}
+& Développer les interfaces de gestion et de réordonnancement des catégories. & 1 \\
+\cline{2-3}
+& Tester la fonctionnalité. & 1 \\
+\hline
+
+\textbf{En tant que commerçant, je souhaite gérer mes collections}
+& Développer l'API des collections et l'association des produits. & 1 \\
+\cline{2-3}
+& Développer les interfaces « Collections » et « Gérer une collection ». & 1 \\
+\hline
+
+\textbf{En tant que commerçant, je souhaite choisir les tailles dans une liste}
+& Définir les groupes de tailles (lettres, numériques, jeans, enfants, chaussures, taille unique). & 1 \\
+\cline{2-3}
+& Développer le sélecteur de tailles à choix multiple. & 1 \\
+\hline
+
+\textbf{En tant que commerçant, je souhaite choisir des couleurs prédéfinies ou libres}
+& Définir la palette de 28 couleurs de base nommées. & 1 \\
+\cline{2-3}
+& Développer le sélecteur de couleurs avec ajout d'une couleur libre (sélecteur RVB et nom). & 1 \\
+\hline
+
+\textbf{En tant que commerçant, je souhaite choisir le tissu et d'autres attributs, et en ajouter}
+& Définir la liste des tissus (fibres naturelles, artificielles, synthétiques) et des autres attributs (coupe, saison, entretien). & 1 \\
+\cline{2-3}
+& Stocker les valeurs ajoutées par la boutique (\texttt{customOptions}) et les fusionner avec les listes par défaut. & 1 \\
+\cline{2-3}
+& Développer les sélecteurs extensibles et le hook \texttt{useShopOptions}. & 1 \\
+\cline{2-3}
+& Tester la fonctionnalité. & 1 \\
+\hline
+
+\multicolumn{2}{|r|}{\textbf{Total}} & \textbf{19} \\
+\hline
+\caption{Backlog du Sprint 3}
+\label{tab:backlog-sprint3}
+\end{longtable}
+
+\section{Diagramme de cas d'utilisation du Sprint 3}
+\Needspace{20\baselineskip}
+La figure~\ref{fig:cu-sprint3} présente le diagramme de cas d'utilisation du troisième sprint.
+\begin{figure}[H]
+    \centering
+    \img{0.8}{cu_sprint3.png}
+    \caption{Diagramme de cas d'utilisation du Sprint 3}
+    \label{fig:cu-sprint3}
+\end{figure}
+
+\section{Services web du Sprint 3}
+Le tableau~\ref{tab:ws-sprint3} présente les services web du Sprint 3, exposés par le microservice \texttt{catalog-service}.
+\renewcommand{\arraystretch}{1.15}
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{|p{1.5cm}|p{6.8cm}|p{6.2cm}|}
+\hline
+\textbf{Méthode} & \textbf{URL} & \textbf{Description} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Méthode} & \textbf{URL} & \textbf{Description} \\
+\hline
+\endhead
+\multicolumn{3}{|c|}{\textbf{Produits (administration) --- /api/v1/admin/products}} \\
+\hline
+GET & /api/v1/admin/products & Lister les produits de la boutique. \\
+\hline
+GET & /api/v1/admin/products/stats & Statistiques du catalogue. \\
+\hline
+POST & /api/v1/admin/products & Créer un produit et ses variantes. \\
+\hline
+PUT & /api/v1/admin/products/\{id\} & Modifier un produit. \\
+\hline
+PATCH & /api/v1/admin/products/\{id\}/archive & Archiver un produit. \\
+\hline
+PATCH & /api/v1/admin/products/\{id\}/deactivate & Désactiver un produit. \\
+\hline
+DELETE & /api/v1/admin/products/\{id\} & Supprimer un produit. \\
+\hline
+POST & /api/v1/admin/upload & Téléverser une image. \\
+\hline
+\multicolumn{3}{|c|}{\textbf{Catégories et collections (administration)}} \\
+\hline
+GET, POST & /api/v1/admin/categories & Lister, créer une catégorie. \\
+\hline
+PUT, DELETE & /api/v1/admin/categories/\{id\} & Modifier, supprimer une catégorie. \\
+\hline
+PUT & /api/v1/admin/categories/reorder & Réordonner les catégories. \\
+\hline
+GET, POST & /api/v1/admin/collections & Lister, créer une collection. \\
+\hline
+PUT, DELETE & /api/v1/admin/collections/\{id\} & Modifier, supprimer une collection. \\
+\hline
+\multicolumn{3}{|c|}{\textbf{Catalogue public (vitrine)}} \\
+\hline
+GET & /api/v1/public/products & Lister et filtrer les produits publiés. \\
+\hline
+GET & /api/v1/public/products/\{slug\} & Fiche d'un produit. \\
+\hline
+GET & /api/v1/public/products/category/\{categoryId\} & Produits d'une catégorie. \\
+\hline
+GET & /api/v1/public/products/collection/\{collectionSlug\} & Produits d'une collection. \\
+\hline
+GET & /api/v1/public/products/by-ids & Produits à partir d'une liste d'identifiants (recommandations). \\
+\hline
+GET & /api/v1/public/categories/menu & Arborescence du menu de la vitrine. \\
+\hline
+GET & /api/v1/public/categories/footer & Catégories du pied de page. \\
+\hline
+GET & /api/v1/public/collections/homepage & Collections mises en avant. \\
+\hline
+\caption{Services web du Sprint 3}
+\label{tab:ws-sprint3}
+\end{longtable}
+
+\section{Les cas d'utilisation du Sprint 3}
+\subsection{Cas d'utilisation « Ajouter un produit avec ses variantes »}
+\subsubsection{Description textuelle}
+Le tableau~\ref{tab:uc-produit} présente la description textuelle de ce cas.
+\renewcommand{\arraystretch}{1.5}
+\begin{longtable}{|p{4cm}|p{11cm}|}
+\hline
+\textbf{Acteurs} & Commerçant, Collaborateur disposant de la permission « Produits » \\
+\hline
+\textbf{Objectif} & Publier un produit avec des attributs normalisés, exploitables par les filtres de la vitrine et par le moteur de recommandation. \\
+\hline
+\textbf{Pré-condition} & L'utilisateur est connecté et sa boutique est active. \\
+\hline
+\textbf{Scénario principal} &
+1. L'utilisateur ouvre « Ajouter un produit » ; le formulaire s'adapte au secteur de la boutique.\newline
+2. Il saisit le nom, la description, le prix, la catégorie et téléverse les images.\newline
+3. Pour un vêtement, il choisit les tailles dans les groupes proposés, les couleurs dans la palette, et le tissu dans la liste.\newline
+4. Le système génère une variante par combinaison taille / couleur, dont l'utilisateur ajuste le stock.\newline
+5. L'utilisateur enregistre ; le système valide les données et crée le produit rattaché à sa boutique.\newline
+6. Le produit apparaît dans la liste et, s'il est publié, sur la vitrine. \\
+\hline
+\textbf{Scénario alternatif} &
+\textbf{Valeur absente de la liste :} à l'étape 3, l'utilisateur ajoute une couleur libre (sélecteur RVB et nom) ou un nouveau tissu ; la valeur est enregistrée dans les options de la boutique et proposée pour les produits suivants.\newline
+\textbf{Données invalides :} à l'étape 5, le système signale les champs erronés (prix négatif, nom manquant) sans perdre la saisie. \\
+\hline
+\caption{Description textuelle du cas « Ajouter un produit avec ses variantes »}
+\label{tab:uc-produit}
+\end{longtable}
+
+\subsubsection{Diagramme de séquence système}
+\Needspace{18\baselineskip}
+\begin{figure}[H]
+    \centering
+    \img{0.65}{dss_produit.png}
+    \caption{Diagramme de séquence système du cas « Ajouter un produit »}
+    \label{fig:dss-produit}
+\end{figure}
+
+\subsubsection{Diagramme de séquence objet}
+\Needspace{20\baselineskip}
+\begin{figure}[H]
+    \centering
+    \img{0.9}{dso_produit.png}
+    \caption{Diagramme de séquence objet du cas « Ajouter un produit »}
+    \label{fig:dso-produit}
+\end{figure}
+
+\section{Réalisation du Sprint 3}
+\Needspace{20\baselineskip}
+\textbf{Liste des produits :} la figure~\ref{fig:ui-produits} présente la liste des produits avec leurs statistiques, filtres et actions.
+\begin{figure}[H]
+    \centering
+    \img{0.85}{ui_produits.png}
+    \caption{Liste des produits de la boutique}
+    \label{fig:ui-produits}
+\end{figure}
+
+\Needspace{20\baselineskip}
+\textbf{Sélecteurs d'attributs :} la figure~\ref{fig:ui-attributs} présente le formulaire d'un vêtement : groupes de tailles, palette de couleurs avec ajout d'une couleur libre, et liste des tissus extensible. Remplacer la saisie libre par ces listes évite les doublons (« bleu marine », « Marine », « navy ») qui fausseraient les filtres et les recommandations.
+\begin{figure}[H]
+    \centering
+    \img{0.85}{ui_attributs.png}
+    \caption{Sélecteurs de tailles, couleurs et tissus}
+    \label{fig:ui-attributs}
+\end{figure}
+
+\Needspace{20\baselineskip}
+\textbf{Catégories et collections :} la figure~\ref{fig:ui-categories} présente la gestion des catégories hiérarchiques.
+\begin{figure}[H]
+    \centering
+    \img{0.85}{ui_categories.png}
+    \caption{Gestion des catégories}
+    \label{fig:ui-categories}
+\end{figure}
+
+%==================================================================
+\section{Backlog du Sprint 4}
+\Needspace{18\baselineskip}
+Le tableau~\ref{tab:backlog-sprint4} présente le \textbf{backlog du Sprint 4}, consacré à la vitrine et à sa personnalisation.
+
+\renewcommand{\arraystretch}{1.05}
+\setlength{\tabcolsep}{3pt}
+\begin{longtable}{|>{\raggedright\arraybackslash}p{4cm}|>{\raggedright\arraybackslash}p{9cm}|>{\centering\arraybackslash}p{1.2cm}|}
+\hline
+\textbf{User Story} & \textbf{Tâches} & \textbf{Estimation} \\
+\hline
+\endfirsthead
+\hline
+\textbf{User Story} & \textbf{Tâches} & \textbf{Estimation} \\
+\hline
+\endhead
+\hline
+\multicolumn{3}{r}{\textit{Suite à la page suivante}} \\
+\endfoot
+\hline
+\endlastfoot
+
+\textbf{En tant que commerçant, je souhaite choisir un gabarit Minimal, Bold ou Luxury}
+& Concevoir l'architecture des gabarits : en-tête, accueil et pied de page par gabarit, briques partagées (navigation, données d'accueil, catégories du pied de page). & 1 \\
+\cline{2-3}
+& Développer le gabarit Minimal (épuré, typographie fine, grands espaces). & 1 \\
+\cline{2-3}
+& Développer le gabarit Bold (contrastes forts, en-tête transparent sur bannière plein écran). & 1 \\
+\cline{2-3}
+& Développer le gabarit Luxury (typographie à empattements, tons sourds, mise en page éditoriale). & 1 \\
+\cline{2-3}
+& Faire correspondre les anciens thèmes aux trois gabarits et permettre la prévisualisation (\texttt{?preview=}). & 1 \\
+\cline{2-3}
+& Supprimer la section codée en dur propre à NaturEssence (atelier « DIY »). & 1 \\
+\hline
+
+\textbf{En tant que visiteur, je souhaite parcourir la vitrine, ses menus et ses catégories}
+& Développer les menus déroulants alimentés par l'arborescence des catégories. & 1 \\
+\cline{2-3}
+& Développer la page de catégorie avec filtres (prix, taille, couleur). & 1 \\
+\cline{2-3}
+& Afficher un message lorsque la boutique est en attente, fermée ou suspendue. & 1 \\
+\hline
+
+\textbf{En tant que visiteur, je souhaite consulter la fiche d'un produit}
+& Développer la fiche produit (galerie, variantes, stock, avis). & 1 \\
+\cline{2-3}
+& Adapter la carte produit à chaque gabarit, avec choix rapide de la taille. & 1 \\
+\hline
+
+\textbf{En tant que commerçant, je souhaite choisir la palette de couleurs de ma boutique}
+& Exposer la palette sous forme de variables CSS (\texttt{--rgb-primary}, \texttt{--rgb-accent}, \dots) consommées par Tailwind. & 1 \\
+\cline{2-3}
+& Développer le choix de palette dans « Votre boutique » (couleurs prédéfinies et personnalisées). & 1 \\
+\hline
+
+\textbf{En tant que commerçant, je souhaite personnaliser boutons, survols, navigation, textes et pied de page}
+& Définir le modèle de thème (14 variables : annonce, navigation, survol, titres, boutons, prix, badges, pied de page). & 1 \\
+\cline{2-3}
+& Développer l'éditeur de thème avec aperçu et réinitialisation. & 1 \\
+\cline{2-3}
+& Appliquer le thème sur la vitrine via des variables \texttt{--t-*} et des classes d'ancrage (\texttt{t-nav}, \texttt{t-btn}, \texttt{t-price}\dots). & 1 \\
+\cline{2-3}
+& Valider le thème côté serveur (couleurs \#RRGGBB, taille et type du logo). & 1 \\
+\cline{2-3}
+& Tester sur les trois gabarits. & 1 \\
+\hline
+
+\multicolumn{2}{|r|}{\textbf{Total}} & \textbf{18} \\
+\hline
+\caption{Backlog du Sprint 4}
+\label{tab:backlog-sprint4}
+\end{longtable}
+
+\section{Diagramme de cas d'utilisation du Sprint 4}
+\Needspace{20\baselineskip}
+\begin{figure}[H]
+    \centering
+    \img{0.8}{cu_sprint4.png}
+    \caption{Diagramme de cas d'utilisation du Sprint 4}
+    \label{fig:cu-sprint4}
+\end{figure}
+
+\section{Services web du Sprint 4}
+Le tableau~\ref{tab:ws-sprint4} présente les services web du Sprint 4.
+\renewcommand{\arraystretch}{1.15}
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{|p{1.5cm}|p{6.8cm}|p{6.2cm}|}
+\hline
+\textbf{Méthode} & \textbf{URL} & \textbf{Description} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Méthode} & \textbf{URL} & \textbf{Description} \\
+\hline
+\endhead
+\multicolumn{3}{|c|}{\textbf{Boutique et thème (auth-service)}} \\
+\hline
+PATCH & /api/v1/auth/my-shop & Enregistrer le gabarit, la palette, le thème et le logo. \\
+\hline
+GET & /api/v1/public/shops/\{slug\} & Charger le gabarit, la palette et le thème d'une boutique. \\
+\hline
+\multicolumn{3}{|c|}{\textbf{Apparence et profil de la boutique (marketing-service)}} \\
+\hline
+GET & /api/v1/admin/appearance/\{scope\} & Consulter les réglages d'apparence d'une zone (accueil, en-tête, pied de page). \\
+\hline
+PUT & /api/v1/admin/appearance/\{scope\} & Modifier les réglages d'apparence. \\
+\hline
+POST & /api/v1/admin/appearance/\{scope\}/reset & Réinitialiser les réglages. \\
+\hline
+GET & /api/v1/public/appearance/\{scope\} & Réglages d'apparence publics. \\
+\hline
+GET, PUT & /api/v1/admin/store & Consulter, modifier le profil de la boutique (contact, réseaux sociaux). \\
+\hline
+GET & /api/v1/public/store & Profil public de la boutique. \\
+\hline
+\caption{Services web du Sprint 4}
+\label{tab:ws-sprint4}
+\end{longtable}
+
+\section{Les cas d'utilisation du Sprint 4}
+\subsection{Cas d'utilisation « Personnaliser la vitrine »}
+\subsubsection{Description textuelle}
+Le tableau~\ref{tab:uc-theme} présente la description textuelle de ce cas.
+\renewcommand{\arraystretch}{1.5}
+\begin{longtable}{|p{4cm}|p{11cm}|}
+\hline
+\textbf{Acteurs} & Commerçant \\
+\hline
+\textbf{Objectif} & Donner à la vitrine l'apparence de la marque sans écrire de code. \\
+\hline
+\textbf{Pré-condition} & Le commerçant est connecté et possède une boutique. \\
+\hline
+\textbf{Scénario principal} &
+1. Le commerçant ouvre « Votre boutique ».\newline
+2. Il choisit un gabarit (Minimal, Bold ou Luxury) et peut le prévisualiser sans l'enregistrer.\newline
+3. Il choisit sa palette : couleur de marque, accent, fond, texte.\newline
+4. Dans l'éditeur de thème, il règle le bandeau d'annonce, la navigation et son survol, les boutons et leur survol, les prix, les badges et le pied de page.\newline
+5. Il enregistre ; le système valide chaque couleur (format \#RRGGBB) et stocke le thème.\newline
+6. À l'ouverture suivante, la vitrine charge le thème et l'applique sous forme de variables CSS ; seuls les réglages renseignés remplacent le style par défaut du gabarit. \\
+\hline
+\textbf{Scénario alternatif} &
+\textbf{Couleur invalide :} à l'étape 5, le système refuse le thème avec « Le thème ne peut contenir que des couleurs \#RRGGBB ».\newline
+\textbf{Retour au style du gabarit :} le commerçant réinitialise un réglage ; la variable correspondante est retirée et le style d'origine du gabarit s'applique de nouveau. \\
+\hline
+\caption{Description textuelle du cas « Personnaliser la vitrine »}
+\label{tab:uc-theme}
+\end{longtable}
+
+\subsubsection{Diagramme de séquence système}
+\Needspace{18\baselineskip}
+\begin{figure}[H]
+    \centering
+    \img{0.65}{dss_theme.png}
+    \caption{Diagramme de séquence système du cas « Personnaliser la vitrine »}
+    \label{fig:dss-theme}
+\end{figure}
+
+\subsubsection{Diagramme de séquence objet}
+\Needspace{20\baselineskip}
+\begin{figure}[H]
+    \centering
+    \img{0.9}{dso_theme.png}
+    \caption{Diagramme de séquence objet du cas « Personnaliser la vitrine »}
+    \label{fig:dso-theme}
+\end{figure}
+
+\section{Réalisation du Sprint 4}
+\Needspace{20\baselineskip}
+\textbf{Les trois gabarits :} les figures~\ref{fig:ui-minimal}, \ref{fig:ui-bold} et~\ref{fig:ui-luxury} présentent la même boutique affichée avec chacun des trois gabarits. Le contenu (produits, catégories, bannières) est identique ; seuls la structure et le style changent.
+\begin{figure}[H]
+    \centering
+    \img{0.85}{ui_vitrine_minimal.png}
+    \caption{Vitrine avec le gabarit Minimal}
+    \label{fig:ui-minimal}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \img{0.85}{ui_vitrine_bold.png}
+    \caption{Vitrine avec le gabarit Bold}
+    \label{fig:ui-bold}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \img{0.85}{ui_vitrine_luxury.png}
+    \caption{Vitrine avec le gabarit Luxury}
+    \label{fig:ui-luxury}
+\end{figure}
+
+\Needspace{20\baselineskip}
+\textbf{Éditeur de thème :} la figure~\ref{fig:ui-theme} présente l'éditeur de thème, organisé en groupes (couleurs de base, bandeau d'annonce, navigation, boutons, prix et badges, pied de page).
+\begin{figure}[H]
+    \centering
+    \img{0.85}{ui_editeur_theme.png}
+    \caption{Éditeur de thème de la vitrine}
+    \label{fig:ui-theme}
+\end{figure}
+
+\Needspace{20\baselineskip}
+\textbf{Fiche produit :} la figure~\ref{fig:ui-fiche} présente la fiche d'un vêtement, avec le choix de la taille et de la couleur.
+\begin{figure}[H]
+    \centering
+    \img{0.85}{ui_fiche_produit.png}
+    \caption{Fiche produit sur la vitrine}
+    \label{fig:ui-fiche}
+\end{figure}
+
+\subsection*{Conclusion}
+Cette release a doté chaque boutique d'un catalogue structuré et d'une vitrine qui lui ressemble. Les attributs normalisés ne servent pas qu'à l'affichage : ils alimentent aussi la partie « contenu » du moteur de recommandation présenté au chapitre 8. La release suivante porte sur le parcours d'achat.
