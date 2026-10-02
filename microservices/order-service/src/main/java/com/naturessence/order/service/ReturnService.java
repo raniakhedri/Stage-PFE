@@ -1,5 +1,7 @@
 package com.naturessence.order.service;
 
+import com.naturessence.shared.entity.User;
+import com.naturessence.shared.security.TenantGuard;
 import com.naturessence.shared.dto.request.ReturnRequestDTO;
 import com.naturessence.shared.dto.response.ReturnResponse;
 import com.naturessence.shared.entity.Order;
@@ -26,15 +28,17 @@ public class ReturnService {
     private final ReturnRequestRepository returnRequestRepository;
     private final OrderRepository orderRepository;
     private final ReturnPolicyRepository returnPolicyRepository;
+    private final com.naturessence.shared.repository.ShopRepository shopRepository;
 
     @Transactional
-    public ReturnResponse createReturn(String userEmail, ReturnRequestDTO dto) {
+    public ReturnResponse createReturn(User customer, ReturnRequestDTO dto) {
         Order order = orderRepository.findById(dto.getOrderId())
                 .orElseThrow(() -> new RuntimeException("Commande introuvable"));
 
-        // Check ownership: match by email OR by linked user email
-        boolean ownsOrder = order.getEmail().equalsIgnoreCase(userEmail)
-                || (order.getUser() != null && order.getUser().getEmail().equalsIgnoreCase(userEmail));
+        // The order is the customer's: placed while signed in, or as a guest with their e-mail in the same shop.
+        boolean ownsOrder = (order.getUser() != null && order.getUser().getId().equals(customer.getId()))
+                || (order.getEmail() != null && order.getEmail().equalsIgnoreCase(customer.getEmail())
+                    && java.util.Objects.equals(order.getShopId(), customer.getShopId()));
         if (!ownsOrder) {
             throw new RuntimeException("Cette commande ne vous appartient pas");
         }
@@ -97,6 +101,7 @@ public class ReturnService {
     public ReturnResponse getReturnById(Long id) {
         ReturnRequest rr = returnRequestRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Demande de retour introuvable"));
+        TenantGuard.assertOwned(rr.getOrder() != null ? rr.getOrder().getShopId() : null, shopRepository);
         return mapToResponse(rr);
     }
 
@@ -104,6 +109,7 @@ public class ReturnService {
     public ReturnResponse updateStatus(Long id, String newStatus, String motifRefus) {
         ReturnRequest rr = returnRequestRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Demande de retour introuvable"));
+        TenantGuard.assertOwned(rr.getOrder() != null ? rr.getOrder().getShopId() : null, shopRepository);
         rr.setStatus(ReturnStatus.valueOf(newStatus));
         if (motifRefus != null && !motifRefus.isBlank()) {
             rr.setMotifRefus(motifRefus);

@@ -1,5 +1,6 @@
 package com.naturessence.catalog.controller;
 
+import com.naturessence.shared.security.CurrentUser;
 import com.naturessence.catalog.service.ReviewService;
 import com.naturessence.shared.dto.request.ReviewRequest;
 import com.naturessence.shared.dto.response.ReviewResponse;
@@ -30,15 +31,14 @@ public class PublicReviewController {
     }
 
     // ── Authenticated: Submit a review ─────────────────────────────────
-    // Requires a valid JWT. The principal name is the user's email (set by JwtAuthenticationFilter).
+    // Requires a valid JWT. The principal name is the user's id (set by JwtAuthenticationFilter).
     @PostMapping({ "/api/v1/reviews", "/api/v1/profile/reviews" })
     public ResponseEntity<ReviewResponse> submitReview(
         Authentication authentication,
         @Valid @RequestBody ReviewRequest request
     ) {
-        String email = authentication.getName();
-        User user = userRepository
-            .findByEmailIgnoreCase(email)
+        Long userId = CurrentUser.id(authentication);
+        User user = (userId == null ? java.util.Optional.<User>empty() : userRepository.findById(userId))
             .orElseThrow(() ->
                 new IllegalArgumentException("Utilisateur introuvable")
             );
@@ -52,9 +52,8 @@ public class PublicReviewController {
     public ResponseEntity<List<ReviewResponse>> getMyReviews(
         Authentication authentication
     ) {
-        String email = authentication.getName();
-        User user = userRepository
-            .findByEmailIgnoreCase(email)
+        Long userId = CurrentUser.id(authentication);
+        User user = (userId == null ? java.util.Optional.<User>empty() : userRepository.findById(userId))
             .orElseThrow(() ->
                 new IllegalArgumentException("Utilisateur introuvable")
             );

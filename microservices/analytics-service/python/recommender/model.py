@@ -11,6 +11,7 @@ both by the Java service (via train.py) and by the offline benchmark.
 
 from __future__ import annotations
 
+import json
 import math
 import unicodedata
 from collections import Counter, defaultdict
@@ -60,6 +61,15 @@ def product_text(p: dict) -> str:
     attributes = " ".join(
         str(p.get(k) or "") for k in ("tissu", "couleur", "coupe", "genre", "saison", "latin", "origine")
     )
+    # Sector characteristics (sport, high-tech, maison…) arrive as a JSON object.
+    raw = p.get("attributes")
+    if raw:
+        try:
+            extra = json.loads(raw) if isinstance(raw, str) else raw
+            if isinstance(extra, dict):
+                attributes += " " + " ".join(str(v) for v in extra.values())
+        except ValueError:
+            pass
     return _strip_accents(" ".join([
         p.get("name") or "",
         (category + " ") * 3,

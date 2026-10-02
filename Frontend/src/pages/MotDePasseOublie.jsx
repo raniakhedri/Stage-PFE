@@ -49,7 +49,7 @@ export default function MotDePasseOublie() {
     if (password !== confirm) return setError('Les deux mots de passe ne correspondent pas.');
     setLoading(true);
     try {
-      await post('/reset-password', { email, code, password });
+      await post('/reset-password', { email, code, password, shopSlug });
       setStep('done');
     } catch (err) {
       setError(err.message);

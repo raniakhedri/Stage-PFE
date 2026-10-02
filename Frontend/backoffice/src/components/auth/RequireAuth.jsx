@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router-dom'
-import { clearSession, currentShopSlug, firstAllowedPath, readUser, shopIsActive } from '../../lib/sellio'
+import { clearSession, currentShopSlug, firstAllowedPath, isPlatform, readUser, shopIsActive } from '../../lib/sellio'
 
 export default function RequireAuth() {
   const token = localStorage.getItem('accessToken')
@@ -19,7 +19,14 @@ export default function RequireAuth() {
     window.location.replace('/changer-mot-de-passe')
     return null
   }
-  if (user?.roleName === 'SUPER_ADMIN') return <Outlet />
+  // The Sellio team runs the console; a shop's backoffice (customers, orders…) belongs to its merchant.
+  if (isPlatform(user)) {
+    if (currentShopSlug()) {
+      window.location.replace('/sellio')
+      return null
+    }
+    return <Outlet />
+  }
 
   // Merchant owners and their team members stay inside their own shop.
   const slug = currentShopSlug()

@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { layoutOf } from '../data/storeTemplates'
+import { LAYOUTS, layoutOf } from '../data/storeTemplates'
+import { sectorOf } from '../data/sectors'
 
 const StoreContext = createContext({
   businessType: 'COSMETICS',
@@ -58,12 +59,32 @@ function parseTheme(raw) {
 
 const hexOk = (v) => /^#[0-9a-f]{6}$/i.test(v || '')
 
-// `?preview=minimal|bold|luxury` lets a merchant look at another template without saving it.
+// `?preview=<template>` lets a merchant look at another template without saving it.
 function previewLayout() {
   const value = new URLSearchParams(window.location.search).get('preview')
   if (value) sessionStorage.setItem('templatePreview', value)
   const stored = value || sessionStorage.getItem('templatePreview')
-  return ['minimal', 'bold', 'luxury'].includes(stored) ? stored : null
+  return LAYOUTS.includes(stored) ? stored : null
+}
+
+function setFavicon(href) {
+  if (!href) return
+  let link = document.querySelector("link[rel~='icon']")
+  if (!link) {
+    link = document.createElement('link')
+    link.rel = 'icon'
+    document.head.appendChild(link)
+  }
+  link.removeAttribute('type') // the logo may be PNG, JPEG, SVG or WebP
+  link.href = href
+}
+
+function initialIcon(name, color) {
+  const letter = (name || '?').trim().charAt(0).toUpperCase() || '?'
+  const fill = hexOk(color) ? color : '#111827'
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="${fill}"/>`
+    + `<text x="32" y="44" font-family="Arial, sans-serif" font-size="36" font-weight="700" fill="#fff" text-anchor="middle">${letter.replace(/[<&>"]/g, '')}</text></svg>`
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`
 }
 
 function shopSlug() {
@@ -115,6 +136,12 @@ export function StoreProvider({ children }) {
       .catch(() => setStore((prev) => ({ ...prev, ready: true, missing: true })))
   }, [])
 
+  // Browser tab icon: the merchant's logo, or the shop's initial on its brand colour when there is no logo.
+  useEffect(() => {
+    if (!store.ready || store.missing) return
+    setFavicon(store.logo || initialIcon(store.storeName, store.primaryColor))
+  }, [store.ready, store.missing, store.logo, store.storeName, store.primaryColor])
+
   useEffect(() => {
     const root = document.documentElement
     const layout = store.layout || layoutOf(store.templateKey)
@@ -148,7 +175,16 @@ export function StoreProvider({ children }) {
     store.buttonTextColor, store.accentColor, store.backgroundColor, store.textColor, store.theme])
 
   return (
-    <StoreContext.Provider value={{ ...store, layout: store.layout || layoutOf(store.templateKey), isClothes: store.businessType === 'CLOTHES' }}>
+    <StoreContext.Provider
+      value={{
+        ...store,
+        layout: store.layout || layoutOf(store.templateKey),
+        sector: sectorOf(store.businessType),
+        // The customer picks among the product's sizes/formats (tailles) in every sector except cosmetics.
+        hasSizes: sectorOf(store.businessType).sizes,
+        isClothes: store.businessType === 'CLOTHES',
+      }}
+    >
       {children}
     </StoreContext.Provider>
   )

@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { SellioLogo, TechBackdrop, DISPLAY, MONO } from '../components/sellio/brand'
-import { readUser } from '../lib/sellio'
+import { readUser, isPlatform } from '../lib/sellio'
 
 const FEATURES = [
   {
     icon: 'storefront',
-    title: 'Trois vitrines premium',
-    text: 'Minimal, Bold ou Luxury : chaque modèle a son en-tête, ses menus et sa page d’accueil. Changez-en en un clic.',
+    title: 'Huit modèles de vitrine',
+    text: 'Minimal, Bold, Luxury, Sport, Tech, Artisan, Pop ou Éditorial : chaque modèle a son en-tête, ses menus et sa page d’accueil. Changez-en en un clic.',
     wide: true,
   },
   { icon: 'view_in_ar', title: 'Essayage virtuel IA', text: 'Vos clientes essaient les vêtements en direct depuis la fiche produit.' },
@@ -25,8 +25,8 @@ const STEPS = [
 ]
 
 const STATS = [
-  ['3', 'modèles de vitrine'],
-  ['2', 'secteurs : mode & cosmétique'],
+  ['8', 'modèles de vitrine'],
+  ['8', 'secteurs : mode, beauté, sport, high-tech…'],
   ['TND', 'prix, TVA et livraison locales'],
   ['24/7', 'boutique toujours ouverte'],
 ]
@@ -165,7 +165,7 @@ function HeroMock() {
 export default function SellioHome() {
   const user = readUser()
   const signedIn = Boolean(localStorage.getItem('accessToken')) && user?.roleName && user.roleName !== 'CLIENT'
-  const spaceLink = user?.roleName === 'SUPER_ADMIN' ? '/sellio' : user?.shopSlug ? `/${user.shopSlug}/dashboard` : '/nouvelle-boutique'
+  const spaceLink = isPlatform(user) ? '/sellio' : user?.shopSlug ? `/${user.shopSlug}/dashboard` : '/nouvelle-boutique'
   const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
@@ -220,7 +220,7 @@ export default function SellioHome() {
             <span className="bg-gradient-to-r from-white via-violet-300 to-cyan-200 bg-clip-text text-transparent sellio-shine">prête en quelques minutes.</span>
           </h1>
           <p className="mt-7 max-w-2xl mx-auto text-base md:text-lg text-white/55 leading-relaxed">
-            Sellio est la plateforme e-commerce pensée pour les marques de mode et de cosmétique :
+            Sellio est la plateforme e-commerce des marques tunisiennes — mode, beauté, sport, high-tech, maison, épicerie fine, bijoux, enfants :
             vitrines premium, catalogue structuré, paiements, livraisons et analyses — sans une ligne de code.
           </p>
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">

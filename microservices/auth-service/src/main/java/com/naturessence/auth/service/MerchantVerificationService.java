@@ -1,5 +1,6 @@
 package com.naturessence.auth.service;
 
+import com.naturessence.shared.security.PlatformRoles;
 import com.naturessence.shared.dto.request.MerchantVerificationRequest;
 import com.naturessence.shared.entity.MerchantVerification;
 import com.naturessence.shared.entity.Shop;
@@ -175,7 +176,7 @@ public class MerchantVerificationService {
 
     @Transactional
     public void setUserBlocked(User user, boolean blocked) {
-        if (user.getRole() != null && "SUPER_ADMIN".equals(user.getRole().getName())) {
+        if (user.getRole() != null && PlatformRoles.isPlatform(user.getRole().getName())) {
             throw new IllegalArgumentException("Un compte plateforme ne peut pas être bloqué.");
         }
         user.setStatus(blocked ? AccountStatus.BLOCKED : AccountStatus.ACTIVE);

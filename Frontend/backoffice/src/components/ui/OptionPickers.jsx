@@ -106,7 +106,7 @@ export function OptionSelect({ optionKey, value, onChange, placeholder = 'Choisi
  * Multi-select stored as a comma-separated string (the API format for tailles / certifications).
  * `grouped` shows the size families as quick-pick rows.
  */
-export function MultiOptionSelect({ optionKey, value, onChange, grouped = false, placeholder = 'Ajouter…' }) {
+export function MultiOptionSelect({ optionKey, value, onChange, grouped = false, groups = SIZE_GROUPS, placeholder = 'Ajouter…' }) {
   const shop = useShopOptions()
   const selected = splitList(value)
   const custom = shop.customFor(optionKey)
@@ -121,7 +121,7 @@ export function MultiOptionSelect({ optionKey, value, onChange, grouped = false,
     <div className="space-y-3">
       {grouped ? (
         <div className="space-y-3">
-          {[...SIZE_GROUPS, ...(custom.length ? [{ label: 'Vos tailles', values: custom }] : [])].map((g) => (
+          {[...groups, ...(custom.length ? [{ label: 'Vos valeurs', values: custom }] : [])].map((g) => (
             <div key={g.label}>
               <div className="flex items-center justify-between mb-1.5">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{g.label}</p>

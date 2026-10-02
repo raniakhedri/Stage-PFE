@@ -65,6 +65,8 @@ public class ProductRequest {
     private String tailles;
     private String saison;
     private String genre;
+    /** Sector-specific characteristics, JSON object of strings. */
+    private String attributes;
 
     // Shipping
     private double weight;

@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef, forwardRef } from 'react'
+import { useState, useEffect, useRef, forwardRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import CustomSelect from '../components/ui/CustomSelect'
@@ -6,6 +6,9 @@ import PageHeader from '../components/ui/PageHeader'
 import { applyProductImage, computeProductStock, productApi, resolveImgUrl, serializeProductImages } from '../api/productApi'
 import { categoryApi } from '../api/categoryApi'
 import ClothingFields, { clothingPayload, emptyClothing } from '../components/ClothingFields'
+import SectorFields, { emptySector, sectorPayload } from '../components/SectorFields'
+import { sizesOf, typeOf } from '../data/sectors'
+import { useShopSector, SectorLoading } from '../hooks/useShopSector'
 import { OptionSelect, MultiOptionSelect } from '../components/ui/OptionPickers'
 import { splitList } from '../data/catalogOptions'
 
@@ -76,7 +79,7 @@ function Section({ title, children, rightSlot }) {
     </div>
   )
 }
-function AjouterProduit() {
+function AjouterProduitForm({ sector }) {
   const navigate = useNavigate()
 
   // General info
@@ -103,9 +106,6 @@ function AjouterProduit() {
       }
     }).catch(() => {})
     productApi.getAll().then(setAllProducts).catch(() => {})
-    try {
-      setClothes(JSON.parse(localStorage.getItem('user') || '{}').businessType === 'CLOTHES')
-    } catch { setClothes(false) }
   }, [])
 
   // Pricing
@@ -141,8 +141,15 @@ function AjouterProduit() {
   const [precautions, setPrecautions] = useState('')
   const [inciComposition, setInciComposition] = useState('')
   const [certifications, setCertifications] = useState('')
-  const [clothes, setClothes] = useState(false)
+  // The product sheet follows the shop's sector (data/sectors.js).
+  const clothes = sector.form === 'clothes'
+  const cosmetics = sector.form === 'cosmetics'
+  const [sectorValue, setSectorValue] = useState(() => emptySector(sector))
   const [clothing, setClothing] = useState(emptyClothing)
+  const generic = sector.form === 'generic'
+  const productType = generic ? typeOf(sector, sectorValue.attributes?.type) : null
+  const sizes = generic ? sizesOf(sector, sectorValue.attributes?.type) : sector.sizes
+  const chosenSizes = cosmetics || !sizes ? [] : splitList(clothes ? clothing.tailles : sectorValue.tailles)
 
   // Variants
   const [variants, setVariants] = useState([])
@@ -253,6 +260,7 @@ function AjouterProduit() {
         inciComposition: inciComposition.trim() || null,
         certifications: certifications.trim() || null,
         ...(clothes ? clothingPayload(clothing) : {}),
+        ...(generic ? sectorPayload(sectorValue, sector) : {}),
         upsellTags: upsellProducts.map(p => String(p.id)).join(',') || null,
         variants: variants.map((v) => ({
           label: v.label,
@@ -292,11 +300,11 @@ function AjouterProduit() {
                   <Input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder={clothes ? 'Ex: Pull uni cachemire' : 'Ex: Huile Essentielle de Lavande Vraie'}
+                    placeholder={productType?.example || sector.example}
                   />
                 </div>
 
-                {!clothes && (
+                {cosmetics && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <Label>Nom latin / INCI</Label>
@@ -316,14 +324,14 @@ function AjouterProduit() {
                   </div>
                 </div>
                 )}
-                {clothes && (
+                {!cosmetics && (
                   <div>
                     <Label>Référence (SKU)</Label>
                     <Input value={sku} onChange={(e) => setSku(e.target.value)} placeholder="AT-PULL-01" />
                   </div>
                 )}
 
-                {!clothes && (
+                {cosmetics && (
                 <div className="flex items-center gap-3 p-4 bg-emerald-50/50 rounded-lg border border-emerald-100 cursor-pointer" onClick={() => setBio(!bio)}>
                   <input type="checkbox" checked={bio} onChange={() => setBio(!bio)} className="w-5 h-5 text-emerald-600 rounded focus:ring-emerald-500 cursor-pointer accent-emerald-600" />
                   <div>
@@ -377,7 +385,7 @@ function AjouterProduit() {
               <Section title="Fiche vêtement">
                 <ClothingFields value={clothing} onChange={setClothing} />
               </Section>
-            ) : (
+            ) : cosmetics ? (
             <Section title="Fiche Cosmétique">
               <div className="space-y-6">
                 <div>
@@ -422,16 +430,21 @@ function AjouterProduit() {
                 </div>
               </div>
             </Section>
+            ) : (
+              <Section title={`Fiche ${(productType?.label || sector.short).toLowerCase()}`}>
+                <SectorFields sector={sector} value={sectorValue} onChange={setSectorValue} />
+              </Section>
             )}
 
-            {/* Variantes */}
+            {/* Variantes: one row per size the customer can choose */}
+            {(sizes || cosmetics) && (
             <Section title="Variantes du produit">
               <div className="space-y-4">
                 <div className="overflow-visible">
                   <table className="w-full">
                     <thead>
                       <tr className="text-left border-b border-slate-100">
-                        {(clothes ? ['Taille', 'SKU', 'Stock', 'Action'] : ['Contenance / Label', 'SKU', 'Stock', 'Action']).map((h, i) => (
+                        {[sizes?.label || 'Variante', 'SKU', 'Stock', 'Action'].map((h, i) => (
                           <th key={h} className={`pb-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 ${i === 3 ? 'text-right' : ''}`}>
                             {h}
                           </th>
@@ -443,12 +456,12 @@ function AjouterProduit() {
                         <tr key={v.id} className="group hover:bg-slate-50/50">
                           <td className="py-3 px-2">
                             <OptionSelect
-                              optionKey={clothes ? 'tailles' : 'volume'}
-                              options={clothes && splitList(clothing.tailles).length ? splitList(clothing.tailles) : undefined}
-                              allowAdd={!(clothes && splitList(clothing.tailles).length)}
+                              optionKey={sizes?.optionKey || 'volume'}
+                              options={chosenSizes.length ? chosenSizes : undefined}
+                              allowAdd={!chosenSizes.length}
                               value={v.label}
                               onChange={(val) => updateVariant(v.id, 'label', val)}
-                              placeholder={clothes ? 'Taille' : 'Contenance'}
+                              placeholder={sizes?.label || 'Variante'}
                             />
                           </td>
                           <td className="py-3 px-2">
@@ -490,6 +503,7 @@ function AjouterProduit() {
                 </button>
               </div>
             </Section>
+            )}
 
             {/* Média & Galerie */}
             <Section title="Média & Galerie">
@@ -944,6 +958,13 @@ function AjouterProduit() {
 
     </div>
   )
+}
+
+/** Waits for the shop's sector (from the server) before showing the sheet: never guess the sector. */
+function AjouterProduit() {
+  const { sector, error } = useShopSector()
+  if (!sector) return <SectorLoading error={error} />
+  return <AjouterProduitForm sector={sector} />
 }
 
 export default AjouterProduit

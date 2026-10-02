@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
-import { TEMPLATES, layoutOf } from '../data/storeTemplates'
+import { TEMPLATES, isRecommended, layoutOf, templatesFor } from '../data/storeTemplates'
+import { SECTORS, optionKeysFor, sectorLabel } from '../data/sectors'
 import { OPTION_LABELS } from '../data/catalogOptions'
 import { readUser, storeSession } from '../lib/sellio'
 import { useShopOptions } from '../hooks/useShopOptions'
@@ -22,9 +23,10 @@ async function patchShop(body) {
   return data
 }
 
-function CustomLists() {
+function CustomLists({ businessType }) {
   const { customFor, removeOption } = useShopOptions()
-  const [key, setKey] = useState('tissu')
+  const keys = optionKeysFor(businessType).filter((k) => OPTION_LABELS[k])
+  const [key, setKey] = useState(keys[0] || 'couleur')
   const values = customFor(key)
   return (
     <section className="bg-white rounded-2xl border border-slate-200 p-6 space-y-5">
@@ -33,7 +35,7 @@ function CustomLists() {
         <p className="text-sm text-slate-500 mt-1">Les formulaires produit proposent des listes prêtes (tailles, tissus, couleurs…). Ajoutez ici vos propres valeurs.</p>
       </div>
       <div className="flex flex-wrap gap-1.5">
-        {Object.entries(OPTION_LABELS).map(([k, label]) => (
+        {keys.map((k) => [k, OPTION_LABELS[k]]).map(([k, label]) => (
           <button key={k} type="button" onClick={() => setKey(k)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold border ${key === k ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200'}`}>
             {label}
             {customFor(k).length > 0 && <span className="ml-1.5 opacity-60">{customFor(k).length}</span>}
@@ -58,11 +60,19 @@ export default function ConfigurationBoutique() {
   const user = readUser()
   const [layout, setLayout] = useState(layoutOf(user.templateKey))
   const [shop, setShop] = useState(null)
+  // The saved profile can be older than the shop: the server's answer below is what counts.
+  const [business, setBusiness] = useState(user.businessType || null)
+  const [pendingBusiness, setPendingBusiness] = useState(null)
 
   useEffect(() => {
     fetch(`${API}/auth/my-shop`, { headers: authHeaders() })
       .then((r) => (r.ok ? r.json() : null))
-      .then((data) => data && setShop(data))
+      .then((data) => {
+        if (!data) return
+        setShop(data)
+        if (data.businessType) setBusiness(data.businessType)
+        if (data.templateKey) setLayout(layoutOf(data.templateKey))
+      })
       .catch(() => {})
   }, [])
 
@@ -74,6 +84,18 @@ export default function ConfigurationBoutique() {
       toast.success('Modèle enregistré')
     } catch (err) {
       setLayout(previous)
+      toast.error(err.message)
+    }
+  }
+
+  const saveBusiness = async () => {
+    const id = pendingBusiness
+    setPendingBusiness(null)
+    try {
+      await patchShop({ businessType: id })
+      setBusiness(id)
+      toast.success(`Activité : ${sectorLabel(id)}. Les fiches produit suivent maintenant ce secteur.`)
+    } catch (err) {
       toast.error(err.message)
     }
   }
@@ -100,19 +122,27 @@ export default function ConfigurationBoutique() {
       </div>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Modèle de vitrine</h2>
-        <div className="grid md:grid-cols-3 gap-4">
-          {TEMPLATES.map((item) => (
+        <div>
+          <h2 className="text-lg font-semibold">Modèle de vitrine</h2>
+          <p className="text-sm text-slate-500">{TEMPLATES.length} modèles. Les plus adaptés à votre activité apparaissent en premier ; « Prévisualiser » ouvre votre vitrine avec le modèle sans l’enregistrer.</p>
+        </div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {templatesFor(business).map((item) => (
             <button
               type="button"
               key={item.id}
               onClick={() => saveLayout(item.id)}
               className={`text-left rounded-2xl border p-5 bg-white transition-all ${layout === item.id ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200 hover:border-slate-400'}`}
             >
-              <div className="flex items-center justify-between">
-                <p className="font-semibold">{item.title}</p>
-                {layout === item.id && <span className="material-symbols-outlined text-lg">check_circle</span>}
+              <div className="flex items-center justify-between mb-3">
+                <span className="flex gap-1.5">
+                  {item.swatch.map((color) => <span key={color} className="w-4 h-4 rounded-full border border-black/10" style={{ background: color }} />)}
+                </span>
+                {layout === item.id
+                  ? <span className="material-symbols-outlined text-lg">check_circle</span>
+                  : isRecommended(business, item.id) && <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-600">Recommandé</span>}
               </div>
+              <p className="font-semibold" style={{ fontFamily: item.font, fontStyle: item.italic ? 'italic' : 'normal' }}>{item.title}</p>
               <p className="text-sm text-slate-500 mt-1">{item.text}</p>
               {user.shopSlug && (
                 <a
@@ -132,12 +162,43 @@ export default function ConfigurationBoutique() {
 
       <ThemeEditor shop={shop} layout={layout} shopName={user.shopName} onSave={saveTheme} />
 
-      <CustomLists />
+      <section className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
+        <div>
+          <h2 className="text-lg font-semibold">Activité</h2>
+          <p className="text-sm text-slate-500 mt-1">Le secteur choisit les champs des fiches produit (tailles, matière, garantie, allergènes…) et les textes par défaut de la vitrine.</p>
+        </div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {SECTORS.map((s) => (
+            <button
+              type="button"
+              key={s.id}
+              onClick={() => s.id !== business && setPendingBusiness(s.id)}
+              className={`text-left rounded-xl border p-4 transition-all ${business === s.id ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200 hover:border-slate-400'}`}
+            >
+              <span className="material-symbols-outlined text-xl">{s.icon}</span>
+              <p className="font-semibold text-sm mt-1">{s.title}</p>
+            </button>
+          ))}
+        </div>
+        {pendingBusiness && (
+          <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-amber-800">
+              Passer à « {sectorLabel(pendingBusiness)} » ? Vos produits restent en ligne ; les champs propres à l’ancienne activité ne s’affichent plus.
+            </p>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setPendingBusiness(null)} className="px-4 py-2 rounded-full border border-amber-300 text-sm">Annuler</button>
+              <button type="button" onClick={saveBusiness} className="px-4 py-2 rounded-full bg-slate-900 text-white text-sm font-semibold">Changer d’activité</button>
+            </div>
+          </div>
+        )}
+      </section>
+
+      <CustomLists key={business} businessType={business} />
 
       <dl className="bg-white rounded-2xl border border-slate-200 divide-y">
         <div className="px-5 py-4 flex justify-between"><dt>Nom</dt><dd className="font-medium">{user.shopName || '—'}</dd></div>
         <div className="px-5 py-4 flex justify-between"><dt>Préfixe</dt><dd className="font-medium">/{user.shopSlug || '—'}</dd></div>
-        <div className="px-5 py-4 flex justify-between"><dt>Activité</dt><dd className="font-medium">{user.businessType === 'CLOTHES' ? 'Vêtements' : 'Cosmétiques'}</dd></div>
+        <div className="px-5 py-4 flex justify-between"><dt>Activité</dt><dd className="font-medium">{sectorLabel(business)}</dd></div>
       </dl>
     </div>
   )

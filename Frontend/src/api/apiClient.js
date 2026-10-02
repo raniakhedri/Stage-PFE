@@ -1,4 +1,5 @@
 import { getAccessToken } from './tokenStorage';
+import { parseAttributes } from '../data/sectors';
 
 const API_BASE = 'http://localhost:8080/api/v1/public';
 const API_PROFILE = 'http://localhost:8080/api/v1/profile';
@@ -255,6 +256,8 @@ function mapProduct(p) {
       stock: v.stock,
     })),
     upsellTags: p.upsellTags || '',
+    // Sector characteristics (sport, high-tech, maison, épicerie, bijoux, enfants)
+    attributes: parseAttributes(p.attributes),
   };
 }
 

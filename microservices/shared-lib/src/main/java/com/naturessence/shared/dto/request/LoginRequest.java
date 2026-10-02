@@ -13,4 +13,7 @@ public class LoginRequest {
 
     @NotBlank(message = "Le mot de passe est obligatoire")
     private String password;
+
+    /** Set by a shop's storefront: signs in that shop's customer account. Empty for merchants and the Sellio team. */
+    private String shopSlug;
 }

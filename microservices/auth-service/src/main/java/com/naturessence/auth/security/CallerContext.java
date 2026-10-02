@@ -1,11 +1,11 @@
 package com.naturessence.auth.security;
 
+import com.naturessence.shared.security.CurrentUser;
+import com.naturessence.shared.security.PlatformRoles;
 import com.naturessence.shared.entity.User;
 import com.naturessence.shared.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -17,16 +17,16 @@ public class CallerContext {
     private final UserRepository userRepository;
 
     public User require() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || auth.getName() == null || "anonymousUser".equals(auth.getName())) {
+        Long userId = CurrentUser.id();
+        if (userId == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Connexion requise");
         }
-        return userRepository.findByEmailIgnoreCase(auth.getName())
+        return userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Connexion requise"));
     }
 
     public static boolean isPlatformAdmin(User user) {
-        return user.getRole() != null && "SUPER_ADMIN".equals(user.getRole().getName());
+        return user.getRole() != null && PlatformRoles.isPlatform(user.getRole().getName());
     }
 
     /** Shop managed by a merchant or team member; fails for accounts without a shop. */

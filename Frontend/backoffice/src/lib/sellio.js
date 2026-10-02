@@ -45,6 +45,11 @@ export const PAGE_MODULES = [
   ['/compte', 'COMPTE_HEBERGEMENT'],
 ]
 
+/** Sellio team accounts: they work in the console only, never inside a shop. */
+export function isPlatform(user) {
+  return user?.roleName === 'SUPER_ADMIN' || user?.roleName === 'SELLIO_ADMIN'
+}
+
 export function canAccess(user, moduleKey) {
   if (!user) return false
   if (user.roleName === 'SUPER_ADMIN' || user.roleName === 'ADMIN') return true
@@ -72,7 +77,7 @@ export function openMerchantHome(user) {
     window.location.replace('/changer-mot-de-passe')
     return
   }
-  if (user.roleName === 'SUPER_ADMIN') {
+  if (isPlatform(user)) {
     window.location.replace('/sellio')
     return
   }

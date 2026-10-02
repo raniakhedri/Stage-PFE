@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { SellioLogo, TechBackdrop, DISPLAY, MONO } from './brand'
 
 const POINTS = [
-  ['storefront', 'Trois vitrines premium, personnalisables'],
+  ['storefront', 'Huit modèles de vitrine, huit secteurs d’activité'],
   ['view_in_ar', 'Essayage virtuel par IA pour la mode'],
   ['insights', 'Tableau de bord et prédiction du churn'],
 ]

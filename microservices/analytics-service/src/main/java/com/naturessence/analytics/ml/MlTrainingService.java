@@ -60,7 +60,7 @@ public class MlTrainingService {
     public JsonNode trainRecommender(long shopId) throws Exception {
         List<Map<String, Object>> products = jdbc.queryForList(
             "SELECT p.id, p.nom AS name, p.description, c.nom AS category, p.sub_category AS \"subCategory\", p.tissu, "
-                + "p.couleur, p.coupe, p.genre, p.saison, p.latin, p.origine FROM products p "
+                + "p.couleur, p.coupe, p.genre, p.saison, p.latin, p.origine, p.attributes FROM products p "
                 + "LEFT JOIN categories c ON c.id = p.category_id WHERE p.shop_id = ? AND p.statut = 'actif'", shopId);
         if (products.size() < 2) {
             return record(shopId, "recommender", "SKIPPED", Map.of("reason", "moins de 2 produits actifs"));

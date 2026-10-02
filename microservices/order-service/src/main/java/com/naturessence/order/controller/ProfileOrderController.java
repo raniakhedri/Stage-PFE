@@ -1,5 +1,6 @@
 package com.naturessence.order.controller;
 
+import com.naturessence.shared.security.CurrentUser;
 import com.naturessence.order.service.OrderService;
 import com.naturessence.order.service.ReturnService;
 import com.naturessence.shared.dto.request.ReturnRequestDTO;
@@ -26,19 +27,13 @@ public class ProfileOrderController {
     @GetMapping("/orders")
     public ResponseEntity<List<OrderResponse>> getMyOrders(Authentication authentication) {
         return ResponseEntity.ok(
-            orderService.getOrdersForAuthenticatedUser(authentication.getName())
+            orderService.getOrdersForAuthenticatedUser(requireUser(authentication))
         );
     }
 
     @GetMapping("/returns")
     public ResponseEntity<List<ReturnResponse>> getMyReturns(Authentication authentication) {
-        Long userId = userRepository
-            .findByEmailIgnoreCase(authentication.getName())
-            .map(User::getId)
-            .orElseThrow(() ->
-                new IllegalArgumentException("Utilisateur introuvable")
-            );
-        return ResponseEntity.ok(returnService.getMyReturns(userId));
+        return ResponseEntity.ok(returnService.getMyReturns(requireUser(authentication).getId()));
     }
 
     @PostMapping("/returns")
@@ -47,7 +42,14 @@ public class ProfileOrderController {
         @Valid @RequestBody ReturnRequestDTO request
     ) {
         return ResponseEntity.ok(
-            returnService.createReturn(authentication.getName(), request)
+            returnService.createReturn(requireUser(authentication), request)
         );
+    }
+
+    /** The signed-in customer, resolved by id: the same e-mail can be a customer of several shops. */
+    private User requireUser(Authentication authentication) {
+        Long userId = CurrentUser.id(authentication);
+        return (userId == null ? java.util.Optional.<User>empty() : userRepository.findById(userId))
+            .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable"));
     }
 }

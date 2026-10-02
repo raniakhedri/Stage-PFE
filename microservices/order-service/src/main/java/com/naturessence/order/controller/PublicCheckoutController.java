@@ -1,5 +1,6 @@
 package com.naturessence.order.controller;
 
+import com.naturessence.shared.security.CurrentUser;
 import com.naturessence.order.service.OrderService;
 import com.naturessence.order.service.TvaShippingService;
 import com.naturessence.shared.dto.request.OrderRequest;
@@ -50,10 +51,7 @@ public class PublicCheckoutController {
 
     /** The customer is taken from the JWT, never from the request body (userId is ignored). */
     private User signedInUser(Authentication authentication) {
-        if (authentication == null || authentication.getName() == null
-                || "anonymousUser".equals(authentication.getName())) {
-            return null;
-        }
-        return userRepository.findByEmailIgnoreCase(authentication.getName()).orElse(null);
+        Long userId = CurrentUser.id(authentication);
+        return userId == null ? null : userRepository.findById(userId).orElse(null);
     }
 }

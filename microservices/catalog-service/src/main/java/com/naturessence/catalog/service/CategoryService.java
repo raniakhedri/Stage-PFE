@@ -1,5 +1,6 @@
 package com.naturessence.catalog.service;
 
+import com.naturessence.shared.security.TenantGuard;
 import com.naturessence.shared.dto.request.CategoryRequest;
 import com.naturessence.shared.dto.response.CategoryResponse;
 import com.naturessence.shared.entity.Category;
@@ -80,7 +81,7 @@ public class CategoryService {
                 .badgePromo(request.isBadgePromo())
                 .metaTitle(request.getMetaTitle())
                 .metaDescription(request.getMetaDescription())
-                .shopId(resolveShopId(request.getShopSlug()))
+                .shopId(resolveShopId(TenantGuard.shopForCreation(request.getShopSlug())))
                 .build();
 
         if (request.getParentId() != null) {
@@ -320,8 +321,11 @@ public class CategoryService {
     }
 
     private Category findOrThrow(Long id) {
-        return categoryRepository.findById(id)
+        Category found = categoryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Catégorie non trouvée avec l'id: " + id));
+        // Merchants only reach their own shop's records (TenantGuard).
+        TenantGuard.assertOwned(found.getShopId(), shopRepository);
+        return found;
     }
 
     private String generateSlug(String requestSlug, String nom) {

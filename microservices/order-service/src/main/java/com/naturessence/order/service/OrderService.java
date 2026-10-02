@@ -1,5 +1,6 @@
 package com.naturessence.order.service;
 
+import com.naturessence.shared.security.TenantGuard;
 import com.naturessence.shared.dto.request.OrderRequest;
 import com.naturessence.shared.dto.response.OrderItemResponse;
 import com.naturessence.shared.dto.response.OrderResponse;
@@ -164,15 +165,17 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
-    public List<OrderResponse> getOrdersForAuthenticatedUser(String email) {
+    public List<OrderResponse> getOrdersForAuthenticatedUser(User user) {
+        // Guest orders placed with the same e-mail count too, but only those of the customer's own shop:
+        // the same address can belong to customers of other shops.
         LinkedHashMap<Long, OrderResponse> merged = new LinkedHashMap<>();
-        getOrdersByEmail(email).forEach(o -> merged.put(o.getId(), o));
-        userRepository
-            .findByEmailIgnoreCase(email)
-            .map(User::getId)
-            .ifPresent(userId ->
-                getOrdersByUserId(userId).forEach(o -> merged.put(o.getId(), o))
-            );
+        orderRepository
+            .findByEmailOrderByCreatedAtDesc(user.getEmail())
+            .stream()
+            .filter(o -> java.util.Objects.equals(o.getShopId(), user.getShopId()))
+            .map(this::mapToResponse)
+            .forEach(o -> merged.put(o.getId(), o));
+        getOrdersByUserId(user.getId()).forEach(o -> merged.put(o.getId(), o));
         return merged
             .values()
             .stream()
@@ -192,6 +195,7 @@ public class OrderService {
             .orElseThrow(() ->
                 new IllegalArgumentException("Commande introuvable")
             );
+        TenantGuard.assertOwned(order.getShopId(), shopRepository);
         return mapToResponse(order);
     }
 
@@ -202,6 +206,7 @@ public class OrderService {
             .orElseThrow(() ->
                 new IllegalArgumentException("Commande introuvable")
             );
+        TenantGuard.assertOwned(order.getShopId(), shopRepository);
         return mapToResponse(order);
     }
 
@@ -212,6 +217,7 @@ public class OrderService {
             .orElseThrow(() ->
                 new IllegalArgumentException("Commande introuvable")
             );
+        TenantGuard.assertOwned(order.getShopId(), shopRepository);
         OrderStatus previousStatus = order.getStatus();
         OrderStatus newStatus;
         try {

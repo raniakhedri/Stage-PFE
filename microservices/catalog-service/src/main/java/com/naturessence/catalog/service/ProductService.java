@@ -1,5 +1,6 @@
 package com.naturessence.catalog.service;
 
+import com.naturessence.shared.security.TenantGuard;
 import com.naturessence.shared.dto.request.ProductRequest;
 import com.naturessence.shared.dto.response.ProductResponse;
 import com.naturessence.shared.dto.response.ProductStatsResponse;
@@ -160,7 +161,7 @@ public class ProductService {
     @Transactional
     public ProductResponse createProduct(ProductRequest request) {
         String slug = generateSlug(request.getSlug(), request.getNom());
-        Long shopId = resolveShopId(request.getShopSlug());
+        Long shopId = resolveShopId(TenantGuard.shopForCreation(request.getShopSlug()));
         if (shopId != null && productRepository.existsByShopIdAndSlug(shopId, slug)) {
             throw new IllegalArgumentException("Cette boutique a déjà un produit avec ce nom.");
         }
@@ -210,6 +211,7 @@ public class ProductService {
                 .tailles(request.getTailles())
                 .saison(request.getSaison())
                 .genre(request.getGenre())
+                .attributes(cleanAttributes(request.getAttributes()))
                 .performance(request.getPerformance())
                 .shopId(shopId)
                 .imageUrl(request.getImageUrl())
@@ -292,6 +294,7 @@ public class ProductService {
         product.setTailles(request.getTailles());
         product.setSaison(request.getSaison());
         product.setGenre(request.getGenre());
+        if (request.getAttributes() != null) product.setAttributes(cleanAttributes(request.getAttributes()));
         product.setPerformance(request.getPerformance());
         product.setImageUrl(request.getImageUrl());
         product.setImages(request.getImages());
@@ -368,8 +371,11 @@ public class ProductService {
     }
 
     private Product findOrThrow(Long id) {
-        return productRepository.findById(id)
+        Product found = productRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Produit introuvable avec l'ID: " + id));
+        // Merchants only reach their own shop's records (TenantGuard).
+        TenantGuard.assertOwned(found.getShopId(), shopRepository);
+        return found;
     }
 
     private String generateSlug(String providedSlug, String nom) {
@@ -473,6 +479,7 @@ public class ProductService {
                 .tailles(p.getTailles())
                 .saison(p.getSaison())
                 .genre(p.getGenre())
+                .attributes(p.getAttributes())
                 .performance(p.getPerformance())
                 .imageUrl(p.getImageUrl())
                 .images(p.getImages())
@@ -481,5 +488,28 @@ public class ProductService {
                 .createdAt(p.getCreatedAt())
                 .updatedAt(p.getUpdatedAt())
                 .build();
+    }
+
+    private static final com.fasterxml.jackson.databind.ObjectMapper JSON = new com.fasterxml.jackson.databind.ObjectMapper();
+
+    /** Keeps a flat JSON object of non-empty strings (max 40 keys, 2000 chars each); anything else is refused. */
+    private static String cleanAttributes(String raw) {
+        if (raw == null || raw.isBlank()) return null;
+        try {
+            com.fasterxml.jackson.databind.JsonNode node = JSON.readTree(raw);
+            if (!node.isObject()) throw new IllegalArgumentException("Caractéristiques invalides.");
+            com.fasterxml.jackson.databind.node.ObjectNode out = JSON.createObjectNode();
+            var fields = node.fields();
+            while (fields.hasNext() && out.size() < 40) {
+                var entry = fields.next();
+                String key = entry.getKey().trim();
+                String value = entry.getValue().isValueNode() ? entry.getValue().asText("").trim() : "";
+                if (key.isEmpty() || key.length() > 60 || value.isEmpty()) continue;
+                out.put(key, value.length() > 2000 ? value.substring(0, 2000) : value);
+            }
+            return out.isEmpty() ? null : JSON.writeValueAsString(out);
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            throw new IllegalArgumentException("Caractéristiques invalides.");
+        }
     }
 }

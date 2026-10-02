@@ -1,5 +1,6 @@
 package com.naturessence.order.controller;
 
+import com.naturessence.shared.security.CurrentUser;
 import com.naturessence.order.service.CheckoutPricingService;
 import com.naturessence.order.service.StripeService;
 import com.naturessence.shared.dto.request.OrderRequest;
@@ -29,10 +30,7 @@ public class StripeController {
      */
     @PostMapping("/payment-intent")
     public ResponseEntity<?> createPaymentIntent(@Valid @RequestBody OrderRequest request, Authentication authentication) {
-        Long userId = null;
-        if (authentication != null && authentication.getName() != null && !"anonymousUser".equals(authentication.getName())) {
-            userId = userRepository.findByEmailIgnoreCase(authentication.getName()).map(u -> u.getId()).orElse(null);
-        }
+        Long userId = CurrentUser.id(authentication);
         CheckoutPricingService.Quote quote = pricingService.quote(request, userId);
         try {
             PaymentIntent intent = stripeService.createPaymentIntent(quote.amountInCents(), request.getShopSlug());

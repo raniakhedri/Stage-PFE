@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import apiClient from '../../api/apiClient'
-import { canAccess, currentShopSlug, firstAllowedPath, moduleForPath, readUser } from '../../lib/sellio'
+import { canAccess, currentShopSlug, firstAllowedPath, moduleForPath, readUser, isPlatform } from '../../lib/sellio'
 
 const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'
 
@@ -19,7 +19,7 @@ function tokenClaims() {
  * the merchant's shop. Returns true when the page is reloading.
  */
 async function upgradeLegacyToken(user) {
-  if (user?.roleName === 'SUPER_ADMIN' || !user?.shopSlug || tokenClaims().shop) return false
+  if (isPlatform(user) || !user?.shopSlug || tokenClaims().shop) return false
   const refreshToken = localStorage.getItem('refreshToken')
   if (!refreshToken) return false
   const res = await fetch(`${API}/auth/refresh`, {

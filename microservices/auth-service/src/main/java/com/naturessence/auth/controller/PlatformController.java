@@ -9,7 +9,10 @@ import com.naturessence.shared.repository.ShopRepository;
 import com.naturessence.shared.repository.UserRepository;
 import com.naturessence.auth.service.AuthService;
 import com.naturessence.auth.service.MerchantVerificationService;
-import org.springframework.security.core.Authentication;
+import com.naturessence.auth.service.PlatformAccountService;
+import com.naturessence.auth.security.CallerContext;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -32,7 +35,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/** Read-only views for the Sellio platform administrator (SUPER_ADMIN). */
+/**
+ * Sellio console (SUPER_ADMIN and SELLIO_ADMIN). The Sellio team sees shops, merchants and platform figures,
+ * never a shop's customers: customer accounts belong to the merchant.
+ */
 @RestController
 @RequestMapping("/api/v1/admin/platform")
 @RequiredArgsConstructor
@@ -46,6 +52,8 @@ public class PlatformController {
     private final ProductRepository productRepository;
     private final AuthService authService;
     private final MerchantVerificationService verificationService;
+    private final PlatformAccountService accountService;
+    private final CallerContext caller;
     private final JdbcTemplate jdbcTemplate;
 
     private record OrderStats(long count, double revenue, LocalDateTime lastOrderAt) {}
@@ -55,6 +63,7 @@ public class PlatformController {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("shops", shopRepository.count());
         result.put("merchants", countUsersByRole("ADMIN"));
+        result.put("admins", countUsersByRole("SELLIO_ADMIN") + countUsersByRole("SUPER_ADMIN"));
         result.put("clients", countUsersByRole("CLIENT"));
         result.put("products", productRepository.count());
         result.put("orders", queryLong("SELECT COUNT(*) FROM orders"));
@@ -85,15 +94,10 @@ public class PlatformController {
         result.put("shop", toResponse(shop, orderStatsByShop().get(id)));
         result.put("owner", shop.getOwnerId() == null ? null
                 : userRepository.findById(shop.getOwnerId()).map(authService::mapToUserResponse).orElse(null));
-        result.put("clients", userRepository.findAll().stream()
-                .filter(u -> id.equals(u.getShopId()) && u.getRole() != null && "CLIENT".equals(u.getRole().getName()))
-                .sorted(Comparator.comparing(User::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())))
-                .limit(100)
-                .map(authService::mapToUserResponse)
-                .toList());
+        // Customers' identities stay with the merchant: orders are shown without names.
         result.put("recentOrders", queryList(
-                "SELECT id, reference, first_name AS \"firstName\", last_name AS \"lastName\", total, status, "
-                        + "created_at AS \"createdAt\" FROM orders WHERE shop_id = ? ORDER BY created_at DESC LIMIT 10", id));
+                "SELECT id, reference, total, status, created_at AS \"createdAt\" "
+                        + "FROM orders WHERE shop_id = ? ORDER BY created_at DESC LIMIT 10", id));
         result.put("ordersByStatus", queryList(
                 "SELECT status, COUNT(*) AS count FROM orders WHERE shop_id = ? GROUP BY status", id));
         result.put("activeProducts", productRepository.countByShopIdAndStatut(id, "actif"));
@@ -121,7 +125,8 @@ public class PlatformController {
             throw new IllegalArgumentException("Statut attendu : BLOCKED ou ACTIVE");
         }
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Utilisateur introuvable"));
+                .filter(u -> u.getRole() != null && "ADMIN".equals(u.getRole().getName()))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Marchand introuvable"));
         verificationService.setUserBlocked(user, "BLOCKED".equals(status));
         return authService.mapToUserResponse(user);
     }
@@ -137,23 +142,40 @@ public class PlatformController {
     }
 
     @PostMapping("/verifications/{id}/approve")
-    public Map<String, Object> approve(@PathVariable Long id, Authentication authentication) {
-        return verificationService.approve(id, authentication.getName());
+    public Map<String, Object> approve(@PathVariable Long id) {
+        return verificationService.approve(id, caller.require().getEmail());
     }
 
     /** body: {"reason": "..."} — shown to the merchant, who can then send a new file. */
     @PostMapping("/verifications/{id}/reject")
-    public Map<String, Object> reject(@PathVariable Long id, @RequestBody Map<String, String> body,
-                                      Authentication authentication) {
-        return verificationService.reject(id, body.get("reason"), authentication.getName());
+    public Map<String, Object> reject(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        return verificationService.reject(id, body.get("reason"), caller.require().getEmail());
     }
 
+    /** Merchants and Sellio administrators. Shop customers and shop staff are not listed. */
     @GetMapping("/users")
     public List<UserResponse> users() {
-        return userRepository.findAll(PageRequest.of(0, 500, Sort.by(Sort.Direction.DESC, "createdAt")))
-                .stream()
-                .map(authService::mapToUserResponse)
-                .toList();
+        return accountService.accounts();
+    }
+
+    /** Super admin: body {"firstName", "lastName", "email", "role": "SELLIO_ADMIN" | "SUPER_ADMIN"}. */
+    @PostMapping("/users")
+    @ResponseStatus(HttpStatus.CREATED)
+    public UserResponse createAdmin(@RequestBody Map<String, String> body) {
+        return accountService.createAdmin(caller.require(), body.get("firstName"), body.get("lastName"),
+                body.get("email"), body.get("role"));
+    }
+
+    /** Super admin: body {"role": "ADMIN" | "SELLIO_ADMIN" | "SUPER_ADMIN"}. */
+    @PatchMapping("/users/{id}/role")
+    public UserResponse changeRole(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        return accountService.changeRole(caller.require(), id, body.get("role"));
+    }
+
+    /** Deletes a merchant together with their shop, its customers and all of its data (or, for a super admin, a platform account). */
+    @DeleteMapping("/users/{id}")
+    public Map<String, Object> deleteAccount(@PathVariable Long id) {
+        return accountService.deleteAccount(caller.require(), id);
     }
 
     private PlatformShopResponse toResponse(Shop shop, OrderStats orders) {

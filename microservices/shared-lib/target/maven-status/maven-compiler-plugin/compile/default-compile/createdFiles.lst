@@ -68,6 +68,7 @@ com\naturessence\shared\dto\request\MerchantVerificationRequest.class
 com\naturessence\shared\security\JwtAuthenticationFilter.class
 com\naturessence\shared\entity\TvaConfig$TvaConfigBuilder.class
 com\naturessence\shared\entity\User$UserBuilder.class
+com\naturessence\shared\security\PlatformRoles.class
 com\naturessence\shared\dto\request\CollectionRequest.class
 com\naturessence\shared\entity\Banner$BannerBuilder.class
 com\naturessence\shared\repository\ReturnRequestRepository.class
@@ -80,6 +81,7 @@ com\naturessence\shared\enums\ReturnStatus.class
 com\naturessence\shared\dto\response\AppearanceResponse$AppearanceResponseBuilder.class
 com\naturessence\shared\entity\StoreProfile$StoreProfileBuilder.class
 com\naturessence\shared\entity\ProductVariant$ProductVariantBuilder.class
+com\naturessence\shared\security\CurrentUser.class
 com\naturessence\shared\entity\OrderItem$OrderItemBuilder.class
 com\naturessence\shared\dto\response\TvaRateResponse$TvaRateResponseBuilder.class
 com\naturessence\shared\repository\RoleRepository.class
@@ -103,6 +105,7 @@ com\naturessence\shared\dto\response\StoreProfileResponse$StoreProfileResponseBu
 com\naturessence\shared\dto\response\PermissionDTO$PermissionDTOBuilder.class
 com\naturessence\shared\repository\StoreProfileRepository.class
 com\naturessence\shared\entity\Role.class
+com\naturessence\shared\security\TenantGuard.class
 com\naturessence\shared\dto\response\ApiResponse$ApiResponseBuilder.class
 com\naturessence\shared\entity\ReturnPolicy.class
 com\naturessence\shared\dto\response\ReturnPolicyResponse$ReturnPolicyResponseBuilder.class
@@ -190,6 +193,7 @@ com\naturessence\shared\entity\TvaRate$TvaRateBuilder.class
 com\naturessence\shared\entity\Role$RoleBuilder.class
 com\naturessence\shared\dto\response\DashboardResponse.class
 com\naturessence\shared\dto\response\SegmentResponse$SegmentResponseBuilder.class
+com\naturessence\shared\catalog\ShopCatalog.class
 com\naturessence\shared\dto\response\ReturnPolicyResponse.class
 com\naturessence\shared\entity\StoreProfile.class
 com\naturessence\shared\dto\request\RefreshTokenRequest.class

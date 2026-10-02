@@ -61,9 +61,6 @@ public class UserService {
     // ── Admin: Create user ────────────────────────────────────────────────────
     @Transactional
     public UserResponse createUser(CreateUserRequest request) {
-        if (userRepository.existsByEmailIgnoreCase(request.getEmail())) {
-            throw new IllegalArgumentException("Cet email est déjà utilisé");
-        }
         User me = caller.require();
         boolean platform = CallerContext.isPlatformAdmin(me);
 
@@ -75,6 +72,7 @@ public class UserService {
                 && (role.getShopId() == null || !role.getShopId().equals(me.getShopId()))) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Vous ne pouvez attribuer que les rôles de votre boutique");
         }
+        requireFreeEmail(request.getEmail(), "CLIENT".equals(role.getName()), platform ? null : me.getShopId());
 
         Segment segment;
         if (request.getSegment() != null && !request.getSegment().isBlank()) {
@@ -114,6 +112,20 @@ public class UserService {
         return authService.mapToUserResponse(user);
     }
 
+    /**
+     * A customer e-mail must be free in that shop only (the same person can be a customer of several shops);
+     * a merchant or team e-mail must be free across Sellio, because the backoffice login has no shop.
+     */
+    private void requireFreeEmail(String email, boolean client, Long shopId) {
+        String key = email == null ? "" : email.trim();
+        boolean taken = client ? userRepository.clientEmailTaken(key, shopId) : userRepository.accountEmailTaken(key);
+        if (taken) {
+            throw new IllegalArgumentException(client
+                    ? "Un client de la boutique utilise déjà cet e-mail."
+                    : "Cet email est déjà utilisé");
+        }
+    }
+
     // ── Team (merchant's staff) ───────────────────────────────────────────────
 
     /** Owner and team members of the caller's shop. */
@@ -132,9 +144,7 @@ public class UserService {
         if (email == null || email.isBlank() || firstName == null || firstName.isBlank()) {
             throw new IllegalArgumentException("Prénom et e-mail sont obligatoires");
         }
-        if (userRepository.existsByEmailIgnoreCase(email.trim())) {
-            throw new IllegalArgumentException("Cet email est déjà utilisé");
-        }
+        requireFreeEmail(email, false, shopId);
         if (roleId == null) throw new IllegalArgumentException("Choisissez un rôle");
         Role role = roleService.ownedRole(me, roleId);
         Segment segment = segmentRepository.findByName("NOUVEAU").orElse(null);
@@ -233,9 +243,8 @@ public class UserService {
         if (request.getFirstName() != null) user.setFirstName(request.getFirstName());
         if (request.getLastName() != null) user.setLastName(request.getLastName());
         if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
-            if (userRepository.existsByEmailIgnoreCase(request.getEmail())) {
-                throw new IllegalArgumentException("Cet email est déjà utilisé");
-            }
+            boolean client = user.getRole() != null && "CLIENT".equals(user.getRole().getName());
+            requireFreeEmail(request.getEmail(), client, user.getShopId());
             user.setEmail(request.getEmail().toLowerCase().trim());
         }
         if (request.getPhone() != null) user.setPhone(request.getPhone());
@@ -470,22 +479,6 @@ public class UserService {
     @Transactional(readOnly = true)
     public UserResponse getProfile(Long userId) {
         return authService.mapToUserResponse(findUserOrThrow(userId));
-    }
-
-    // ── Client: Get own profile by email (JWT-based access) ──────────────────
-    @Transactional(readOnly = true)
-    public UserResponse getProfileByEmail(String email) {
-        User user = userRepository.findByEmailIgnoreCase(email)
-                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé: " + email));
-        return authService.mapToUserResponse(user);
-    }
-
-    // ── Helper: resolve userId from email ─────────────────────────────────────
-    @Transactional(readOnly = true)
-    public Long getUserIdByEmail(String email) {
-        return userRepository.findByEmailIgnoreCase(email)
-                .map(User::getId)
-                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé: " + email));
     }
 
     // ── Cart persistence ──────────────────────────────────────────────────────

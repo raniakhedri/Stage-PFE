@@ -72,7 +72,7 @@ public class ChurnPredictionService {
         return userRepository.findById(userId)
             .map(User::getShopId)
             .flatMap(shopRepository::findById)
-            .map(shop -> "CLOTHES".equalsIgnoreCase(shop.getBusinessType()) ? "clothes" : "general")
+            .map(shop -> com.naturessence.shared.catalog.ShopCatalog.FASHION_LIKE.contains(String.valueOf(shop.getBusinessType()).toUpperCase()) ? "clothes" : "general")
             .orElse("general");
     }
 

@@ -1,5 +1,6 @@
 package com.naturessence.marketing.service;
 
+import com.naturessence.shared.security.TenantGuard;
 import com.naturessence.shared.dto.request.BannerRequest;
 import com.naturessence.shared.dto.response.BannerResponse;
 import com.naturessence.shared.entity.Banner;
@@ -66,7 +67,7 @@ public class BannerService {
                 .visibleHomepage(req.isVisibleHomepage())
                 .visibleMobile(req.isVisibleMobile())
                 .visibleDesktop(req.isVisibleDesktop())
-                .shopId(resolveShopId(req.getShopSlug()))
+                .shopId(resolveShopId(TenantGuard.shopForCreation(req.getShopSlug())))
                 .ordre(req.getOrdre())
                 .dureeSecondes(req.getDureeSecondes() > 0 ? req.getDureeSecondes() : 5)
                 .animation(req.getAnimation() != null ? req.getAnimation() : "fade")
@@ -175,8 +176,11 @@ public class BannerService {
 
     // ── Helpers ───────────────────────────────────────────────────────────────
     private Banner findOrThrow(Long id) {
-        return bannerRepository.findById(id)
+        Banner found = bannerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Bannière introuvable: " + id));
+        // Merchants only reach their own shop's records (TenantGuard).
+        TenantGuard.assertOwned(found.getShopId(), shopRepository);
+        return found;
     }
 
     private BannerResponse toResponse(Banner b) {

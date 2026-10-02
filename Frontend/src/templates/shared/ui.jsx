@@ -179,11 +179,12 @@ export function SearchOverlay({ open, onClose, variant = 'minimal' }) {
 
   if (!open) return null
 
-  const dark = variant === 'bold'
-  const serif = variant === 'luxury'
+  const dark = ['bold', 'sport', 'tech'].includes(variant)
+  const serif = ['luxury', 'editorial', 'artisan'].includes(variant)
+  const background = variant === 'bold' ? 'bg-black text-white' : dark ? 'bg-primary text-white' : variant === 'pop' || variant === 'artisan' ? 'bg-surface text-ink' : 'bg-white text-ink'
 
   return (
-    <div className={`fixed inset-0 z-[200] overflow-y-auto ${dark ? 'bg-black text-white' : 'bg-white text-ink'}`}>
+    <div className={`fixed inset-0 z-[200] overflow-y-auto ${background}`}>
       <div className="max-w-5xl mx-auto px-6 md:px-10 pt-8 pb-20">
         <div className="flex justify-end">
           <button onClick={onClose} aria-label="Fermer" className="p-2 hover:opacity-60"><X size={26} /></button>

@@ -10,7 +10,7 @@ import { sizeOptions, needsSizeChoice } from '../utils/cartLines';
 /** "Souvent achetés ensemble": association rules on the products currently in the cart. */
 function BoughtTogether({ items, onClose }) {
   const { addToCart } = useShop();
-  const { isClothes } = useStore();
+  const { hasSizes, sector } = useStore();
   const ids = [...new Set(items.map((i) => i.id))];
   const { products } = useRecommendations('bought-together', { ids: ids.join(','), limit: '3' }, ids.join(','));
   const suggestions = products.filter((p) => !ids.includes(p.id)).slice(0, 3);
@@ -28,10 +28,10 @@ function BoughtTogether({ items, onClose }) {
                 <span className="block text-xs text-secondary">{p.price.toFixed(2)} TND</span>
               </span>
             </Link>
-            {needsSizeChoice(p, isClothes) ? (
+            {needsSizeChoice(p, hasSizes) ? (
               <Link to={`/produits/${p.slug}`} onClick={onClose} className="text-xs font-bold text-primary underline shrink-0">Choisir</Link>
             ) : (
-              <button onClick={() => { track('RECOMMENDATION_CLICK', { productId: p.id, price: p.price }); addToCart(p, 1, sizeOptions(p, isClothes)[0] || ''); }} className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center shrink-0" aria-label="Ajouter">
+              <button onClick={() => { track('RECOMMENDATION_CLICK', { productId: p.id, price: p.price }); addToCart(p, 1, sizeOptions(p, hasSizes)[0] || ''); }} className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center shrink-0" aria-label="Ajouter">
                 <Plus size={14} />
               </button>
             )}

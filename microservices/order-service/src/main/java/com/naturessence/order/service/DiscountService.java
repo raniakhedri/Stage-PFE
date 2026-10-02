@@ -1,5 +1,6 @@
 package com.naturessence.order.service;
 
+import com.naturessence.shared.security.TenantGuard;
 import com.naturessence.shared.dto.request.DiscountRequest;
 import com.naturessence.shared.dto.response.DiscountResponse;
 import com.naturessence.shared.entity.Category;
@@ -22,6 +23,7 @@ public class DiscountService {
     private final DiscountRepository discountRepository;
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
+    private final com.naturessence.shared.repository.ShopRepository shopRepository;
 
     // ── Get all discounts ──────────────────────────────────────────
     @Transactional(readOnly = true)
@@ -119,8 +121,13 @@ public class DiscountService {
     // ── Helpers ────────────────────────────────────────────────────
 
     private Discount findOrThrow(Long id) {
-        return discountRepository.findById(id)
+        Discount found = discountRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Remise introuvable avec l'ID: " + id));
+        Long shopId = found.getCategory() != null ? found.getCategory().getShopId()
+                : found.getProductId() != null ? productRepository.findById(found.getProductId()).map(p -> p.getShopId()).orElse(null)
+                : null;
+        TenantGuard.assertOwned(shopId, shopRepository);
+        return found;
     }
 
     private double computeFinalPrice(String type, double valeur, double prixOriginal) {

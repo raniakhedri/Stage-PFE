@@ -30,7 +30,7 @@ public class EmailService {
     @Value("${brevo.sender-email:rannniakhedri@gmail.com}")
     private String senderEmail;
 
-    @Value("${brevo.sender-name:NaturEssence}")
+    @Value("${brevo.sender-name:Sellio}")
     private String senderName;
 
     @Value("${brevo.reply-to:rannniakhedri@gmail.com}")

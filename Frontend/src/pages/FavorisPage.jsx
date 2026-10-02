@@ -3,10 +3,11 @@ import { Heart, ShoppingBag, Trash2, ArrowRight } from 'lucide-react';
 import { useShop } from '../context/ShopContext';
 import { useStore } from '../context/StoreContext';
 import { sizeOptions, needsSizeChoice } from '../utils/cartLines';
+import { sizeLabelOf } from '../data/sectors';
 
 export default function FavorisPage() {
   const { wishlist, removeFromWishlist, addToCart } = useShop();
-  const { isClothes } = useStore();
+  const { hasSizes, businessType } = useStore();
 
   return (
     <div className="max-w-6xl mx-auto px-4 md:px-8 py-10">
@@ -76,17 +77,17 @@ export default function FavorisPage() {
                 <p className="font-headline font-bold text-lg text-primary">{product.price?.toFixed(2)} TND</p>
 
                 <div className="flex gap-2">
-                  {needsSizeChoice(product, isClothes) ? (
+                  {needsSizeChoice(product, hasSizes) ? (
                     <Link
                       to={`/produits/${product.slug}`}
                       className="flex-1 flex items-center justify-center gap-2 bg-primary text-white py-2.5 rounded-xl font-medium text-sm hover:bg-primary/90 transition-colors"
                     >
                       <ShoppingBag size={15} />
-                      {isClothes ? 'Choisir une taille' : 'Choisir une contenance'}
+                      {`Choisir : ${sizeLabelOf(businessType, product).toLowerCase()}`}
                     </Link>
                   ) : (
                     <button
-                      onClick={() => addToCart(product, 1, sizeOptions(product, isClothes)[0] || '')}
+                      onClick={() => addToCart(product, 1, sizeOptions(product, hasSizes)[0] || '')}
                       className="flex-1 flex items-center justify-center gap-2 bg-primary text-white py-2.5 rounded-xl font-medium text-sm hover:bg-primary/90 transition-colors"
                     >
                       <ShoppingBag size={15} />

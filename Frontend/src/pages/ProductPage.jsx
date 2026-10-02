@@ -12,6 +12,7 @@ import { useShop } from '../context/ShopContext';
 import LoginPromptModal from '../components/LoginPromptModal';
 import { TryOnButton } from '../components/TryOnModal';
 import { useStore } from '../context/StoreContext';
+import { ATTRIBUTE_LABELS, LONG_ATTRIBUTES, TABLE_ATTRIBUTES, attributeChips, attributeValue, sizeLabelOf, specRows } from '../data/sectors';
 
 // Star rating input component
 function StarInput({ value, onChange }) {
@@ -132,7 +133,11 @@ export default function ProductPage() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const { addToCart, toggleWishlist, isWishlisted } = useShop();
-  const { isClothes } = useStore();
+  const { isClothes, hasSizes, sector, businessType } = useStore();
+  const generic = sector.kind === 'generic';
+  const cosmetics = sector.kind === 'cosmetics';
+  const sizeLabel = sizeLabelOf(businessType, product);
+  const sizeWord = sizeLabel.toLowerCase();
 
   const handleWishlist = () => {
     const result = toggleWishlist(product);
@@ -150,7 +155,7 @@ export default function ProductPage() {
         setProduct(p);
         track('VIEW_PRODUCT', { productId: p.id, price: p.price, categorySlug: p.categorySlug });
         // Several sizes: the customer must pick one. A single option is chosen for them.
-        const opts = sizeOptions(p, isClothes);
+        const opts = sizeOptions(p, hasSizes);
         setSelectedSize(opts.length === 1 ? opts[0] : null);
         setSizeError(false);
         // Load similar/upsell products if defined, otherwise fall back to category
@@ -188,11 +193,18 @@ export default function ProductPage() {
 
   const avgRating = reviews.length ? (reviews.reduce((s, r) => s + r.note, 0) / reviews.length).toFixed(1) : null;
 
+  // Sector characteristics (sport, high-tech, maison…): short ones in the description, long ones in their tab.
+  const attributes = product.attributes || {};
+  const shortAttributes = Object.entries(attributes).filter(([key]) => !LONG_ATTRIBUTES.includes(key));
+  const longAttributes = Object.entries(attributes).filter(([key]) => LONG_ATTRIBUTES.includes(key));
+  const chips = generic ? attributeChips(businessType, attributes) : [];
+
   const tabs = [
     { id: 'description', label: 'Description' },
     ...(isClothes && product.entretien ? [{ id: 'entretien', label: 'Entretien' }] : []),
-    ...(!isClothes && (product.usageInstructions || product.precautions) ? [{ id: 'usage', label: "Conseils d'utilisation" }] : []),
-    ...(!isClothes && product.inciComposition ? [{ id: 'composition', label: 'Composition / INCI' }] : []),
+    ...(cosmetics && (product.usageInstructions || product.precautions) ? [{ id: 'usage', label: "Conseils d'utilisation" }] : []),
+    ...(cosmetics && product.inciComposition ? [{ id: 'composition', label: 'Composition / INCI' }] : []),
+    ...(generic && longAttributes.length ? [{ id: 'specs', label: 'Caractéristiques' }] : []),
     { id: 'reviews', label: `Avis clients${reviews.length ? ` (${reviews.length})` : ''}` },
   ];
 
@@ -230,15 +242,18 @@ export default function ProductPage() {
         <div className="md:col-span-5 flex flex-col">
           {/* Badges: bio + certifications */}
           <div className="flex flex-wrap gap-2 mb-4">
-            {isClothes && product.couleur && (
+            {(isClothes || generic) && product.couleur && (
               <span className="px-3 py-1 bg-surface-container-highest text-primary text-[10px] font-bold uppercase tracking-wider rounded-full flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full border border-black/10" style={{ background: product.couleurHex || '#111' }} />
                 {product.couleur}
               </span>
             )}
             {isClothes && product.tissu && <span className="px-3 py-1 bg-primary/5 text-primary text-[10px] font-bold uppercase tracking-wider rounded-full">{product.tissu}</span>}
-            {!isClothes && product.bio && <span className="px-3 py-1 bg-secondary-container text-on-secondary-container text-[10px] font-bold uppercase tracking-wider rounded-full flex items-center gap-1"><Leaf size={10} />Bio</span>}
-            {!isClothes && product.certifications.map(cert => (
+            {chips.map((chip) => (
+              <span key={chip} className="px-3 py-1 bg-primary/5 text-primary text-[10px] font-bold uppercase tracking-wider rounded-full">{chip}</span>
+            ))}
+            {cosmetics && product.bio && <span className="px-3 py-1 bg-secondary-container text-on-secondary-container text-[10px] font-bold uppercase tracking-wider rounded-full flex items-center gap-1"><Leaf size={10} />Bio</span>}
+            {cosmetics && product.certifications.map(cert => (
               <span key={cert} className="px-3 py-1 bg-surface-container-highest text-primary text-[10px] font-bold uppercase tracking-wider rounded-full flex items-center gap-1"><Award size={10} />{cert}</span>
             ))}
             {product.stock > 0
@@ -247,7 +262,7 @@ export default function ProductPage() {
           </div>
 
           <h2 className="text-3xl md:text-4xl font-headline font-bold text-primary mb-1 leading-tight">{product.name}</h2>
-          {!isClothes && product.latin && <p className="text-secondary font-medium italic mb-4">{product.latin}</p>}
+          {cosmetics && product.latin && <p className="text-secondary font-medium italic mb-4">{product.latin}</p>}
           {isClothes && (product.coupe || product.genre) && (
             <p className="text-secondary font-medium mb-4">{[product.genre, product.coupe, product.saison].filter(Boolean).join(' · ')}</p>
           )}
@@ -270,17 +285,17 @@ export default function ProductPage() {
 
           {/* Size */}
           <div className="space-y-6 mb-8">
-            {sizeOptions(product, isClothes).length > 0 && (
+            {sizeOptions(product, hasSizes).length > 0 && (
               <div>
                 <div className="flex items-baseline justify-between mb-3">
                   <span className="block text-xs font-bold text-primary uppercase tracking-widest">
-                    {isClothes ? 'Taille' : 'Contenance'}
+                    {sizeLabel}
                     {selectedSize && <span className="ml-2 normal-case tracking-normal font-medium text-secondary">: {selectedSize}</span>}
                   </span>
-                  {sizeError && <span className="text-xs font-semibold text-red-600">Choisissez {isClothes ? 'une taille' : 'une contenance'}</span>}
+                  {sizeError && <span className="text-xs font-semibold text-red-600">Choisissez : {sizeWord}</span>}
                 </div>
                 <div className={`flex flex-wrap gap-3 rounded-2xl transition-all ${sizeError ? 'p-2 -m-2 ring-2 ring-red-400 size-shake' : ''}`}>
-                  {sizeOptions(product, isClothes).map(size => (
+                  {sizeOptions(product, hasSizes).map(size => (
                     <button key={size} onClick={() => { setSelectedSize(size); setSizeError(false); }}
                       className={`min-w-[52px] px-5 py-2 rounded-full border-2 font-medium text-sm transition-all ${selectedSize === size ? 'border-primary bg-primary text-white' : 'border-outline-variant text-secondary hover:border-primary'}`}>
                       {size}
@@ -302,12 +317,12 @@ export default function ProductPage() {
                 }`}
                 onClick={() => {
                   if (product.stock <= 0) return;
-                  if (needsSizeChoice(product, isClothes) && !selectedSize) { setSizeError(true); return; }
+                  if (needsSizeChoice(product, hasSizes) && !selectedSize) { setSizeError(true); return; }
                   addToCart(product, quantity, selectedSize || '');
                 }}>
-                <ShoppingBag size={18} />{needsSizeChoice(product, isClothes) && !selectedSize ? (isClothes ? 'Choisir une taille' : 'Choisir une contenance') : 'Ajouter au panier'}
+                <ShoppingBag size={18} />{needsSizeChoice(product, hasSizes) && !selectedSize ? `Choisir : ${sizeWord}` : 'Ajouter au panier'}
               </button>
-              {isClothes && (
+              {sector.tryOn && (
               <TryOnButton
                 product={product}
                 className="px-5 py-4 rounded-full border-2 border-primary text-primary font-bold flex items-center justify-center gap-2 hover:bg-primary hover:text-white transition-all"
@@ -362,6 +377,18 @@ export default function ProductPage() {
                         <span className="text-on-surface-variant">{value}</span>
                       </li>
                     ))}
+                  </>
+                ) : generic ? (
+                  <>
+                    {[['Couleur', product.couleur], ...shortAttributes.map(([key, value]) => [ATTRIBUTE_LABELS[key] || key, attributeValue(businessType, key, value)])]
+                      .filter(([, value]) => value)
+                      .map(([label, value]) => (
+                        <li key={label} className="flex items-start gap-4 text-sm">
+                          <span className="w-2 h-2 rounded-full bg-gold shrink-0 mt-1.5" />
+                          <span className="font-bold text-primary w-36 shrink-0">{label}</span>
+                          <span className="text-on-surface-variant">{String(value).split(',').map((v) => v.trim()).join(' · ')}</span>
+                        </li>
+                      ))}
                   </>
                 ) : (
                   <>
@@ -427,6 +454,30 @@ export default function ProductPage() {
             ) : (
               <p className="text-on-surface-variant">Aucun conseil disponible pour ce produit.</p>
             )}
+          </div>
+        )}
+
+        {activeTab === 'specs' && (
+          <div className="max-w-3xl space-y-10">
+            {longAttributes.map(([key, value]) => (
+              <div key={key}>
+                <h3 className="text-2xl font-headline font-bold text-primary mb-4">{ATTRIBUTE_LABELS[key] || key}</h3>
+                {TABLE_ATTRIBUTES.includes(key) ? (
+                  <table className="w-full text-sm border-t border-surface-container-highest">
+                    <tbody>
+                      {specRows(value).map(([name, val], i) => (
+                        <tr key={i} className="border-b border-surface-container-highest">
+                          <th className="text-left font-bold text-primary py-3 pr-6 w-1/2 align-top">{name || '—'}</th>
+                          <td className="py-3 text-on-surface-variant">{val}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p className="text-on-surface-variant leading-relaxed whitespace-pre-wrap">{value}</p>
+                )}
+              </div>
+            ))}
           </div>
         )}
 

@@ -107,7 +107,7 @@ public class RoleService {
     @Transactional
     public void deleteRole(Long id) {
         Role role = ownedRole(caller.require(), id);
-        if (role.getShopId() == null && Set.of("SUPER_ADMIN", "ADMIN", "CLIENT").contains(role.getName())) {
+        if (role.getShopId() == null && Set.of("SUPER_ADMIN", "SELLIO_ADMIN", "ADMIN", "CLIENT").contains(role.getName())) {
             throw new IllegalArgumentException("Ce rôle système ne peut pas être supprimé");
         }
         long userCount = userRepository.countByRoleId(id);

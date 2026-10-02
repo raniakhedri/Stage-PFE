@@ -1,13 +1,12 @@
 package com.naturessence.analytics;
 
+import com.naturessence.shared.security.CurrentUser;
 import com.naturessence.shared.entity.Shop;
 import com.naturessence.shared.entity.User;
 import com.naturessence.shared.repository.ShopRepository;
 import com.naturessence.shared.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -29,20 +28,16 @@ public class ShopAccess {
 
     /** Logged-in user (any role) or null for anonymous visitors. */
     public User currentUser() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !auth.isAuthenticated() || auth.getName() == null || "anonymousUser".equals(auth.getName())) {
-            return null;
-        }
-        return userRepository.findByEmailIgnoreCase(auth.getName()).orElse(null);
+        Long userId = CurrentUser.id();
+        return userId == null ? null : userRepository.findById(userId).orElse(null);
     }
 
-    /** A merchant reads only their own shop; the Sellio platform admin reads every shop. */
+    /** A merchant reads only their own shop. The Sellio team has no access to a shop's visitors and customers. */
     public Shop forAdmin(String slug) {
         Shop shop = bySlug(slug);
         User user = currentUser();
         if (user == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
         String role = user.getRole() != null ? user.getRole().getName() : "";
-        if ("SUPER_ADMIN".equals(role)) return shop;
         if (!shop.getId().equals(user.getShopId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cette boutique ne vous appartient pas");
         }

@@ -54,6 +54,8 @@ public class DataSeeder implements CommandLineRunner {
 		log.info("🌱 Starting database initialization...");
 		migrateSchema();
 		seedRoles();
+		seedSellioAdminRole();
+		migrateUserEmails();
 		seedSegments();
 		seedSuperAdmin();
 		seedSellioAdmin();
@@ -267,9 +269,43 @@ public class DataSeeder implements CommandLineRunner {
 		log.info("🏪 NaturEssence shop ready (slug naturessence)");
 	}
 
+	/** Sellio team member: runs the console (verifications, suspensions, deleting merchants) without owning the platform. */
+	private void seedSellioAdminRole() {
+		if (roleRepository.findByName("SELLIO_ADMIN").isPresent()) return;
+		roleRepository.save(Role.builder()
+				.name("SELLIO_ADMIN")
+				.label("Administrateur Sellio")
+				.description("Équipe Sellio : boutiques, marchands et vérifications. Aucun accès aux clients des boutiques.")
+				.build());
+		log.info("✓ Role SELLIO_ADMIN created");
+	}
+
+	/**
+	 * A customer account belongs to one shop, so the same e-mail may exist once per shop for customers, and once
+	 * across Sellio for merchants, team members and platform accounts. Replaces the old global unique e-mail.
+	 */
+	private void migrateUserEmails() {
+		Role client = roleRepository.findByName("CLIENT").orElse(null);
+		if (client == null) return;
+		try {
+			for (String name : jdbcTemplate.queryForList("""
+					SELECT k.conname FROM pg_constraint k
+					JOIN pg_attribute a ON a.attrelid = k.conrelid AND a.attnum = ANY (k.conkey)
+					WHERE k.conrelid = 'users'::regclass AND k.contype = 'u' AND a.attname = 'email'
+					""", String.class)) {
+				jdbcTemplate.execute("ALTER TABLE users DROP CONSTRAINT IF EXISTS \"" + name + "\"");
+				log.info("✓ Dropped global unique e-mail constraint {}", name);
+			}
+			jdbcTemplate.execute("CREATE UNIQUE INDEX IF NOT EXISTS ux_users_client_email_shop ON users (lower(email), shop_id) WHERE role_id = " + client.getId());
+			jdbcTemplate.execute("CREATE UNIQUE INDEX IF NOT EXISTS ux_users_account_email ON users (lower(email)) WHERE role_id <> " + client.getId());
+		} catch (Exception e) {
+			log.warn("User e-mail migration skipped: {}", e.getMessage());
+		}
+	}
+
 	private void seedSuperAdmin() {
 		log.info("👨‍💼 Seeding super admin user...");
-		if (userRepository.existsByEmailIgnoreCase(adminEmail)) {
+		if (userRepository.accountEmailTaken(adminEmail)) {
 			log.info("✓ Super Admin already exists");
 			return;
 		}
@@ -299,7 +335,7 @@ public class DataSeeder implements CommandLineRunner {
 		String email = sellioEmail.toLowerCase().trim();
 		Role superAdminRole = roleRepository.findByName("SUPER_ADMIN")
 				.orElseThrow(() -> new RuntimeException("Rôle SUPER_ADMIN non trouvé"));
-		User existing = userRepository.findByEmailIgnoreCase(email).orElse(null);
+		User existing = userRepository.findAccountByEmail(email).orElse(null);
 		if (existing != null) {
 			// Keep it a platform account even if it was created through the merchant sign-up.
 			if (!"SUPER_ADMIN".equals(existing.getRole().getName()) || existing.getShopId() != null) {

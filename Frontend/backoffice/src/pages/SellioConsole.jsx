@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { readUser } from '../lib/sellio'
-import { layoutOf } from '../data/storeTemplates'
+import { isPlatform, readUser } from '../lib/sellio'
+import { TEMPLATE_LABELS, layoutOf } from '../data/storeTemplates'
+import { SECTORS, sectorLabel } from '../data/sectors'
 import { useSellioTheme, ThemeToggle } from '../lib/sellioTheme'
 import { SellioLogo, DISPLAY, MONO } from '../components/sellio/brand'
 
@@ -8,7 +9,8 @@ const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'
 const STOREFRONT = 'http://localhost:3001'
 const PAGE_SIZE = 10
 
-const ROLE_LABELS = { SUPER_ADMIN: 'Plateforme', ADMIN: 'Marchand', CLIENT: 'Client' }
+const ROLE_LABELS = { SUPER_ADMIN: 'Super admin', SELLIO_ADMIN: 'Admin Sellio', ADMIN: 'Marchand' }
+const ROLE_TONES = { SUPER_ADMIN: 'amber', SELLIO_ADMIN: 'green', ADMIN: 'violet' }
 const ORDER_STATUS = {
   EN_ATTENTE: 'En attente', CONFIRMEE: 'Confirmée', EN_PREPARATION: 'En préparation', EXPEDIEE: 'Expédiée',
   LIVREE: 'Livrée', ANNULEE: 'Annulée', REMBOURSEE: 'Remboursée',
@@ -17,7 +19,6 @@ const SHOP_STATUS = {
   ACTIVE: ['Active', 'green'], PENDING: ['En vérification', 'amber'], REJECTED: ['Refusée', 'red'], SUSPENDED: ['Suspendue', 'red'],
 }
 const VERIF_STATUS = { PENDING: ['À examiner', 'amber'], APPROVED: ['Validé', 'green'], REJECTED: ['Refusé', 'red'] }
-const TEMPLATE_LABELS = { minimal: 'Minimal', bold: 'Bold', luxury: 'Luxury' }
 
 async function api(path, options = {}) {
   const res = await fetch(`${API}${path}`, {
@@ -131,10 +132,113 @@ function Row({ label, children, theme }) {
   )
 }
 
+/**
+ * Deleting a merchant removes their shop and everything in it, so the name has to be typed to confirm.
+ * For a platform account the e-mail is typed instead.
+ */
+function DeleteAccountDialog({ account, shopName, theme, onClose, onDeleted, notify }) {
+  const [typed, setTyped] = useState('')
+  const [busy, setBusy] = useState(false)
+  const merchant = account.roleName === 'ADMIN'
+  const expected = merchant && shopName ? shopName : account.email
+  const remove = async () => {
+    setBusy(true)
+    try {
+      const res = await api(`/admin/platform/users/${account.id}`, { method: 'DELETE' })
+      notify(res?.shop ? `Marchand supprimé avec « ${res.shop} » et ses ${res.clients ?? 0} client(s).` : 'Compte supprimé.')
+      onDeleted()
+    } catch (err) {
+      notify(err.message === 'forbidden' ? 'Action réservée au super administrateur.' : err.message, true)
+      setBusy(false)
+    }
+  }
+  return (
+    <div className="fixed inset-0 z-[65] flex items-center justify-center p-4">
+      <div className={`absolute inset-0 ${theme.t.overlay}`} onClick={busy ? undefined : onClose} />
+      <div className={`relative w-full max-w-md rounded-2xl shadow-2xl overflow-hidden ${theme.t.page}`}>
+       <div className={`rounded-2xl p-6 ${theme.t.card}`}>
+        <div className="flex items-center gap-3">
+          <span className="material-symbols-outlined text-red-400">warning</span>
+          <h3 className="font-semibold text-lg">{merchant ? 'Supprimer le marchand' : 'Supprimer le compte'}</h3>
+        </div>
+        <p className={`mt-3 text-sm ${theme.t.muted}`}>
+          {merchant && shopName ? (
+            <>Le compte de <b>{account.firstName} {account.lastName}</b> et la boutique <b>{shopName}</b> seront supprimés définitivement, avec ses clients, son équipe, ses produits, ses commandes et ses statistiques.</>
+          ) : merchant ? (
+            <>Le compte marchand <b>{account.email}</b> (sans boutique) sera supprimé définitivement.</>
+          ) : (
+            <>Le compte Sellio <b>{account.email}</b> sera supprimé définitivement.</>
+          )}
+        </p>
+        <label className={`block mt-5 text-xs ${theme.t.muted}`}>
+          Tapez <b className="select-all" style={MONO}>{expected}</b> pour confirmer
+        </label>
+        <input autoFocus value={typed} onChange={(e) => setTyped(e.target.value)} className={`mt-2 w-full rounded-lg px-3 py-2.5 text-sm outline-none ${theme.t.input}`} />
+        <div className="mt-5 flex justify-end gap-2">
+          <button disabled={busy} onClick={onClose} className={`px-4 py-2 rounded-lg text-sm ${theme.t.secondaryBtn}`}>Annuler</button>
+          <button
+            disabled={busy || typed.trim() !== expected}
+            onClick={remove}
+            className="px-4 py-2 rounded-lg text-sm font-semibold bg-red-500 text-white hover:bg-red-400 disabled:opacity-40"
+          >
+            {busy ? 'Suppression…' : 'Supprimer définitivement'}
+          </button>
+        </div>
+       </div>
+      </div>
+    </div>
+  )
+}
+
+/** Super admin: adds a Sellio admin, who receives a one-time password by e-mail. */
+function AddAdminDialog({ theme, onClose, onCreated, notify }) {
+  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', role: 'SELLIO_ADMIN' })
+  const [busy, setBusy] = useState(false)
+  const set = (key) => (e) => setForm({ ...form, [key]: e.target.value })
+  const submit = async (e) => {
+    e.preventDefault()
+    setBusy(true)
+    try {
+      await api('/admin/platform/users', { method: 'POST', body: JSON.stringify(form) })
+      notify(`Compte créé : un mot de passe temporaire a été envoyé à ${form.email}.`)
+      onCreated()
+    } catch (err) {
+      notify(err.message, true)
+      setBusy(false)
+    }
+  }
+  const input = `w-full rounded-lg px-3 py-2.5 text-sm outline-none ${theme.t.input}`
+  return (
+    <div className="fixed inset-0 z-[65] flex items-center justify-center p-4">
+      <div className={`absolute inset-0 ${theme.t.overlay}`} onClick={onClose} />
+      <form onSubmit={submit} className={`relative w-full max-w-md rounded-2xl shadow-2xl overflow-hidden ${theme.t.page}`}>
+       <div className={`rounded-2xl p-6 space-y-4 ${theme.t.card}`}>
+        <h3 className="font-semibold text-lg">Ajouter un administrateur Sellio</h3>
+        <div className="grid grid-cols-2 gap-3">
+          <input required placeholder="Prénom" value={form.firstName} onChange={set('firstName')} className={input} />
+          <input placeholder="Nom" value={form.lastName} onChange={set('lastName')} className={input} />
+        </div>
+        <input required type="email" placeholder="E-mail" value={form.email} onChange={set('email')} className={input} />
+        <select value={form.role} onChange={set('role')} className={input}>
+          <option value="SELLIO_ADMIN">Admin Sellio — boutiques, vérifications, marchands</option>
+          <option value="SUPER_ADMIN">Super admin — gère aussi les admins et les rôles</option>
+        </select>
+        <p className={`text-xs ${theme.t.faint}`}>Les comptes Sellio n’ont jamais accès aux clients des boutiques.</p>
+        <div className="flex justify-end gap-2 pt-1">
+          <button type="button" onClick={onClose} className={`px-4 py-2 rounded-lg text-sm ${theme.t.secondaryBtn}`}>Annuler</button>
+          <button disabled={busy} className={`px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50 ${theme.t.primaryBtn}`}>{busy ? 'Création…' : 'Créer le compte'}</button>
+        </div>
+       </div>
+      </form>
+    </div>
+  )
+}
+
 function ShopDrawer({ shopId, theme, onClose, onChanged, notify }) {
   const [data, setData] = useState(null)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const dark = theme.dark
 
   const load = useCallback(() => {
@@ -175,7 +279,6 @@ function ShopDrawer({ shopId, theme, onClose, onChanged, notify }) {
         <>
           <div className="flex flex-wrap items-center gap-2">
             <a href={`${STOREFRONT}/${shop.slug}`} target="_blank" rel="noreferrer" className={`px-4 py-2 rounded-lg text-sm font-medium ${theme.t.primaryBtn}`}>Voir la vitrine ↗</a>
-            <a href={`/${shop.slug}/dashboard`} className={`px-4 py-2 rounded-lg text-sm ${theme.t.secondaryBtn}`}>Ouvrir le backoffice</a>
             {shop.ownerId && ['ACTIVE', 'SUSPENDED'].includes(shop.status) && (
               <button
                 disabled={busy}
@@ -183,6 +286,14 @@ function ShopDrawer({ shopId, theme, onClose, onChanged, notify }) {
                 className={`ml-auto px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50 ${suspended ? 'bg-emerald-500 text-white hover:bg-emerald-400' : 'bg-red-500/90 text-white hover:bg-red-500'}`}
               >
                 {suspended ? 'Réactiver la boutique' : 'Bloquer le marchand'}
+              </button>
+            )}
+            {owner && (
+              <button
+                onClick={() => setDeleting(true)}
+                className={`${shop.ownerId && ['ACTIVE', 'SUSPENDED'].includes(shop.status) ? '' : 'ml-auto '}px-4 py-2 rounded-lg text-sm font-semibold border border-red-500/40 text-red-400 hover:bg-red-500/10`}
+              >
+                Supprimer le marchand
               </button>
             )}
           </div>
@@ -204,7 +315,7 @@ function ShopDrawer({ shopId, theme, onClose, onChanged, notify }) {
           <Section theme={theme} title="Configuration">
             <dl className="grid grid-cols-2 gap-y-3 text-sm">
               <Row theme={theme} label="Statut"><Pill dark={dark} tone={SHOP_STATUS[shop.status]?.[1]}>{SHOP_STATUS[shop.status]?.[0] || shop.status}</Pill></Row>
-              <Row theme={theme} label="Activité">{shop.businessType === 'CLOTHES' ? 'Vêtements' : 'Cosmétiques'}</Row>
+              <Row theme={theme} label="Activité">{sectorLabel(shop.businessType)}</Row>
               <Row theme={theme} label="Modèle">{TEMPLATE_LABELS[layoutOf(shop.templateKey)]}</Row>
               <Row theme={theme} label="Produits en rupture">{data.outOfStock}</Row>
               <Row theme={theme} label="Dernière commande">{dateTime(shop.lastOrderAt)}</Row>
@@ -241,13 +352,13 @@ function ShopDrawer({ shopId, theme, onClose, onChanged, notify }) {
             ) : (
               <table className="w-full text-sm">
                 <thead className={`text-left text-xs ${theme.t.tableHead}`}>
-                  <tr><th className="py-2">Référence</th><th>Client</th><th>Date</th><th className="text-right">Total</th></tr>
+                  <tr><th className="py-2">Référence</th><th>Statut</th><th>Date</th><th className="text-right">Total</th></tr>
                 </thead>
                 <tbody>
                   {data.recentOrders.map((o) => (
                     <tr key={o.id} className={`border-t ${theme.t.divider}`}>
                       <td className="py-2 text-xs" style={MONO}>{o.reference}</td>
-                      <td>{o.firstName} {o.lastName}</td>
+                      <td className={theme.t.muted}>{ORDER_STATUS[o.status] || o.status}</td>
                       <td className={theme.t.muted}>{date(o.createdAt)}</td>
                       <td className="text-right tabular-nums">{money(o.total)}</td>
                     </tr>
@@ -257,24 +368,18 @@ function ShopDrawer({ shopId, theme, onClose, onChanged, notify }) {
             )}
           </Section>
 
-          <Section theme={theme} title={`Clients (${data.clients.length})`}>
-            {data.clients.length === 0 ? (
-              <p className={`text-sm ${theme.t.muted}`}>Aucun client inscrit.</p>
-            ) : (
-              <ul className={`divide-y ${dark ? 'divide-white/[0.06]' : 'divide-slate-100'}`}>
-                {data.clients.map((c) => (
-                  <li key={c.id} className="py-2.5 flex items-center justify-between gap-4 text-sm">
-                    <div className="min-w-0">
-                      <p className="font-medium truncate">{c.firstName} {c.lastName}</p>
-                      <p className={`text-xs truncate ${theme.t.muted}`}>{c.email}{c.phone ? ` · ${c.phone}` : ''}</p>
-                    </div>
-                    <p className={`text-[11px] shrink-0 ${theme.t.faint}`}>depuis {date(c.createdAt)}</p>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Section>
+          <p className={`text-xs ${theme.t.faint}`}>Les clients d’une boutique appartiennent au marchand : l’équipe Sellio ne voit que leur nombre.</p>
         </>
+      )}
+      {deleting && owner && (
+        <DeleteAccountDialog
+          account={owner}
+          shopName={shop.name}
+          theme={theme}
+          notify={notify}
+          onClose={() => setDeleting(false)}
+          onDeleted={() => { onChanged(); onClose() }}
+        />
       )}
     </Drawer>
   )
@@ -358,7 +463,7 @@ function VerificationDrawer({ id, theme, onClose, onChanged, notify }) {
             <dl className="grid grid-cols-2 gap-y-3 text-sm">
               <Row theme={theme} label="Nom">{data.shopName}</Row>
               <Row theme={theme} label="Lien">/{data.shopSlug}</Row>
-              <Row theme={theme} label="Activité">{data.businessType === 'CLOTHES' ? 'Vêtements' : 'Cosmétiques'}</Row>
+              <Row theme={theme} label="Activité">{sectorLabel(data.businessType)}</Row>
             </dl>
           </Section>
 
@@ -420,6 +525,9 @@ export default function SellioConsole() {
   const [verifFilter, setVerifFilter] = useState('PENDING')
   const [openShop, setOpenShop] = useState(null)
   const [openVerif, setOpenVerif] = useState(null)
+  const [deletingAccount, setDeletingAccount] = useState(null)
+  const [addingAdmin, setAddingAdmin] = useState(false)
+  const superAdmin = user.roleName === 'SUPER_ADMIN'
 
   const notify = useCallback((message, isError = false) => {
     setToast({ message, isError })
@@ -443,7 +551,7 @@ export default function SellioConsole() {
   }, [])
 
   useEffect(() => {
-    if (user.roleName !== 'SUPER_ADMIN') {
+    if (!isPlatform(user)) {
       window.location.replace('/login')
       return
     }
@@ -466,6 +574,18 @@ export default function SellioConsole() {
       load()
     } catch (err) {
       notify(err.message, true)
+    }
+  }
+
+  const changeRole = async (row, role) => {
+    if (role === row.roleName) return
+    if (!window.confirm(`Donner le rôle « ${ROLE_LABELS[role]} » à ${row.firstName} ${row.lastName} ?`)) return
+    try {
+      await api(`/admin/platform/users/${row.id}/role`, { method: 'PATCH', body: JSON.stringify({ role }) })
+      notify('Rôle modifié. Il s’applique à la prochaine connexion.')
+      load()
+    } catch (err) {
+      notify(err.message === 'forbidden' ? 'Action réservée au super administrateur.' : err.message, true)
     }
   }
 
@@ -546,7 +666,7 @@ export default function SellioConsole() {
             {[
               ['shops', `Boutiques (${shops.length})`],
               ['verifications', 'Vérifications', pending],
-              ['users', `Utilisateurs (${users.length})`],
+              ['users', `Comptes (${users.length})`],
             ].map(([id, label, badge]) => (
               <button key={id} onClick={() => setTab(id)} className={`px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-2 ${tab === id ? (dark ? 'bg-white text-black' : 'bg-slate-900 text-white') : t.muted}`}>
                 {label}
@@ -567,18 +687,24 @@ export default function SellioConsole() {
                 </select>
                 <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className={select}>
                   <option value="ALL">Toutes activités</option>
-                  <option value="CLOTHES">Vêtements</option>
-                  <option value="COSMETICS">Cosmétiques</option>
+                  {SECTORS.map((s) => <option key={s.id} value={s.id}>{s.short}</option>)}
                 </select>
               </>
             )}
             {tab === 'users' && (
-              <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} className={select}>
-                <option value="ALL">Tous les rôles</option>
-                <option value="ADMIN">Marchands</option>
-                <option value="CLIENT">Clients</option>
-                <option value="SUPER_ADMIN">Plateforme</option>
-              </select>
+              <>
+                <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} className={select}>
+                  <option value="ALL">Tous les rôles</option>
+                  <option value="ADMIN">Marchands</option>
+                  <option value="SELLIO_ADMIN">Admins Sellio</option>
+                  <option value="SUPER_ADMIN">Super admins</option>
+                </select>
+                {superAdmin && (
+                  <button onClick={() => setAddingAdmin(true)} className={`px-3 py-2 rounded-lg text-sm font-semibold inline-flex items-center gap-1.5 ${t.primaryBtn}`}>
+                    <span className="material-symbols-outlined text-lg">person_add</span> Ajouter un admin
+                  </button>
+                )}
+              </>
             )}
             {tab === 'verifications' && (
               <select value={verifFilter} onChange={(e) => setVerifFilter(e.target.value)} className={select}>
@@ -615,7 +741,7 @@ export default function SellioConsole() {
                           <ShopAvatar shop={shop} size="w-9 h-9" />
                           <div>
                             <p className="font-medium">{shop.name}</p>
-                            <p className={`text-xs ${t.faint}`}>/{shop.slug} · {shop.businessType === 'CLOTHES' ? 'Vêtements' : 'Cosmétiques'} · {TEMPLATE_LABELS[layoutOf(shop.templateKey)]}</p>
+                            <p className={`text-xs ${t.faint}`}>/{shop.slug} · {sectorLabel(shop.businessType)} · {TEMPLATE_LABELS[layoutOf(shop.templateKey)]}</p>
                           </div>
                         </div>
                       </td>
@@ -708,19 +834,32 @@ export default function SellioConsole() {
                         <p>{row.email}</p>
                         {row.phone && <p className={`text-xs ${t.faint}`}>{row.phone}</p>}
                       </td>
-                      <td className="px-5 py-3"><Pill dark={dark} tone={row.roleName === 'ADMIN' ? 'violet' : row.roleName === 'SUPER_ADMIN' ? 'amber' : 'slate'}>{ROLE_LABELS[row.roleName] || row.roleName}</Pill></td>
+                      <td className="px-5 py-3">
+                        {superAdmin && row.id !== user.id ? (
+                          <select value={row.roleName} onChange={(e) => changeRole(row, e.target.value)} className={`px-2 py-1 rounded-md text-xs outline-none ${t.input}`}>
+                            {Object.entries(ROLE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                          </select>
+                        ) : (
+                          <Pill dark={dark} tone={ROLE_TONES[row.roleName] || 'slate'}>{ROLE_LABELS[row.roleName] || row.roleName}</Pill>
+                        )}
+                      </td>
                       <td className="px-5 py-3">{row.shopId ? <button onClick={() => setOpenShop(row.shopId)} className="underline">{row.shopName}</button> : '—'}</td>
                       <td className="px-5 py-3"><Pill dark={dark} tone={row.status === 'ACTIVE' ? 'green' : 'red'}>{row.status === 'BLOCKED' ? 'Bloqué' : row.status === 'ACTIVE' ? 'Actif' : row.status}</Pill></td>
                       <td className={`px-5 py-3 whitespace-nowrap ${t.muted}`}>{dateTime(row.lastLogin)}</td>
-                      <td className="px-5 py-3 text-right">
-                        {row.roleName !== 'SUPER_ADMIN' && (
-                          <button
-                            onClick={() => toggleUser(row)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${row.status === 'BLOCKED' ? 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25' : 'bg-red-500/10 text-red-400 hover:bg-red-500/20'}`}
-                          >
-                            {row.status === 'BLOCKED' ? 'Débloquer' : 'Bloquer'}
-                          </button>
-                        )}
+                      <td className="px-5 py-3 text-right whitespace-nowrap">
+                        <div className="inline-flex items-center gap-2">
+                          {row.roleName === 'ADMIN' && (
+                            <button
+                              onClick={() => toggleUser(row)}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${row.status === 'BLOCKED' ? 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25' : 'bg-red-500/10 text-red-400 hover:bg-red-500/20'}`}
+                            >
+                              {row.status === 'BLOCKED' ? 'Débloquer' : 'Bloquer'}
+                            </button>
+                          )}
+                          {row.id !== user.id && (row.roleName === 'ADMIN' || superAdmin) && (
+                            <button onClick={() => setDeletingAccount(row)} title="Supprimer" className={`material-symbols-outlined text-lg px-1.5 py-1 rounded-lg text-red-400 hover:bg-red-500/10`}>delete</button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -735,6 +874,17 @@ export default function SellioConsole() {
 
       {openShop && <ShopDrawer shopId={openShop} theme={theme} onClose={() => setOpenShop(null)} onChanged={load} notify={notify} />}
       {openVerif && <VerificationDrawer id={openVerif} theme={theme} onClose={() => setOpenVerif(null)} onChanged={load} notify={notify} />}
+      {deletingAccount && (
+        <DeleteAccountDialog
+          account={deletingAccount}
+          shopName={deletingAccount.shopName}
+          theme={theme}
+          notify={notify}
+          onClose={() => setDeletingAccount(null)}
+          onDeleted={() => { setDeletingAccount(null); load() }}
+        />
+      )}
+      {addingAdmin && <AddAdminDialog theme={theme} notify={notify} onClose={() => setAddingAdmin(false)} onCreated={() => { setAddingAdmin(false); load() }} />}
 
       {toast && (
         <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[70] px-5 py-3 rounded-xl shadow-2xl text-sm font-medium ${toast.isError ? 'bg-red-500 text-white' : dark ? 'bg-white text-black' : 'bg-slate-900 text-white'}`}>

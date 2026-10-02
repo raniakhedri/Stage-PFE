@@ -14,7 +14,25 @@ import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
 
-    Optional<User> findByEmailIgnoreCase(String email);
+    /** Merchant, team member or platform account: these e-mails are unique across Sellio. */
+    @Query("SELECT u FROM User u WHERE LOWER(u.email) = LOWER(:email) AND u.role.name <> 'CLIENT'")
+    Optional<User> findAccountByEmail(@Param("email") String email);
+
+    /** A shop's customer: the same e-mail can have one customer account in each shop. */
+    @Query("SELECT u FROM User u WHERE LOWER(u.email) = LOWER(:email) AND u.role.name = 'CLIENT' AND u.shopId = :shopId")
+    Optional<User> findClientByEmail(@Param("email") String email, @Param("shopId") Long shopId);
+
+    @Query("SELECT COUNT(u) > 0 FROM User u WHERE LOWER(u.email) = LOWER(:email) AND u.role.name <> 'CLIENT'")
+    boolean accountEmailTaken(@Param("email") String email);
+
+    @Query("SELECT COUNT(u) > 0 FROM User u WHERE LOWER(u.email) = LOWER(:email) AND u.role.name = 'CLIENT' AND u.shopId = :shopId")
+    boolean clientEmailTaken(@Param("email") String email, @Param("shopId") Long shopId);
+
+    /** Accounts the Sellio team manages: merchants and platform administrators (never customers or shop staff). */
+    @Query("SELECT u FROM User u WHERE u.role.name IN :roles ORDER BY u.createdAt DESC")
+    List<User> findByRoleNames(@Param("roles") java.util.Collection<String> roles);
+
+    List<User> findByShopId(Long shopId);
 
     long countByShopId(Long shopId);
 
@@ -36,8 +54,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
             "LOWER(u.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
             "LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<User> searchInShop(@Param("shopId") Long shopId, @Param("search") String search, Pageable pageable);
-
-    boolean existsByEmailIgnoreCase(String email);
 
     /** The merchant's team: every account of the shop that is not a customer (owner + staff). */
     @Query("SELECT u FROM User u WHERE u.shopId = :shopId AND u.role.name <> 'CLIENT' ORDER BY u.createdAt ASC")

@@ -29,7 +29,11 @@ public class User {
     @Column(nullable = false)
     private String lastName;
 
-    @Column(nullable = false, unique = true)
+    /**
+     * Unique among merchants, team members and platform accounts. A customer account belongs to one shop,
+     * so the same e-mail can have one customer account per shop (enforced by partial unique indexes).
+     */
+    @Column(nullable = false)
     private String email;
 
     @Column(nullable = false)

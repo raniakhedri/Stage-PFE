@@ -74,7 +74,7 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.OPTIONS, "/**")
                     .permitAll()
                     .requestMatchers("/api/v1/admin/platform", "/api/v1/admin/platform/**")
-                    .hasRole("SUPER_ADMIN")
+                    .hasAnyRole("SUPER_ADMIN", "SELLIO_ADMIN")
                     .requestMatchers(
                         "/api/v1/admin/users",
                         "/api/v1/admin/users/**",

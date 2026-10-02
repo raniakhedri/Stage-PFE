@@ -77,7 +77,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (jwtUtil.isTokenValid(token)
                     && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-                String username = jwtUtil.extractUsername(token);
+                Long userId     = jwtUtil.extractUserId(token);
                 String role     = jwtUtil.extractRole(token);
                 String shop     = jwtUtil.extractShop(token);
                 List<String> perms = jwtUtil.extractPermissions(token);
@@ -98,14 +98,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
 
                 UsernamePasswordAuthenticationToken authToken =
-                        new UsernamePasswordAuthenticationToken(username, null, authorities);
+                        new UsernamePasswordAuthenticationToken(String.valueOf(userId), null, authorities);
 
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
 
                 // Merchant APIs fall back to "all shops" when ?shop= is missing: pin it to the caller's shop.
-                if (!"SUPER_ADMIN".equals(role) && isMerchantApi(request.getRequestURI())) {
-                    request = new ShopScopedRequest(request, shop == null ? "__aucune-boutique__" : shop);
+                if (!PlatformRoles.isPlatform(role) && isMerchantApi(request.getRequestURI())) {
+                    String pinned = shop == null ? "__aucune-boutique__" : shop;
+                    request.setAttribute(TenantGuard.ATTRIBUTE, pinned);
+                    request = new ShopScopedRequest(request, pinned);
                 }
             }
         }
@@ -153,8 +155,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     /** Returns an error message when the request leaves the caller's shop or permissions, else null. */
     private String tenantViolation(HttpServletRequest request, String role, String shop, List<String> perms) {
-        if ("SUPER_ADMIN".equals(role)) return null;
         String path = request.getRequestURI();
+        if (PlatformRoles.isPlatform(role)) {
+            // The Sellio team runs the platform; a shop's customers, orders and analytics belong to the merchant.
+            boolean allowed = !isMerchantApi(path)
+                    || path.startsWith("/api/v1/admin/platform")
+                    || path.startsWith("/api/v1/admin/roles");
+            return allowed ? null : "L'équipe Sellio n'a pas accès aux données des boutiques.";
+        }
         boolean merchantApi = isMerchantApi(path);
         if (merchantApi) {
             String requested = request.getParameter("shop");

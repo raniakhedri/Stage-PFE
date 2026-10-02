@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { BUSINESSES, TEMPLATES } from '../data/storeTemplates'
+import { BUSINESSES, TEMPLATES, defaultTemplate, isRecommended, templatesFor } from '../data/storeTemplates'
 import { readUser, storeSession } from '../lib/sellio'
 import { useSellioTheme, ThemeToggle, Switch } from '../lib/sellioTheme'
 import { SellioLogo } from '../components/sellio/brand'
@@ -29,6 +29,77 @@ function hexOk(value) {
   return /^#[0-9A-Fa-f]{6}$/.test(value || '')
 }
 
+/** Header mock of each template, so the merchant sees the difference before choosing. */
+function PreviewHeader({ id, title, logo, primary, surface }) {
+  const brand = (cls = 'h-6') => (logo ? <img src={logo} alt="" className={`${cls} object-contain`} /> : title)
+  switch (id) {
+    case 'luxury':
+      return (
+        <div className="text-center py-3 border-b border-black/5" style={{ color: primary }}>
+          <span style={{ fontFamily: '"Cormorant Garamond", Georgia, serif', letterSpacing: '0.18em' }} className="text-base uppercase">{brand('h-6 mx-auto')}</span>
+          <div className="flex justify-center gap-4 mt-1.5 text-[8px] tracking-[0.2em] uppercase opacity-70"><span>Collection</span><span>Nouveautés</span><span>Maison</span></div>
+        </div>
+      )
+    case 'bold':
+      return (
+        <div className="px-4 py-3 flex items-center justify-between bg-black text-white">
+          <span className="text-[9px] font-bold uppercase">☰ Menu</span>
+          <span className="text-lg uppercase leading-none" style={{ fontFamily: 'Anton, Impact, sans-serif' }}>{brand()}</span>
+          <span className="text-[9px] font-bold uppercase">Panier (2)</span>
+        </div>
+      )
+    case 'sport':
+      return (
+        <div className="px-4 py-3 flex items-center justify-between" style={{ background: primary, color: '#fff' }}>
+          <span className="text-lg uppercase italic font-extrabold leading-none" style={{ fontFamily: '"Barlow Condensed", Impact, sans-serif' }}>{brand()}</span>
+          <span className="text-[9px] font-bold uppercase italic tracking-wide opacity-80">Running · Training · Outdoor</span>
+          <span className="text-[9px] font-black px-2 py-1 skew-x-[-10deg]" style={{ background: '#c6f432', color: '#0b1220' }}>PANIER</span>
+        </div>
+      )
+    case 'tech':
+      return (
+        <div className="px-4 py-3 flex items-center justify-between" style={{ background: '#0b0f19', color: '#e5e7eb' }}>
+          <span className="text-sm font-semibold" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>{brand('h-5')}</span>
+          <span className="text-[9px] px-3 py-1 rounded-full border border-white/15 opacity-70">⌕ Rechercher un produit</span>
+          <span className="text-[9px] text-blue-300">◫ 2</span>
+        </div>
+      )
+    case 'artisan':
+      return (
+        <div className="px-4 py-3 flex items-center justify-between border-b border-black/5" style={{ color: primary, background: surface }}>
+          <span className="text-[9px] opacity-70">Boutique · Atelier</span>
+          <span className="text-base italic" style={{ fontFamily: 'Fraunces, Georgia, serif' }}>{brand()}</span>
+          <span className="text-[9px] px-2 py-1 rounded-full" style={{ background: `${primary}18` }}>Panier</span>
+        </div>
+      )
+    case 'pop':
+      return (
+        <div className="px-3 py-2.5 flex items-center justify-between">
+          <span className="text-base font-bold px-3 py-1 rounded-full text-white" style={{ background: primary, fontFamily: 'Fredoka, sans-serif' }}>{brand('h-5')}</span>
+          <span className="flex gap-1">
+            {['#fbbf24', '#f43f5e', '#22c55e'].map((c) => <span key={c} className="w-3 h-3 rounded-full" style={{ background: c }} />)}
+          </span>
+          <span className="text-[9px] font-bold px-2 py-1 rounded-full bg-amber-300 text-black">🛒 2</span>
+        </div>
+      )
+    case 'editorial':
+      return (
+        <div className="px-4 pt-3 pb-2 border-b-2" style={{ borderColor: primary, color: primary }}>
+          <div className="flex justify-between text-[8px] uppercase tracking-[0.2em] opacity-60"><span>N° 01</span><span>Édition de saison</span></div>
+          <p className="text-xl italic leading-none mt-1" style={{ fontFamily: '"Playfair Display", Georgia, serif' }}>{brand()}</p>
+        </div>
+      )
+    default:
+      return (
+        <div className="px-4 py-3 flex items-center justify-between bg-white border-b border-black/5" style={{ color: primary }}>
+          <span className="text-sm font-semibold">{brand('h-5')}</span>
+          <span className="text-[9px] opacity-60">Nouveautés · Collection · Offres</span>
+          <span className="text-[10px]">♡ ◫</span>
+        </div>
+      )
+  }
+}
+
 function StorePreview({ name, template, logo, colors }) {
   const look = template?.colors || {}
   const primary = colors.primary || look.primary || '#163328'
@@ -37,37 +108,21 @@ function StorePreview({ name, template, logo, colors }) {
   const buttonText = colors.buttonText || look.buttonText || '#ffffff'
   const muted = look.muted || '#c4a574'
   const title = name.trim() || 'Votre boutique'
-  const radius = template?.radius === '0px' ? 0 : 10
+  const radius = template?.radius === '0px' ? 0 : template?.radius === '999px' ? 18 : parseInt(template?.radius || '10', 10)
   return (
     <div className="rounded-2xl overflow-hidden border border-black/10 shadow-2xl" style={{ background: surface }}>
       <div className="text-[9px] tracking-[0.18em] uppercase text-center py-1.5" style={{ background: primary, color: surface }}>Livraison offerte dès 200 TND</div>
-      {template?.id === 'luxury' ? (
-        <div className="text-center py-3 border-b border-black/5" style={{ color: primary }}>
-          <span style={{ fontFamily: '"Cormorant Garamond", Georgia, serif', letterSpacing: '0.18em' }} className="text-base uppercase">
-            {logo ? <img src={logo} alt="" className="h-6 mx-auto object-contain" /> : title}
-          </span>
-          <div className="flex justify-center gap-4 mt-1.5 text-[8px] tracking-[0.2em] uppercase opacity-70"><span>Collection</span><span>Nouveautés</span><span>Maison</span></div>
-        </div>
-      ) : template?.id === 'bold' ? (
-        <div className="px-4 py-3 flex items-center justify-between bg-black text-white">
-          <span className="text-[9px] font-bold uppercase">☰ Menu</span>
-          <span className="text-lg uppercase leading-none" style={{ fontFamily: 'Anton, Impact, sans-serif' }}>
-            {logo ? <img src={logo} alt="" className="h-6 object-contain" /> : title}
-          </span>
-          <span className="text-[9px] font-bold uppercase">Panier (2)</span>
-        </div>
-      ) : (
-        <div className="px-4 py-3 flex items-center justify-between bg-white border-b border-black/5" style={{ color: primary }}>
-          <span className="text-sm font-semibold">{logo ? <img src={logo} alt="" className="h-5 object-contain" /> : title}</span>
-          <span className="text-[9px] opacity-60">Nouveautés · Robes · Soins</span>
-          <span className="text-[10px]">♡ ◫</span>
-        </div>
-      )}
+      <PreviewHeader id={template?.id} title={title} logo={logo} primary={primary} surface={surface} />
       <div className="p-4">
         <p className="text-[9px] uppercase tracking-[0.2em]" style={{ color: muted }}>Nouvelle collection</p>
-        <p className="text-lg mt-1" style={{ color: primary, fontFamily: template?.font, textTransform: template?.upper ? 'uppercase' : 'none' }}>{title}</p>
+        <p
+          className="text-lg mt-1"
+          style={{ color: primary, fontFamily: template?.font, textTransform: template?.upper ? 'uppercase' : 'none', fontStyle: template?.italic ? 'italic' : 'normal' }}
+        >
+          {title}
+        </p>
         <div className="mt-3 grid grid-cols-2 gap-2">
-          {['Pièce 01', 'Pièce 02'].map((label) => (
+          {['Produit 01', 'Produit 02'].map((label) => (
             <div key={label}>
               <div className="h-16" style={{ background: `${primary}14`, borderRadius: radius }} />
               <p className="text-[11px] mt-1" style={{ color: primary }}>{label}</p>
@@ -156,7 +211,8 @@ export default function NouvelleBoutique() {
   const [step, setStep] = useState(0)
   const [name, setName] = useState('')
   const [business, setBusiness] = useState('COSMETICS')
-  const [template, setTemplate] = useState('minimal')
+  const [template, setTemplate] = useState(() => defaultTemplate('COSMETICS'))
+  const [templateTouched, setTemplateTouched] = useState(false)
   const [logo, setLogo] = useState('')
   const [customColors, setCustomColors] = useState(false)
   const [primaryColor, setPrimaryColor] = useState('#163328')
@@ -175,7 +231,17 @@ export default function NouvelleBoutique() {
     if (user.shopSlug) window.location.replace('/verification')
   }, [user.shopSlug])
 
+  const chooseBusiness = (id) => {
+    setBusiness(id)
+    if (!templateTouched) applyTemplate(TEMPLATES.find((t) => t.id === defaultTemplate(id)) || TEMPLATES[0])
+  }
+
   const pickTemplate = (item) => {
+    setTemplateTouched(true)
+    applyTemplate(item)
+  }
+
+  const applyTemplate = (item) => {
     setTemplate(item.id)
     if (!customColors) {
       setPrimaryColor(item.colors.primary)
@@ -305,10 +371,10 @@ export default function NouvelleBoutique() {
                 </section>
                 <section className="space-y-3">
                   <p className="text-sm font-medium">Activité</p>
-                  <div className="grid md:grid-cols-2 gap-3">
+                  <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-3">
                     {BUSINESSES.map((item) => (
-                      <button type="button" key={item.id} onClick={() => setBusiness(item.id)} className={option(business === item.id)}>
-                        <span className="material-symbols-outlined text-2xl">{item.id === 'CLOTHES' ? 'checkroom' : 'spa'}</span>
+                      <button type="button" key={item.id} onClick={() => chooseBusiness(item.id)} className={option(business === item.id)}>
+                        <span className="material-symbols-outlined text-2xl">{item.icon}</span>
                         <p className="font-semibold mt-2">{item.title}</p>
                         <p className={`text-sm mt-1 ${t.muted}`}>{item.text}</p>
                       </button>
@@ -316,14 +382,17 @@ export default function NouvelleBoutique() {
                   </div>
                 </section>
                 <section className="space-y-3">
-                  <p className="text-sm font-medium">Modèle de vitrine</p>
-                  <div className="grid md:grid-cols-3 gap-3">
-                    {TEMPLATES.map((item) => (
+                  <p className="text-sm font-medium">Modèle de vitrine <span className={`font-normal ${t.muted}`}>· {TEMPLATES.length} modèles, les plus adaptés à votre activité en premier</span></p>
+                  <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-3">
+                    {templatesFor(business).map((item) => (
                       <button type="button" key={item.id} onClick={() => pickTemplate(item)} className={option(template === item.id)}>
-                        <div className="flex gap-1.5 mb-3">
-                          {item.swatch.map((color) => <span key={color} className="w-5 h-5 rounded-full border border-black/10" style={{ background: color }} />)}
+                        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                          <span className="flex gap-1.5">
+                            {item.swatch.map((color) => <span key={color} className="w-5 h-5 rounded-full border border-black/10" style={{ background: color }} />)}
+                          </span>
+                          {isRecommended(business, item.id) && <span className="text-[10px] font-semibold uppercase tracking-wider text-violet-400">Recommandé</span>}
                         </div>
-                        <p className="font-semibold">{item.title}</p>
+                        <p className="font-semibold" style={{ fontFamily: item.font, fontStyle: item.italic ? 'italic' : 'normal' }}>{item.title}</p>
                         <p className={`text-sm mt-1 ${t.muted}`}>{item.text}</p>
                       </button>
                     ))}

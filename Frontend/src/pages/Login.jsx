@@ -22,7 +22,8 @@ export default function Login() {
       const res = await fetch('http://localhost:8080/api/v1/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        // The shop scopes the sign-in: the same e-mail can have a separate account in each shop.
+        body: JSON.stringify({ email, password, shopSlug }),
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
@@ -33,11 +34,6 @@ export default function Login() {
       // Only customers sign in here: merchants and their team use Sellio.
       if (data.user?.roleName !== 'CLIENT') {
         setError('Les marchands se connectent sur Sellio.');
-        setLoading(false);
-        return;
-      }
-      if (data.user?.shopSlug && data.user.shopSlug !== shopSlug) {
-        setError('Ce compte appartient à une autre boutique.');
         setLoading(false);
         return;
       }

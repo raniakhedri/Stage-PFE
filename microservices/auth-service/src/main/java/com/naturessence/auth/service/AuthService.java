@@ -1,6 +1,5 @@
 package com.naturessence.auth.service;
 
-import com.naturessence.auth.security.UserPrincipal;
 import com.naturessence.shared.dto.request.CreateShopRequest;
 import com.naturessence.shared.dto.request.LoginRequest;
 import com.naturessence.shared.dto.request.MerchantVerificationRequest;
@@ -11,6 +10,7 @@ import com.naturessence.shared.entity.RefreshToken;
 import com.naturessence.shared.entity.Role;
 import com.naturessence.shared.entity.Segment;
 import com.naturessence.shared.entity.Shop;
+import com.naturessence.shared.catalog.ShopCatalog;
 import com.naturessence.shared.entity.AuthCode;
 import com.naturessence.shared.entity.User;
 import com.naturessence.shared.enums.PermissionModule;
@@ -21,12 +21,10 @@ import com.naturessence.shared.repository.SegmentRepository;
 import com.naturessence.shared.repository.ShopRepository;
 import com.naturessence.shared.repository.UserRepository;
 import com.naturessence.shared.security.JwtUtil;
+import com.naturessence.shared.security.PlatformRoles;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.LockedException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,8 +39,6 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private static final Set<String> LAYOUTS = Set.of("minimal", "bold", "luxury");
-
     private static final Set<String> RESERVED_SLUGS = Set.of(
             "login", "inscription", "auth-callback", "nouvelle-boutique", "sellio",
             "produits", "categories", "checkout", "confirmation", "profile",
@@ -54,7 +50,6 @@ public class AuthService {
     private final ShopRepository shopRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
-    private final AuthenticationManager authenticationManager;
     private final RefreshTokenService refreshTokenService;
     private final LoyaltyService loyaltyService;
     private final MerchantVerificationService verificationService;
@@ -66,8 +61,14 @@ public class AuthService {
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-        if (userRepository.existsByEmailIgnoreCase(request.getEmail())) {
-            throw new IllegalArgumentException("Cet email est déjà utilisé");
+        // A customer always signs up in a shop; the same e-mail may already have an account in another shop.
+        if (request.getShopSlug() == null || request.getShopSlug().isBlank()) {
+            throw new IllegalArgumentException("Inscrivez-vous depuis la boutique.");
+        }
+        Shop shop = shopRepository.findBySlug(request.getShopSlug().trim().toLowerCase())
+                .orElseThrow(() -> new IllegalArgumentException("Boutique introuvable"));
+        if (userRepository.clientEmailTaken(request.getEmail().trim(), shop.getId())) {
+            throw new IllegalArgumentException("Un compte existe déjà avec cet e-mail dans cette boutique.");
         }
 
         Role clientRole = roleRepository.findByName("CLIENT")
@@ -87,13 +88,8 @@ public class AuthService {
                 .role(clientRole)
                 .segment(nouveauSegment)
                 .status(AccountStatus.ACTIVE)
+                .shopId(shop.getId())
                 .build();
-
-        if (request.getShopSlug() != null && !request.getShopSlug().isBlank()) {
-            Shop shop = shopRepository.findBySlug(request.getShopSlug().trim().toLowerCase())
-                    .orElseThrow(() -> new IllegalArgumentException("Boutique introuvable"));
-            user.setShopId(shop.getId());
-        }
 
         user = userRepository.save(user);
 
@@ -112,7 +108,7 @@ public class AuthService {
     @Transactional
     public Map<String, Object> startMerchantSignup(RegisterRequest request) {
         String email = request.getEmail().toLowerCase().trim();
-        if (userRepository.existsByEmailIgnoreCase(email)) {
+        if (userRepository.accountEmailTaken(email)) {
             throw new IllegalArgumentException("Cet email est déjà utilisé");
         }
         requireStrongPassword(request.getPassword());
@@ -151,7 +147,7 @@ public class AuthService {
     @SuppressWarnings("unchecked")
     public AuthResponse verifyMerchantSignup(String email, String code) {
         String key = email == null ? "" : email.toLowerCase().trim();
-        if (userRepository.existsByEmailIgnoreCase(key)) {
+        if (userRepository.accountEmailTaken(key)) {
             throw new IllegalArgumentException("Cet email est déjà utilisé");
         }
         AuthCode entry = authCodeService.consume(key, AuthCode.SIGNUP, code);
@@ -192,17 +188,14 @@ public class AuthService {
     @Transactional
     public void forgotPassword(String email, String shopSlug) {
         String key = email == null ? "" : email.toLowerCase().trim();
-        User user = userRepository.findByEmailIgnoreCase(key).orElse(null);
+        Shop shop = shopOf(shopSlug);
+        if (shopSlug != null && !shopSlug.isBlank() && shop == null) return;
+        // A shop's page resets that shop's customer account; Sellio's page resets a merchant or team account.
+        User user = findForSignIn(key, shop);
         if (user == null || user.getStatus() == AccountStatus.BLOCKED) return;
-        Shop shop = null;
-        if (shopSlug != null && !shopSlug.isBlank()) {
-            shop = shopRepository.findBySlug(shopSlug.trim().toLowerCase()).orElse(null);
-            // A shop's page only resets that shop's customer accounts.
-            if (shop == null || !shop.getId().equals(user.getShopId())) return;
-        }
         String code;
         try {
-            code = authCodeService.issue(key, AuthCode.RESET, null);
+            code = authCodeService.issue(key, resetPurpose(shop), null);
         } catch (IllegalArgumentException tooSoon) {
             return; // a code was sent less than a minute ago; answer as usual
         }
@@ -210,12 +203,13 @@ public class AuthService {
     }
 
     @Transactional(noRollbackFor = IllegalArgumentException.class)
-    public void resetPassword(String email, String code, String newPassword) {
+    public void resetPassword(String email, String code, String newPassword, String shopSlug) {
         requireStrongPassword(newPassword);
         String key = email == null ? "" : email.toLowerCase().trim();
-        authCodeService.consume(key, AuthCode.RESET, code);
-        User user = userRepository.findByEmailIgnoreCase(key)
-                .orElseThrow(() -> new IllegalArgumentException("Code invalide ou expiré."));
+        Shop shop = shopOf(shopSlug);
+        authCodeService.consume(key, resetPurpose(shop), code);
+        User user = findForSignIn(key, shop);
+        if (user == null) throw new IllegalArgumentException("Code invalide ou expiré.");
         user.setPassword(passwordEncoder.encode(newPassword));
         user.setMustChangePassword(false);
         userRepository.save(user);
@@ -224,8 +218,8 @@ public class AuthService {
 
     /** Signed-in password change; also clears the "temporary password" flag. Returns fresh tokens. */
     @Transactional
-    public AuthResponse changePassword(String email, String currentPassword, String newPassword) {
-        User user = userRepository.findByEmailIgnoreCase(email)
+    public AuthResponse changePassword(Long userId, String currentPassword, String newPassword) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé"));
         if (currentPassword == null || !passwordEncoder.matches(currentPassword, user.getPassword())) {
             throw new IllegalArgumentException("Le mot de passe actuel est incorrect.");
@@ -239,6 +233,23 @@ public class AuthService {
         userRepository.save(user);
         refreshTokenService.deleteByUserId(user.getId());
         return issueTokens(user);
+    }
+
+    private Shop shopOf(String shopSlug) {
+        if (shopSlug == null || shopSlug.isBlank()) return null;
+        return shopRepository.findBySlug(shopSlug.trim().toLowerCase()).orElse(null);
+    }
+
+    /** Customer of {@code shop}, or, without a shop, the merchant / team / platform account of that e-mail. */
+    private User findForSignIn(String email, Shop shop) {
+        return (shop != null
+                ? userRepository.findClientByEmail(email, shop.getId())
+                : userRepository.findAccountByEmail(email)).orElse(null);
+    }
+
+    /** Reset codes are kept per shop, so two accounts with the same e-mail never share a code. */
+    private static String resetPurpose(Shop shop) {
+        return shop == null ? AuthCode.RESET : AuthCode.RESET + ":" + shop.getId();
     }
 
     private void requireStrongPassword(String password) {
@@ -263,22 +274,22 @@ public class AuthService {
     }
 
     @Transactional
-    public UserResponse createShop(String email, CreateShopRequest request) {
-        User user = userRepository.findByEmailIgnoreCase(email)
+    public UserResponse createShop(Long userId, CreateShopRequest request) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé"));
 
         String role = user.getRole() != null ? user.getRole().getName() : "";
         if ("CLIENT".equals(role)) {
             throw new IllegalArgumentException("Un client ne peut pas ouvrir une boutique Sellio");
         }
-        if ("SUPER_ADMIN".equals(role)) {
+        if (PlatformRoles.isPlatform(role)) {
             throw new IllegalArgumentException("Le compte plateforme ne possède pas de boutique");
         }
         if (user.getShopId() != null) {
             throw new IllegalArgumentException("Ce compte a déjà une boutique");
         }
 
-        String type = "CLOTHES".equalsIgnoreCase(request.getBusinessType()) ? "CLOTHES" : "COSMETICS";
+        String type = ShopCatalog.businessType(request.getBusinessType());
         String template = layoutKey(request.getTemplateKey());
 
         MerchantVerificationRequest verification = verificationService.requireComplete(request.getVerification());
@@ -308,8 +319,8 @@ public class AuthService {
     }
 
     @Transactional
-    public UserResponse updateShop(String email, CreateShopRequest request) {
-        User user = userRepository.findByEmailIgnoreCase(email)
+    public UserResponse updateShop(Long userId, CreateShopRequest request) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé"));
         if (user.getShopId() == null) {
             throw new IllegalArgumentException("Ce compte n'a pas encore de boutique");
@@ -318,6 +329,9 @@ public class AuthService {
                 .orElseThrow(() -> new IllegalArgumentException("Boutique introuvable"));
         if (request.getTemplateKey() != null && !request.getTemplateKey().isBlank()) {
             shop.setTemplateKey(layoutKey(request.getTemplateKey()));
+        }
+        if (request.getBusinessType() != null && !request.getBusinessType().isBlank()) {
+            shop.setBusinessType(ShopCatalog.businessType(request.getBusinessType()));
         }
         if (request.getLogo() != null) shop.setLogo(cleanLogo(request.getLogo()));
         if (request.getPrimaryColor() != null) shop.setPrimaryColor(cleanHex(request.getPrimaryColor()));
@@ -335,8 +349,8 @@ public class AuthService {
         return mapToUserResponse(user);
     }
 
-    public Shop myShop(String email) {
-        User user = userRepository.findByEmailIgnoreCase(email)
+    public Shop myShop(Long userId) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé"));
         if (user.getShopId() == null) {
             throw new IllegalArgumentException("Ce compte n'a pas encore de boutique");
@@ -346,41 +360,33 @@ public class AuthService {
     }
 
     private String layoutKey(String value) {
-        String key = value == null ? "" : value.trim().toLowerCase();
-        if (LAYOUTS.contains(key)) return key;
-        if ("noir".equals(key) || "marin".equals(key)) return "bold";
-        if ("atelier".equals(key) || "apothicaire".equals(key) || "botanique".equals(key)) return "luxury";
-        return "minimal";
+        return ShopCatalog.layout(value);
     }
 
     @Transactional
     public AuthResponse login(LoginRequest request) {
-        try {
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            request.getEmail().toLowerCase().trim(),
-                            request.getPassword()));
-
-            UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
-
-            User user = userRepository.findByEmailIgnoreCase(principal.getEmail())
-                    .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
-
-            if (user.getStatus() == AccountStatus.BLOCKED) {
-                throw new LockedException("Votre compte a été bloqué. Contactez l'équipe Sellio.");
-            }
-            if (user.getStatus() == AccountStatus.INACTIVE) {
-                throw new LockedException("Votre accès a été désactivé. Contactez le responsable de la boutique.");
-            }
-
-            user.setLastLogin(LocalDateTime.now());
-            userRepository.save(user);
-
-            return issueTokens(user);
-
-        } catch (BadCredentialsException e) {
+        // From a storefront the e-mail is looked up among that shop's customers only; from Sellio among
+        // merchants, team members and the Sellio team. The same e-mail can therefore be a customer in
+        // several shops, each account with its own password.
+        String email = request.getEmail().toLowerCase().trim();
+        boolean storefront = request.getShopSlug() != null && !request.getShopSlug().isBlank();
+        Shop shop = shopOf(request.getShopSlug());
+        User user = storefront && shop == null ? null : findForSignIn(email, shop);
+        if (user == null || !passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new BadCredentialsException("Email ou mot de passe incorrect");
         }
+
+        if (user.getStatus() == AccountStatus.BLOCKED) {
+            throw new LockedException("Votre compte a été bloqué. Contactez l'équipe Sellio.");
+        }
+        if (user.getStatus() == AccountStatus.INACTIVE) {
+            throw new LockedException("Votre accès a été désactivé. Contactez le responsable de la boutique.");
+        }
+
+        user.setLastLogin(LocalDateTime.now());
+        userRepository.save(user);
+
+        return issueTokens(user);
     }
 
     @Transactional
@@ -408,7 +414,7 @@ public class AuthService {
         Map<String, Boolean> permissionsMap = new HashMap<>();
         String roleName = user.getRole() != null ? user.getRole().getName() : "";
         boolean staff = user.getRole() != null && user.getRole().getShopId() != null;
-        if ("ADMIN".equals(roleName) || "SUPER_ADMIN".equals(roleName)) {
+        if ("ADMIN".equals(roleName) || PlatformRoles.isPlatform(roleName)) {
             // The merchant owns the shop: every page of their backoffice is theirs.
             for (PermissionModule module : PermissionModule.values()) permissionsMap.put(module.name(), true);
         } else if (user.getRole() != null && user.getRole().getPermissions() != null) {

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import AccountCard, { AccountButton, AccountLabel, AccountMessage, accountInput } from '../components/AccountCard';
-import { clearTokens, getAccessToken, getUser, scheduleAutoLogout, setTokens } from '../api/tokenStorage';
+import { clearTokens, getAccessToken, getUser, isRemembered, scheduleAutoLogout, setTokens } from '../api/tokenStorage';
 
 /**
  * Password change for a signed-in customer. Mandatory right after signing in with the temporary
@@ -36,7 +36,7 @@ export default function ChangerMotDePasse() {
         return;
       }
       if (!res.ok) throw new Error(data?.message || 'Modification impossible.');
-      const remember = localStorage.getItem('ne_remember') === '1';
+      const remember = isRemembered();
       setTokens(data.accessToken, data.refreshToken, data.user, remember);
       scheduleAutoLogout();
       window.location.replace(`/${window.location.pathname.split('/').filter(Boolean)[0]}/`);

@@ -1,5 +1,6 @@
 package com.naturessence.auth.controller;
 
+import com.naturessence.shared.security.CurrentUser;
 import com.naturessence.auth.service.AuthService;
 import com.naturessence.auth.service.MerchantVerificationService;
 import com.naturessence.shared.dto.request.MerchantVerificationRequest;
@@ -62,7 +63,7 @@ public class AuthController {
 
     @PostMapping("/reset-password")
     public ResponseEntity<MessageResponse> resetPassword(@RequestBody Map<String, String> body) {
-        authService.resetPassword(body.get("email"), body.get("code"), body.get("password"));
+        authService.resetPassword(body.get("email"), body.get("code"), body.get("password"), body.get("shopSlug"));
         return ResponseEntity.ok(new MessageResponse("Mot de passe modifié. Vous pouvez vous connecter."));
     }
 
@@ -72,29 +73,23 @@ public class AuthController {
                                                        @RequestBody Map<String, String> body) {
         User user = currentUser(authentication);
         if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        return ResponseEntity.ok(authService.changePassword(user.getEmail(),
+        return ResponseEntity.ok(authService.changePassword(user.getId(),
                 body.get("currentPassword"), body.get("newPassword")));
     }
 
     @PostMapping("/my-shop")
     public ResponseEntity<UserResponse> createShop(Authentication authentication,
                                                     @Valid @RequestBody CreateShopRequest request) {
-        if (authentication == null || !authentication.isAuthenticated()
-                || authentication.getName() == null
-                || "anonymousUser".equals(authentication.getName())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        return ResponseEntity.status(HttpStatus.CREATED).body(authService.createShop(authentication.getName(), request));
+        Long userId = CurrentUser.id(authentication);
+        if (userId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        return ResponseEntity.status(HttpStatus.CREATED).body(authService.createShop(userId, request));
     }
 
     @GetMapping("/my-shop")
     public ResponseEntity<ShopPublicResponse> myShop(Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()
-                || authentication.getName() == null
-                || "anonymousUser".equals(authentication.getName())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        return ResponseEntity.ok(PublicShopController.toResponse(authService.myShop(authentication.getName())));
+        Long userId = CurrentUser.id(authentication);
+        if (userId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        return ResponseEntity.ok(PublicShopController.toResponse(authService.myShop(userId)));
     }
 
     /** Current session user, re-read from the database (shop status changes after admin review). */
@@ -121,23 +116,16 @@ public class AuthController {
     }
 
     private User currentUser(Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()
-                || authentication.getName() == null
-                || "anonymousUser".equals(authentication.getName())) {
-            return null;
-        }
-        return userRepository.findByEmailIgnoreCase(authentication.getName()).orElse(null);
+        Long userId = CurrentUser.id(authentication);
+        return userId == null ? null : userRepository.findById(userId).orElse(null);
     }
 
     @PatchMapping("/my-shop")
     public ResponseEntity<UserResponse> updateShop(Authentication authentication,
                                                     @RequestBody CreateShopRequest request) {
-        if (authentication == null || !authentication.isAuthenticated()
-                || authentication.getName() == null
-                || "anonymousUser".equals(authentication.getName())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        return ResponseEntity.ok(authService.updateShop(authentication.getName(), request));
+        Long userId = CurrentUser.id(authentication);
+        if (userId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        return ResponseEntity.ok(authService.updateShop(userId, request));
     }
 
     @PostMapping("/login")
@@ -152,10 +140,8 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<MessageResponse> logout(Authentication authentication) {
-        String email = authentication.getName();
-        Long userId = userRepository.findByEmailIgnoreCase(email)
-                .map(u -> u.getId())
-                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+        Long userId = CurrentUser.id(authentication);
+        if (userId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         authService.logout(userId);
         return ResponseEntity.ok(new MessageResponse("Déconnexion réussie"));
     }

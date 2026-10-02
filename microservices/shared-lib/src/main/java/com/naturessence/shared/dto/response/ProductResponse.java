@@ -75,6 +75,7 @@ public class ProductResponse {
     private String tailles;
     private String saison;
     private String genre;
+    private String attributes;
 
     // Shipping
     private double weight;

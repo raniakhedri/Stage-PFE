@@ -97,11 +97,8 @@ public class LoyaltyService {
 
     private User customerOf(Order order) {
         if (order.getUser() != null) return order.getUser();
-        if (order.getEmail() == null) return null;
-        return userRepository.findByEmailIgnoreCase(order.getEmail().trim())
-                .filter(u -> u.getRole() != null && "CLIENT".equals(u.getRole().getName()))
-                .filter(u -> order.getShopId() == null || order.getShopId().equals(u.getShopId()))
-                .orElse(null);
+        if (order.getEmail() == null || order.getShopId() == null) return null;
+        return userRepository.findClientByEmail(order.getEmail().trim(), order.getShopId()).orElse(null);
     }
 
     @Transactional

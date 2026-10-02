@@ -163,6 +163,13 @@ public class Product {
     /** femme, homme, unisexe */
     private String genre;
 
+    /**
+     * Sector-specific characteristics as a flat JSON object, e.g. {"discipline":"Running","garantie":"2 ans"}.
+     * Used by the sectors that have no dedicated columns (sport, high-tech, maison, épicerie, bijoux, enfants).
+     */
+    @Column(columnDefinition = "TEXT")
+    private String attributes;
+
     // ── SEO ───────────────────────────────────────────────────────
     @Column(name = "meta_title")
     private String metaTitle;

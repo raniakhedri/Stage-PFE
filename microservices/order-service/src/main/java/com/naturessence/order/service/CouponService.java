@@ -1,5 +1,6 @@
 package com.naturessence.order.service;
 
+import com.naturessence.shared.security.TenantGuard;
 import com.naturessence.shared.dto.request.CouponRequest;
 import com.naturessence.shared.dto.response.CouponResponse;
 import com.naturessence.shared.dto.response.PromotionStatsResponse;
@@ -73,7 +74,7 @@ public class CouponService {
                 .produits(joinList(request.getProduits()))
                 .auto(request.isAuto())
                 .autoTrigger(request.getAutoTrigger())
-                .shopId(resolveShopId(request.getShopSlug()))
+                .shopId(resolveShopId(TenantGuard.shopForCreation(request.getShopSlug())))
                 .build();
 
         coupon = couponRepository.save(coupon);
@@ -282,8 +283,11 @@ public class CouponService {
     // ── Helpers ────────────────────────────────────────────────────
 
     private Coupon findOrThrow(Long id) {
-        return couponRepository.findById(id)
+        Coupon found = couponRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Coupon introuvable avec l'ID: " + id));
+        // Merchants only reach their own shop's records (TenantGuard).
+        TenantGuard.assertOwned(found.getShopId(), shopRepository);
+        return found;
     }
 
     private String computeStatut(String requested, LocalDate dateDebut, LocalDate dateFin) {

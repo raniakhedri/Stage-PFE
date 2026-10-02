@@ -8,17 +8,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Map;
-import java.util.Set;
+import com.naturessence.shared.catalog.ShopCatalog;
 
 @Service
 @RequiredArgsConstructor
 public class StoreProfileService {
 
-    private static final Map<String, Set<String>> TEMPLATES = Map.of(
-            "COSMETICS", Set.of("botanique", "nude"),
-            "CLOTHES", Set.of("atelier", "noir")
-    );
 
     private final StoreProfileRepository repository;
 
@@ -33,13 +28,8 @@ public class StoreProfileService {
         String business = normalizeBusiness(request.getBusinessType());
         if (business != null) profile.setBusinessType(business);
 
-        String template = request.getTemplateKey() == null ? null : request.getTemplateKey().trim().toLowerCase();
-        Set<String> allowed = TEMPLATES.get(profile.getBusinessType());
-        String fallback = "CLOTHES".equals(profile.getBusinessType()) ? "atelier" : "botanique";
-        if (template != null && allowed.contains(template)) {
-            profile.setTemplateKey(template);
-        } else if (template != null || !allowed.contains(profile.getTemplateKey())) {
-            profile.setTemplateKey(fallback);
+        if (request.getTemplateKey() != null) {
+            profile.setTemplateKey(ShopCatalog.layout(request.getTemplateKey()));
         }
 
         if (request.getStoreName() != null) {
@@ -59,11 +49,7 @@ public class StoreProfileService {
 
     private String normalizeBusiness(String raw) {
         if (raw == null || raw.isBlank()) return null;
-        String value = raw.trim().toUpperCase();
-        if (!TEMPLATES.containsKey(value)) {
-            throw new IllegalArgumentException("Type d'activité inconnu: " + raw);
-        }
-        return value;
+        return ShopCatalog.businessType(raw);
     }
 
     private StoreProfileResponse toResponse(StoreProfile profile) {
