@@ -96,7 +96,8 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: [
         {
-          find: /frame-metadata-diagnostics(?:\.js)?$/,
+          // The whole import path must match, otherwise the stub's path is appended to "./".
+          find: /^.*frame-metadata-diagnostics(?:\.js)?$/,
           replacement: fileURLToPath(new URL('./src/decart/frameMetadataStub.js', import.meta.url)),
         },
       ],

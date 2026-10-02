@@ -1,0 +1,10 @@
+**/target
+**/__pycache__
+**/*.pyc
+**/.env
+.env
+**/datasets
+*.bat
+*.log
+.idea
+.vscode
