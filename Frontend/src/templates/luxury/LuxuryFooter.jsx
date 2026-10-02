@@ -1,14 +1,14 @@
 import { Link } from 'react-router-dom'
 import { useStore } from '../../context/StoreContext'
-import { copyFor } from '../shared/content'
-import { Logo } from '../shared/ui'
+import { useCopy } from '../shared/useCopy'
+import { Logo, FooterContact } from '../shared/ui'
 import { useFooterCategories } from '../shared/useFooterCategories'
 
 const small = 'text-[11px] uppercase tracking-[0.28em]'
 
 export default function LuxuryFooter() {
   const { storeName, businessType } = useStore()
-  const copy = copyFor(businessType)
+  const copy = useCopy()
   const categories = useFooterCategories()
   const link = 'text-sm font-light text-[#f6f1ea]/60 hover:text-[#f6f1ea] transition-colors'
 
@@ -18,6 +18,7 @@ export default function LuxuryFooter() {
         <div className="text-center pb-16 border-b border-[#f6f1ea]/15">
           <Logo className="font-headline text-3xl md:text-4xl tracking-[0.2em] uppercase" imgClassName="h-12 mx-auto" />
           <p className="mt-5 font-headline italic text-lg text-[#f6f1ea]/70">{copy.footerBlurb}</p>
+          <FooterContact />
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-10 py-14 text-center md:text-left">
           {categories.length > 0 && (

@@ -40,6 +40,7 @@ export const PAGE_MODULES = [
   ['/avis', 'AVIS'],
   ['/comportement', 'ANALYSES'],
   ['/apparence', 'APPARENCE'],
+  ['/page-accueil', 'APPARENCE'],
   ['/configuration', 'APPARENCE'],
   ['/roles', 'ROLES_PERMISSIONS'],
   ['/compte', 'COMPTE_HEBERGEMENT'],

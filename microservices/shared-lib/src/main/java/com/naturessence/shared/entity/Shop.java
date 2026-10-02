@@ -62,6 +62,13 @@ public class Shop {
     @Column(columnDefinition = "TEXT")
     private String theme;
 
+    /**
+     * Merchant customization as JSON: logo size, identity and social links, announcement bar, homepage
+     * (sections, order, texts, featured products) and backoffice colours. Read by the storefront and the backoffice.
+     */
+    @Column(columnDefinition = "TEXT")
+    private String settings;
+
     /** PENDING until the platform validates the owner's identity, then ACTIVE; SUSPENDED when blocked. */
     @Column(length = 20)
     private String status;

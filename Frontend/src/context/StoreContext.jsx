@@ -87,6 +87,33 @@ function initialIcon(name, color) {
   return `data:image/svg+xml,${encodeURIComponent(svg)}`
 }
 
+/** Customization saved in the backoffice (Apparence, Page d'accueil): JSON object, empty when unset. */
+function parseSettings(raw) {
+  try {
+    const value = typeof raw === 'string' ? JSON.parse(raw || '{}') : raw || {}
+    return value && typeof value === 'object' && !Array.isArray(value) ? value : {}
+  } catch {
+    return {}
+  }
+}
+
+// The backoffice shows the storefront in an iframe and sends the unsaved changes for a live preview.
+const BACKOFFICE_ORIGIN = import.meta.env.VITE_BACKOFFICE_URL || 'http://localhost:3000'
+
+/** Google font loaded on demand when the merchant picks a font. */
+function loadFont(family) {
+  if (!family) return
+  const id = `font-${family.replace(/\W+/g, '-')}`
+  if (document.getElementById(id)) return
+  const link = document.createElement('link')
+  link.id = id
+  link.rel = 'stylesheet'
+  link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(family).replace(/%20/g, '+')}:wght@400;500;600;700&display=swap`
+  document.head.appendChild(link)
+}
+
+const FONT_OK = /^[A-Za-z0-9 ]{2,40}$/
+
 function shopSlug() {
   return window.location.pathname.split('/').filter(Boolean)[0] || ''
 }
@@ -128,6 +155,7 @@ export function StoreProvider({ children }) {
           backgroundColor: data.backgroundColor || '',
           textColor: data.textColor || '',
           theme: parseTheme(data.theme),
+          settings: parseSettings(data.settings),
           status: data.status || 'ACTIVE',
           ready: true,
           missing: false,
@@ -135,6 +163,41 @@ export function StoreProvider({ children }) {
       })
       .catch(() => setStore((prev) => ({ ...prev, ready: true, missing: true })))
   }, [])
+
+  // Live preview from the backoffice editor (only messages from the backoffice origin, only inside its iframe).
+  useEffect(() => {
+    if (window.parent === window) return undefined
+    const onMessage = (event) => {
+      if (event.origin !== BACKOFFICE_ORIGIN || event.data?.type !== 'sellio:preview') return
+      const patch = event.data.patch || {}
+      setStore((prev) => ({
+        ...prev,
+        ...patch,
+        layout: patch.templateKey ? layoutOf(patch.templateKey) : prev.layout,
+        theme: patch.theme !== undefined ? parseTheme(patch.theme) : prev.theme,
+        settings: patch.settings !== undefined ? parseSettings(patch.settings) : prev.settings,
+      }))
+    }
+    window.addEventListener('message', onMessage)
+    window.parent.postMessage({ type: 'sellio:preview-ready' }, BACKOFFICE_ORIGIN)
+    return () => window.removeEventListener('message', onMessage)
+  }, [])
+
+  // Fonts chosen by the merchant replace the template's fonts.
+  useEffect(() => {
+    const root = document.documentElement
+    const fonts = store.settings?.fonts || {}
+    ;[['heading', fonts.heading], ['body', fonts.body]].forEach(([name, family]) => {
+      if (family && FONT_OK.test(family)) {
+        loadFont(family)
+        root.style.setProperty(`--t-font-${name}`, `"${family}"`)
+        root.setAttribute(`data-t-font-${name}`, '')
+      } else {
+        root.style.removeProperty(`--t-font-${name}`)
+        root.removeAttribute(`data-t-font-${name}`)
+      }
+    })
+  }, [store.settings])
 
   // Browser tab icon: the merchant's logo, or the shop's initial on its brand colour when there is no logo.
   useEffect(() => {
@@ -178,6 +241,7 @@ export function StoreProvider({ children }) {
     <StoreContext.Provider
       value={{
         ...store,
+        settings: store.settings || {},
         layout: store.layout || layoutOf(store.templateKey),
         sector: sectorOf(store.businessType),
         // The customer picks among the product's sizes/formats (tailles) in every sector except cosmetics.

@@ -1,12 +1,13 @@
 import { Link } from 'react-router-dom'
 import { ArrowUp } from 'lucide-react'
 import { useStore } from '../../context/StoreContext'
-import { copyFor } from '../shared/content'
+import { useCopy } from '../shared/useCopy'
+import { FooterContact } from '../shared/ui'
 import { useFooterCategories } from '../shared/useFooterCategories'
 
 export default function BoldFooter() {
   const { storeName, businessType } = useStore()
-  const copy = copyFor(businessType)
+  const copy = useCopy()
   const categories = useFooterCategories()
   const link = 'block uppercase font-bold text-sm tracking-wide hover:opacity-50 transition-opacity'
 
@@ -15,6 +16,7 @@ export default function BoldFooter() {
       <div className="px-4 md:px-8 pt-16 grid grid-cols-2 md:grid-cols-4 gap-10 border-b border-white/15 pb-14">
         <div className="col-span-2 md:col-span-1">
           <p className="text-white/60 text-sm max-w-xs">{copy.footerBlurb}</p>
+          <FooterContact />
           <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="mt-8 w-14 h-14 border-2 border-white flex items-center justify-center hover:bg-white hover:text-black transition-colors" aria-label="Haut de page">
             <ArrowUp size={20} />
           </button>

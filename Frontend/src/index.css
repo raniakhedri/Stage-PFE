@@ -533,3 +533,9 @@ body {
 .hero-anim-ken-burns {
   animation: heroKenBurns 8s ease-out both;
 }
+
+/* Fonts chosen by the merchant (backoffice > Apparence) replace the template's fonts. */
+[data-t-font-heading] .font-headline,
+[data-t-font-heading] :where(h1, h2, h3) { font-family: var(--t-font-heading), sans-serif !important; }
+html[data-t-font-body] body,
+[data-t-font-body] .font-body { font-family: var(--t-font-body), sans-serif !important; }

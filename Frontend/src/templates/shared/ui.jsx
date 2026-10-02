@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Search, X, Sparkles, Truck, ShieldCheck, RefreshCw, LogOut } from 'lucide-react'
+import { Search, X, Sparkles, Truck, ShieldCheck, RefreshCw, LogOut, Instagram, Facebook, Youtube, Linkedin, Music2, MessageCircle, MapPin, Phone, Mail } from 'lucide-react'
 import { fetchAllProducts } from '../../api/apiClient'
 import { track } from '../../tracking/tracker'
 import { useStore } from '../../context/StoreContext'
@@ -8,12 +8,20 @@ import { formatPrice } from './content'
 
 export const PROMISE_ICONS = { sparkles: Sparkles, truck: Truck, shield: ShieldCheck, refresh: RefreshCw }
 
+/** Shop logo; its height can be set by the merchant (backoffice > Apparence), else the template's size. */
 export function Logo({ className = '', imgClassName = 'h-8' }) {
-  const { storeName, logo } = useStore()
+  const { storeName, logo, settings } = useStore()
+  const height = Number(settings?.logo?.height)
+  const custom = height >= 16 && height <= 160
   return (
     <Link to="/" className={className} aria-label={storeName || 'Accueil'}>
       {logo ? (
-        <img src={logo} alt={storeName || 'Boutique'} className={`${imgClassName} w-auto max-w-[200px] object-contain`} />
+        <img
+          src={logo}
+          alt={storeName || 'Boutique'}
+          style={custom ? { height, maxWidth: height * 6 } : undefined}
+          className={`${custom ? '' : `${imgClassName} max-w-[200px]`} w-auto object-contain`}
+        />
       ) : (
         storeName || 'Boutique'
       )}
@@ -242,5 +250,43 @@ export function NewsletterForm({ className = '', inputClassName = '', buttonClas
       <input type="email" required placeholder={placeholder} className={inputClassName} />
       <button type="submit" className={buttonClassName}>{buttonLabel}</button>
     </form>
+  )
+}
+
+const SOCIALS = [
+  ['instagram', Instagram, 'Instagram'],
+  ['facebook', Facebook, 'Facebook'],
+  ['tiktok', Music2, 'TikTok'],
+  ['youtube', Youtube, 'YouTube'],
+  ['linkedin', Linkedin, 'LinkedIn'],
+]
+
+/** Contact details and social links set by the merchant (backoffice > Apparence), in the template's footer colours. */
+export function FooterContact({ className = 'mt-6' }) {
+  const { settings } = useStore()
+  const id = settings?.identity || {}
+  const links = SOCIALS.filter(([key]) => /^https?:\/\//i.test(id[key] || ''))
+  const whatsapp = String(id.whatsapp || '').replace(/[^\d]/g, '')
+  if (!id.phone && !id.email && !id.address && !links.length && !whatsapp) return null
+  return (
+    <div className={`${className} space-y-2 text-sm`}>
+      {id.address && <p className="flex items-start gap-2 opacity-80"><MapPin size={15} className="mt-0.5 shrink-0" />{id.address}</p>}
+      {id.phone && <a href={`tel:${id.phone.replace(/\s+/g, '')}`} className="flex items-center gap-2 opacity-80 hover:opacity-100"><Phone size={15} />{id.phone}</a>}
+      {id.email && <a href={`mailto:${id.email}`} className="flex items-center gap-2 opacity-80 hover:opacity-100"><Mail size={15} />{id.email}</a>}
+      {(links.length > 0 || whatsapp) && (
+        <div className="flex items-center gap-3 pt-2">
+          {links.map(([key, Icon, label]) => (
+            <a key={key} href={id[key]} target="_blank" rel="noopener noreferrer" aria-label={label} className="opacity-80 hover:opacity-100">
+              <Icon size={18} />
+            </a>
+          ))}
+          {whatsapp && (
+            <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" className="opacity-80 hover:opacity-100">
+              <MessageCircle size={18} />
+            </a>
+          )}
+        </div>
+      )}
+    </div>
   )
 }

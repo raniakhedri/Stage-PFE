@@ -1,12 +1,12 @@
 import { Link } from 'react-router-dom'
 import { useStore } from '../../context/StoreContext'
-import { copyFor } from '../shared/content'
-import { Logo } from '../shared/ui'
+import { useCopy } from '../shared/useCopy'
+import { Logo, FooterContact } from '../shared/ui'
 import { useFooterCategories } from '../shared/useFooterCategories'
 
 export default function MinimalFooter() {
   const { storeName, businessType } = useStore()
-  const copy = copyFor(businessType)
+  const copy = useCopy()
   const categories = useFooterCategories()
   const link = 'text-sm text-neutral-500 hover:text-ink transition-colors'
 
@@ -16,6 +16,7 @@ export default function MinimalFooter() {
         <div className="col-span-2 md:col-span-5">
           <Logo className="text-xl font-semibold tracking-tight text-ink" />
           <p className="mt-4 text-sm text-neutral-500 max-w-xs leading-relaxed">{copy.footerBlurb}</p>
+          <FooterContact />
         </div>
         {categories.length > 0 && (
         <div className="md:col-span-3">

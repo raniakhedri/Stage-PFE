@@ -40,6 +40,7 @@ public class PublicShopController {
                 .textColor(shop.getTextColor())
                 .customOptions(shop.getCustomOptions())
                 .theme(shop.getTheme())
+                .settings(shop.getSettings())
                 .status(Shop.statusOf(shop))
                 .build();
     }
