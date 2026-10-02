@@ -1,6 +1,6 @@
 > **Mise à jour :** le modèle de churn en production est désormais entraîné sur des données réelles
 > (UCI Online Retail II, `train_churn_real.py`). La version décrite ci-dessous (données simulées,
-> `train.py`) est archivée dans `models/legacy_synthetic/`. Documentation à jour : [`README_ML.md`](../../../README_ML.md).
+> `train.py`) est archivée dans `models/legacy_synthetic/`. Documentation à jour : [`README_ML.md`](../../../docs/README_ML.md).
 
 # NaturEssence — Churn Prediction ML Module
 
