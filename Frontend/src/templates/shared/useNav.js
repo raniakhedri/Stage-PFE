@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { fetchTopAnnouncementCoupon, fetchTvaConfig, fetchMenuCategories } from '../../api/apiClient'
 import { getUser, clearTokens, cancelAutoLogout } from '../../api/tokenStorage'
+import { useStore } from '../../context/StoreContext'
 
 function formatAmount(value) {
   const n = Number(value || 0)
@@ -32,7 +33,11 @@ export function useNav() {
   const location = useLocation()
   const navigate = useNavigate()
   const [categories, setCategories] = useState([])
-  const [announcement, setAnnouncement] = useState('')
+  const [autoAnnouncement, setAnnouncement] = useState('')
+  // Announcement bar (backoffice > Apparence): automatic (coupon / free delivery), custom text, or hidden.
+  const { settings } = useStore()
+  const bar = settings?.announcement || {}
+  const announcement = bar.mode === 'off' ? '' : bar.mode === 'custom' && bar.text?.trim() ? bar.text.trim() : autoAnnouncement
   const [user, setUser] = useState(null)
   const [scrolled, setScrolled] = useState(false)
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import apiClient from '../../api/apiClient'
+import { applyAllColors } from '../../utils/brandColor'
 import { canAccess, currentShopSlug, firstAllowedPath, moduleForPath, readUser, isPlatform } from '../../lib/sellio'
 
 const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'
@@ -67,6 +68,13 @@ function Layout() {
         if (!data) return
         setShop(data)
         document.title = `${data.name} · Backoffice`
+        // The merchant's own backoffice colours (Apparence > Back-office), else Sellio's.
+        try {
+          const colors = JSON.parse(data.settings || '{}')?.backoffice || {}
+          if (Object.values(colors).some((v) => /^#[0-9A-Fa-f]{6}$/.test(v || ''))) applyAllColors(colors)
+        } catch {
+          // invalid settings: keep the default colours
+        }
       })
       .catch(() => {})
   }, [user.shopSlug])

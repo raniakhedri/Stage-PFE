@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react'
-import { fetchCategories, fetchFeaturedProducts, fetchHomepageBanners, fetchTvaConfig } from '../../api/apiClient'
+import { fetchAllProducts, fetchCategories, fetchFeaturedProducts, fetchHomepageBanners, fetchTvaConfig } from '../../api/apiClient'
+import { useStore } from '../../context/StoreContext'
 import { getUser } from '../../api/tokenStorage'
 
 const currentDevice = () => (window.matchMedia('(max-width: 768px)').matches ? 'mobile' : 'desktop')
 
 /** Loads everything a template home page renders and runs the back-office banner carousel. */
 export function useHomeData() {
+  const { settings } = useStore()
+  const featured = settings?.home?.featured
+  const featuredIds = featured?.mode === 'manual' ? (featured.productIds || []).map(String).join(',') : ''
   const [categories, setCategories] = useState([])
   const [products, setProducts] = useState([])
   const [banners, setBanners] = useState([])
@@ -24,7 +28,6 @@ export function useHomeData() {
 
     Promise.allSettled([
       fetchCategories().then(setCategories),
-      fetchFeaturedProducts().then(setProducts),
       loadBanners(),
       fetchTvaConfig().then((cfg) => {
         if (cfg?.standardEnabled && cfg?.standardSeuil > 0) setFreeShipping(cfg.standardSeuil)
@@ -41,6 +44,19 @@ export function useHomeData() {
       document.removeEventListener('visibilitychange', onVisible)
     }
   }, [])
+
+  // Products shown on the home page: the merchant's picks in their order, else the newest.
+  useEffect(() => {
+    let alive = true
+    const load = featuredIds
+      ? fetchAllProducts().then((all) => {
+        const byId = new Map(all.map((p) => [String(p.id), p]))
+        return featuredIds.split(',').map((id) => byId.get(id)).filter(Boolean)
+      })
+      : fetchFeaturedProducts()
+    load.then((list) => alive && setProducts(list)).catch(() => alive && setProducts([]))
+    return () => { alive = false }
+  }, [featuredIds])
 
   const banner = banners[bannerIndex] || null
 

@@ -1,12 +1,12 @@
 import { Link } from 'react-router-dom'
 import { useStore } from '../../context/StoreContext'
-import { copyFor } from '../shared/content'
-import { Logo } from '../shared/ui'
+import { useCopy } from '../shared/useCopy'
+import { Logo, FooterContact } from '../shared/ui'
 import { useFooterCategories } from '../shared/useFooterCategories'
 
 export default function SportFooter() {
   const { storeName, businessType } = useStore()
-  const copy = copyFor(businessType)
+  const copy = useCopy()
   const categories = useFooterCategories()
   const link = 'text-sm text-white/65 hover:text-accent transition-colors'
   const head = 'font-headline text-xl text-accent mb-4'
@@ -17,6 +17,7 @@ export default function SportFooter() {
         <div className="col-span-2 md:col-span-5">
           <Logo className="font-headline text-4xl text-white" />
           <p className="mt-4 text-sm text-white/65 max-w-xs leading-relaxed">{copy.footerBlurb}</p>
+          <FooterContact />
           <p className="mt-6 font-headline text-2xl text-white/20">{copy.statement.join(' ')}</p>
         </div>
         {categories.length > 0 && (

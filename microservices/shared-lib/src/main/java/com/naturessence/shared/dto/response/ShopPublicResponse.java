@@ -24,5 +24,6 @@ public class ShopPublicResponse {
     private String textColor;
     private String customOptions;
     private String theme;
+    private String settings;
     private String status;
 }

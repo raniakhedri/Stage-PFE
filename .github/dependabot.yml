@@ -1,0 +1,27 @@
+# Weekly pull requests for outdated or vulnerable dependencies; each one goes through the CI.
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: /microservices
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 5
+  - package-ecosystem: npm
+    directory: /Frontend
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 5
+  - package-ecosystem: pip
+    directory: /microservices/analytics-service/python
+    schedule: { interval: weekly }
+    # The churn models are pickled with these exact versions: upgrade them together with a retraining.
+    ignore:
+      - dependency-name: scikit-learn
+      - dependency-name: numpy
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: monthly }
+  - package-ecosystem: docker
+    directory: /microservices
+    schedule: { interval: monthly }
+  - package-ecosystem: docker
+    directory: /Frontend
+    schedule: { interval: monthly }

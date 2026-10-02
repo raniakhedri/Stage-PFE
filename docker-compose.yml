@@ -1,0 +1,112 @@
+# Whole Sellio platform: PostgreSQL, 6 Spring Boot services, storefront and backoffice.
+#   cp microservices/.env.example microservices/.env   (fill in JWT_SECRET at least)
+#   docker compose up --build
+# Storefront http://localhost:3001 · Backoffice http://localhost:3000 · API gateway http://localhost:8080
+
+x-service: &service
+  build:
+    context: ./microservices
+    target: service
+  env_file: ./microservices/.env
+  environment: &service-env
+    DB_HOST: postgres
+    DB_PORT: "5432"
+    DB_NAME: ${DB_NAME:-naturessence}
+    DB_USERNAME: ${DB_USERNAME:-postgres}
+    DB_PASSWORD: ${DB_PASSWORD:-admin}
+  depends_on:
+    postgres:
+      condition: service_healthy
+  restart: unless-stopped
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:-naturessence}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-admin}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      retries: 20
+    ports:
+      - "5433:5432"   # 5433 on the host, so a local PostgreSQL on 5432 keeps working
+
+  auth-service:
+    <<: *service
+    build: { context: ./microservices, target: service, args: { SERVICE: auth-service } }
+    image: sellio/auth-service
+
+  catalog-service:
+    <<: *service
+    build: { context: ./microservices, target: service, args: { SERVICE: catalog-service } }
+    image: sellio/catalog-service
+    environment:
+      <<: *service-env
+      APP_UPLOAD_DIR: /data/uploads
+    volumes:
+      - uploads:/data/uploads
+    # auth-service creates the shared schema (roles, shops…) on first start.
+    depends_on:
+      postgres: { condition: service_healthy }
+      auth-service: { condition: service_started }
+
+  order-service:
+    <<: *service
+    build: { context: ./microservices, target: service, args: { SERVICE: order-service } }
+    image: sellio/order-service
+    depends_on:
+      postgres: { condition: service_healthy }
+      auth-service: { condition: service_started }
+
+  marketing-service:
+    <<: *service
+    build: { context: ./microservices, target: service, args: { SERVICE: marketing-service } }
+    image: sellio/marketing-service
+    depends_on:
+      postgres: { condition: service_healthy }
+      auth-service: { condition: service_started }
+
+  analytics-service:
+    <<: *service
+    build: { context: ./microservices, target: analytics, args: { SERVICE: analytics-service } }
+    image: sellio/analytics-service
+    depends_on:
+      postgres: { condition: service_healthy }
+      auth-service: { condition: service_started }
+
+  api-gateway:
+    build: { context: ./microservices, target: service, args: { SERVICE: api-gateway } }
+    image: sellio/api-gateway
+    env_file: ./microservices/.env
+    environment:
+      AUTH_SERVICE_URL: http://auth-service:8081
+      CATALOG_SERVICE_URL: http://catalog-service:8082
+      ORDER_SERVICE_URL: http://order-service:8083
+      MARKETING_SERVICE_URL: http://marketing-service:8084
+      ANALYTICS_SERVICE_URL: http://analytics-service:8085
+    ports:
+      - "8080:8080"
+    depends_on: [auth-service, catalog-service, order-service, marketing-service, analytics-service]
+    restart: unless-stopped
+
+  storefront:
+    build: { context: ./Frontend, args: { APP: storefront } }
+    image: sellio/storefront
+    ports:
+      - "3001:80"
+    depends_on: [api-gateway]
+
+  backoffice:
+    build: { context: ./Frontend, args: { APP: backoffice } }
+    image: sellio/backoffice
+    ports:
+      - "3000:80"
+    depends_on: [api-gateway]
+
+volumes:
+  pgdata:
+  uploads:
