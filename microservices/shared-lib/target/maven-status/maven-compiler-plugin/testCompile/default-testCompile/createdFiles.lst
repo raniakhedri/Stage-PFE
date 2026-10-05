@@ -1,0 +1,6 @@
+com\naturessence\shared\security\SecurityTestSupport.class
+com\naturessence\shared\security\TenantGuardTest.class
+com\naturessence\shared\security\JwtAuthenticationFilterTest.class
+com\naturessence\shared\catalog\ShopCatalogTest.class
+com\naturessence\shared\security\JwtAuthenticationFilterTest$Result.class
+com\naturessence\shared\security\JwtUtilTest.class

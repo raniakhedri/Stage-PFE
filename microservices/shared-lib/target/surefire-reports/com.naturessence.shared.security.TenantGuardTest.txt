@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.naturessence.shared.security.TenantGuardTest
+-------------------------------------------------------------------------------
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.634 s -- in com.naturessence.shared.security.TenantGuardTest
