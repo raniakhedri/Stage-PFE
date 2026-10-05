@@ -160,7 +160,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // The Sellio team runs the platform; a shop's customers, orders and analytics belong to the merchant.
             boolean allowed = !isMerchantApi(path)
                     || path.startsWith("/api/v1/admin/platform")
-                    || path.startsWith("/api/v1/admin/roles");
+                    || path.startsWith("/api/v1/admin/roles")
+                    || path.startsWith("/api/v1/admin/appearance");
             return allowed ? null : "L'équipe Sellio n'a pas accès aux données des boutiques.";
         }
         boolean merchantApi = isMerchantApi(path);

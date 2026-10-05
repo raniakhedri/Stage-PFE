@@ -1,12 +1,12 @@
 import { Link } from 'react-router-dom'
 import { useStore } from '../../context/StoreContext'
-import { copyFor } from '../shared/content'
-import { Logo } from '../shared/ui'
+import { useCopy } from '../shared/useCopy'
+import { Logo, FooterContact } from '../shared/ui'
 import { useFooterCategories } from '../shared/useFooterCategories'
 
 export default function PopFooter() {
   const { storeName, businessType } = useStore()
-  const copy = copyFor(businessType)
+  const copy = useCopy()
   const categories = useFooterCategories()
   const link = 'text-sm text-white/75 hover:text-gold transition-colors'
   const head = 'font-headline text-lg text-gold mb-4'
@@ -20,6 +20,7 @@ export default function PopFooter() {
         <div className="col-span-2 md:col-span-5">
           <Logo className="font-headline text-3xl text-white" />
           <p className="mt-4 text-sm text-white/75 max-w-xs leading-relaxed">{copy.footerBlurb}</p>
+          <FooterContact />
           <div className="mt-6 flex gap-2">
             {['bg-gold', 'bg-accent', 'bg-emerald-400', 'bg-sky-400'].map((c) => <span key={c} className={`w-6 h-6 rounded-full ${c}`} />)}
           </div>

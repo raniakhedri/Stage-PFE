@@ -341,6 +341,12 @@ public class AuthService {
         if (request.getBackgroundColor() != null) shop.setBackgroundColor(cleanHex(request.getBackgroundColor()));
         if (request.getTextColor() != null) shop.setTextColor(cleanHex(request.getTextColor()));
         if (request.getTheme() != null) shop.setTheme(cleanTheme(request.getTheme()));
+        if (request.getSettings() != null) shop.setSettings(ShopSettingsValidator.clean(request.getSettings()));
+        if (request.getName() != null && !request.getName().isBlank()) {
+            String name = request.getName().trim();
+            if (name.length() > 80) throw new IllegalArgumentException("Le nom de la boutique est trop long (80 caractères max).");
+            shop.setName(name);
+        }
         if (request.getCustomOptions() != null) {
             String options = request.getCustomOptions().trim();
             shop.setCustomOptions(options.isEmpty() || options.length() > 20000 ? null : options);

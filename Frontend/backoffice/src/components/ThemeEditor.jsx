@@ -31,7 +31,7 @@ export const THEME_GROUPS = [
     title: 'Barre de navigation',
     icon: 'menu',
     fields: [
-      { key: 'navBg', label: 'Fond', help: 'Sur Bold et Luxury, l’en-tête reste transparent au-dessus de la bannière' },
+      { key: 'navBg', label: 'Fond', help: 'Sur Bold et Luxury, l’en-tête est transparent au-dessus de la bannière tant que ce fond est vide' },
       { key: 'navText', label: 'Liens et icônes' },
       { key: 'navHover', label: 'Liens au survol' },
     ],
@@ -154,6 +154,11 @@ function ColorField({ field, value, fallback, onChange }) {
 
 /** Mini storefront that renders every setting, hover states included. */
 function Preview({ values, layout, name }) {
+  // Lets the page show the unsaved colours on the real storefront.
+  useEffect(() => {
+    if (onPreview) onPreview(themePayload(values))
+  }, [values, onPreview])
+
   const template = TEMPLATES.find((t) => t.id === layout) || TEMPLATES[0]
   const [hoverLink, setHoverLink] = useState(null)
   const [hoverBtn, setHoverBtn] = useState(false)
@@ -233,7 +238,7 @@ function Preview({ values, layout, name }) {
   )
 }
 
-export default function ThemeEditor({ shop, layout, shopName, onSave }) {
+export default function ThemeEditor({ shop, layout, shopName, onSave, onPreview, showPreview = true }) {
   const [values, setValues] = useState(EMPTY_THEME)
   const [saved, setSaved] = useState(EMPTY_THEME)
   const [saving, setSaving] = useState(false)
@@ -257,7 +262,7 @@ export default function ThemeEditor({ shop, layout, shopName, onSave }) {
     try {
       await onSave(themePayload(next))
       setSaved(next)
-      toast.success('Personnalisation enregistrée — rechargez la vitrine pour la voir')
+      toast.success('Couleurs enregistrées : elles sont en ligne sur votre vitrine.')
     } catch (err) {
       toast.error(err.message)
     } finally {
@@ -267,7 +272,7 @@ export default function ThemeEditor({ shop, layout, shopName, onSave }) {
 
   return (
     <section className="bg-white rounded-2xl border border-slate-200 p-6">
-      <div className="grid lg:grid-cols-[1fr_320px] gap-8">
+      <div className={showPreview ? 'grid lg:grid-cols-[1fr_320px] gap-8' : ''}>
         <div className="space-y-6">
           <div>
             <h2 className="text-lg font-semibold">Personnalisation de la vitrine</h2>
@@ -330,10 +335,12 @@ export default function ThemeEditor({ shop, layout, shopName, onSave }) {
           </div>
         </div>
 
-        <aside className="space-y-2 lg:sticky lg:top-6 self-start">
-          <p className="text-[11px] uppercase tracking-[0.22em] text-slate-400">Aperçu en direct</p>
-          <Preview values={values} layout={layout} name={shopName} />
-        </aside>
+        {showPreview && (
+          <aside className="space-y-2 lg:sticky lg:top-6 self-start">
+            <p className="text-[11px] uppercase tracking-[0.22em] text-slate-400">Aperçu en direct</p>
+            <Preview values={values} layout={layout} name={shopName} />
+          </aside>
+        )}
       </div>
     </section>
   )

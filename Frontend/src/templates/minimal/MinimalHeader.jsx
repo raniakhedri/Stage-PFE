@@ -6,13 +6,13 @@ import { useStore } from '../../context/StoreContext'
 import CartDrawer from '../../components/CartDrawer'
 import NotificationBell from '../../components/NotificationBell'
 import { useNav } from '../shared/useNav'
-import { copyFor } from '../shared/content'
+import { useCopy } from '../shared/useCopy'
 import { Logo, AccountMenu, SearchOverlay, CountBadge, useOutsideClose, useScrollLock, hideBroken } from '../shared/ui'
 
 export default function MinimalHeader() {
   const { cartCount, wishlistCount } = useShop()
   const { businessType } = useStore()
-  const copy = copyFor(businessType)
+  const copy = useCopy()
   const { categories, announcement, user, logout, pathname } = useNav()
   const [openSlug, setOpenSlug] = useState(null)
   const [drawer, setDrawer] = useState(false)
