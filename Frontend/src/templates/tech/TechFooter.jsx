@@ -1,13 +1,13 @@
 import { Link } from 'react-router-dom'
 import { ShieldCheck, Truck, CreditCard } from 'lucide-react'
 import { useStore } from '../../context/StoreContext'
-import { copyFor } from '../shared/content'
-import { Logo } from '../shared/ui'
+import { useCopy } from '../shared/useCopy'
+import { Logo, FooterContact } from '../shared/ui'
 import { useFooterCategories } from '../shared/useFooterCategories'
 
 export default function TechFooter() {
   const { storeName, businessType } = useStore()
-  const copy = copyFor(businessType)
+  const copy = useCopy()
   const categories = useFooterCategories()
   const link = 'text-sm text-slate-400 hover:text-white transition-colors'
   const head = 'text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 mb-4'
@@ -26,6 +26,7 @@ export default function TechFooter() {
         <div className="col-span-2 md:col-span-5">
           <Logo className="font-headline text-2xl text-white" />
           <p className="mt-4 text-sm text-slate-400 max-w-xs leading-relaxed">{copy.footerBlurb}</p>
+          <FooterContact />
         </div>
         {categories.length > 0 && (
           <div className="md:col-span-3">

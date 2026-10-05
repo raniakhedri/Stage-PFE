@@ -6,13 +6,13 @@ import { useStore } from '../../context/StoreContext'
 import CartDrawer from '../../components/CartDrawer'
 import NotificationBell from '../../components/NotificationBell'
 import { useNav } from '../shared/useNav'
-import { copyFor } from '../shared/content'
+import { useCopy } from '../shared/useCopy'
 import { Logo, AccountMenu, SearchOverlay, useOutsideClose, useScrollLock, hideBroken } from '../shared/ui'
 
 export default function LuxuryHeader() {
   const { cartCount, wishlistCount } = useShop()
-  const { businessType } = useStore()
-  const copy = copyFor(businessType)
+  const { businessType, theme } = useStore()
+  const copy = useCopy()
   const { categories, announcement, user, logout, scrolled, isHome, pathname } = useNav()
   const [openSlug, setOpenSlug] = useState(null)
   const [drawer, setDrawer] = useState(false)
@@ -26,7 +26,8 @@ export default function LuxuryHeader() {
   useEffect(() => { setDrawer(false); setOpenSlug(null) }, [pathname])
 
   const openCat = categories.find((c) => c.slug === openSlug)
-  const transparent = isHome && !scrolled && !openCat
+  // Transparent over the home banner, unless the merchant chose a navbar colour.
+  const transparent = isHome && !scrolled && !openCat && !theme?.navBg
   const tone = transparent ? 'text-white' : 'text-ink'
   const small = 'text-[11px] uppercase tracking-[0.25em]'
   const featured = categories.filter((c) => c.image && c.slug !== openSlug).slice(0, 2)

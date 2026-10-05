@@ -1,5 +1,6 @@
 package com.naturessence.gateway;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.gateway.route.RouteLocator;
@@ -13,8 +14,14 @@ public class ApiGatewayApplication {
         SpringApplication.run(ApiGatewayApplication.class, args);
     }
 
+    /** Service addresses: localhost when run from the IDE, container names under Docker Compose. */
     @Bean
-    public RouteLocator routes(RouteLocatorBuilder builder) {
+    public RouteLocator routes(RouteLocatorBuilder builder,
+                               @Value("${AUTH_SERVICE_URL:http://localhost:8081}") String auth,
+                               @Value("${CATALOG_SERVICE_URL:http://localhost:8082}") String catalog,
+                               @Value("${ORDER_SERVICE_URL:http://localhost:8083}") String order,
+                               @Value("${MARKETING_SERVICE_URL:http://localhost:8084}") String marketing,
+                               @Value("${ANALYTICS_SERVICE_URL:http://localhost:8085}") String analytics) {
         return builder
             .routes()
             .route("auth-service", r ->
@@ -35,7 +42,7 @@ public class ApiGatewayApplication {
                         "/api/v1/admin/segments/**",
                         "/api/v1/admin/loyalty/**"
                     )
-                    .uri("http://localhost:8081")
+                    .uri(auth)
             )
             .route("catalog-service", r ->
                 r
@@ -60,7 +67,7 @@ public class ApiGatewayApplication {
                         "/api/v1/admin/upload/**",
                         "/uploads/**"
                     )
-                    .uri("http://localhost:8082")
+                    .uri(catalog)
             )
             .route("order-service", r ->
                 r
@@ -81,7 +88,7 @@ public class ApiGatewayApplication {
                         "/api/v1/admin/promotions/**",
                         "/api/v1/admin/dashboard/**"
                     )
-                    .uri("http://localhost:8083")
+                    .uri(order)
             )
             .route("marketing-service", r ->
                 r
@@ -96,10 +103,10 @@ public class ApiGatewayApplication {
                         "/api/v1/admin/store/**",
                         "/api/v1/admin/email/**"
                     )
-                    .uri("http://localhost:8084")
+                    .uri(marketing)
             )
             .route("analytics-service", r ->
-                r.path("/api/v1/analytics/**").uri("http://localhost:8085")
+                r.path("/api/v1/analytics/**").uri(analytics)
             )
             .build();
     }

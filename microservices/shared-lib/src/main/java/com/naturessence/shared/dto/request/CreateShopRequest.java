@@ -23,6 +23,8 @@ public class CreateShopRequest {
     private String textColor;
     private String customOptions;
     private String theme;
+    /** Customization JSON (see Shop.settings). */
+    private String settings;
 
     /** Identity and card details required to open a shop. */
     private MerchantVerificationRequest verification;

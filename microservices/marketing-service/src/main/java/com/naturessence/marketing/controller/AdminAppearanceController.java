@@ -10,7 +10,8 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/admin/appearance")
-@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
+/** Sellio's default look (no shop). Shops customise theirs through PATCH /auth/my-shop (settings). */
+@PreAuthorize("hasRole('SUPER_ADMIN')")
 @RequiredArgsConstructor
 public class AdminAppearanceController {
 

@@ -1,12 +1,12 @@
 import { Link } from 'react-router-dom'
 import { useStore } from '../../context/StoreContext'
-import { copyFor } from '../shared/content'
-import { Logo } from '../shared/ui'
+import { useCopy } from '../shared/useCopy'
+import { Logo, FooterContact } from '../shared/ui'
 import { useFooterCategories } from '../shared/useFooterCategories'
 
 export default function EditorialFooter() {
   const { storeName, businessType } = useStore()
-  const copy = copyFor(businessType)
+  const copy = useCopy()
   const categories = useFooterCategories()
   const link = 'text-sm text-ink/60 hover:text-accent transition-colors'
   const head = 'text-[11px] uppercase tracking-[0.2em] text-ink mb-4'
@@ -16,6 +16,7 @@ export default function EditorialFooter() {
       <div className="max-w-[1360px] mx-auto px-5 md:px-10 pt-14 pb-10 grid grid-cols-2 md:grid-cols-12 gap-10">
         <div className="col-span-2 md:col-span-5">
           <p className="text-sm text-ink/60 max-w-sm leading-relaxed">{copy.footerBlurb}</p>
+          <FooterContact />
           <p className="mt-4 font-headline italic text-lg text-ink">{copy.quote}</p>
         </div>
         {categories.length > 0 && (

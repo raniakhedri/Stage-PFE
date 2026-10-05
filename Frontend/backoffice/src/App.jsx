@@ -42,6 +42,7 @@ import SellioConsole from './pages/SellioConsole'
 import SellioHome from './pages/SellioHome'
 import VerificationBoutique from './pages/VerificationBoutique'
 import MotDePasseOublie from './pages/MotDePasseOublie'
+import PageAccueil from './pages/PageAccueil'
 import ChangerMotDePasse from './pages/ChangerMotDePasse'
 import { RESERVED_PATHS } from './lib/sellio'
 
@@ -94,6 +95,7 @@ function App() {
             <Route path="/produits/nouveau" element={<AjouterProduit />} />
             <Route path="/produits/edit/:id" element={<EditProduit />} />
             <Route path="/apparence" element={<Apparence />} />
+            <Route path="/page-accueil" element={<PageAccueil />} />
             <Route path="/clients" element={<Clients />} />
             <Route path="/clients/nouveau" element={<AjouterCompte />} />
             <Route path="/clients/:id" element={<DetailClient />} />

@@ -6,7 +6,7 @@ import { OPTION_LABELS } from '../data/catalogOptions'
 import { readUser, storeSession } from '../lib/sellio'
 import { useShopOptions } from '../hooks/useShopOptions'
 import { AddCustomOption } from '../components/ui/OptionPickers'
-import ThemeEditor from '../components/ThemeEditor'
+import { Link } from 'react-router-dom'
 
 const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'
 
@@ -100,12 +100,6 @@ export default function ConfigurationBoutique() {
     }
   }
 
-  // Saves colours, then re-reads the shop so the editor shows what the storefront will use.
-  const saveTheme = async (payload) => {
-    await patchShop(payload)
-    const fresh = await fetch(`${API}/auth/my-shop`, { headers: authHeaders() }).then((r) => (r.ok ? r.json() : null))
-    if (fresh) setShop(fresh)
-  }
 
   return (
     <div className="max-w-6xl space-y-8">
@@ -160,7 +154,16 @@ export default function ConfigurationBoutique() {
         </div>
       </section>
 
-      <ThemeEditor shop={shop} layout={layout} shopName={user.shopName} onSave={saveTheme} />
+      <section className="bg-white rounded-2xl border border-slate-200 p-6 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-semibold">Couleurs, logo et page d’accueil</h2>
+          <p className="text-sm text-slate-500 mt-1">Ils se règlent dans Apparence et Page d’accueil, avec un aperçu de votre vitrine.</p>
+        </div>
+        <div className="flex gap-2">
+          <Link to="/apparence" className="px-4 py-2 rounded-full border border-slate-300 text-sm font-medium">Apparence</Link>
+          <Link to="/page-accueil" className="px-4 py-2 rounded-full bg-slate-900 text-white text-sm font-medium">Page d’accueil</Link>
+        </div>
+      </section>
 
       <section className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
         <div>

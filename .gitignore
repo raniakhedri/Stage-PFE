@@ -1,47 +1,49 @@
 # ══════════════════════════════════════════════════════════════
-# Root .gitignore — E-commerce NaturEssence
+# Sellio — microservices (Spring Boot) + React (storefront, backoffice)
 # ══════════════════════════════════════════════════════════════
 
-# ── IDE ──────────────────────────────────────────────────────
+# ── IDE / OS ─────────────────────────────────────────────────
 .idea/
 *.iml
 .vscode/
 *.swp
-*.swo
 *~
-
-# ── OS ───────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# ── Environment variables (NEVER commit secrets) ────────────
+# ── Secrets (NEVER commit them: copy microservices/.env.example) ──
 .env
 .env.local
 .env.*.local
 
 # ── Dependencies ─────────────────────────────────────────────
 node_modules/
-**/package-lock.json
 
 # ── Build output ─────────────────────────────────────────────
+target/
 dist/
-Backend/target/
+__pycache__/
+*.pyc
 
 # ── Logs ─────────────────────────────────────────────────────
 *.log
 logs/
 
-# ── Old folders (to be deleted) ──────────────────────────────
-_old_backoffice/
-_old_frontoffice/
-Back Office/
-Front Office/
-
-
-Backend/src/main/resources/application.properties
-microservices/nul
+# ── Windows reserved names created by mistaken redirections ──
 nul
 
-# Jeux de données bruts (téléchargés ; régénérables avec python/data_prep/*)
+# ── Raw ML datasets (downloaded; rebuilt by python/data_prep/*) ──
 microservices/analytics-service/python/datasets/raw/
+
+# ── LaTeX build files of the report ─────────────────────────
+*.aux
+*.bbl
+*.blg
+*.lof
+*.lot
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz

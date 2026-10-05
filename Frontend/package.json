@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "version": "0.0.1",
-  "description": "NaturEssence — Frontend monorepo (Back Office + Front Office)",
+  "description": "Sellio — storefront (src/) and backoffice (backoffice/) of the multi-shop platform",
   "workspaces": [
     "backoffice",
     "frontoffice"
@@ -15,11 +15,15 @@
     "build:backoffice": "npm run build --workspace=backoffice",
     "build:frontoffice": "npm run build --workspace=frontoffice",
     "build": "npm run build:backoffice && npm run build:frontoffice",
-    "lint": "npm run lint --workspace=backoffice"
+    "lint": "npm run lint --workspace=backoffice",
+    "test": "vitest run"
   },
   "dependencies": {
     "@decartai/sdk": "^0.2.3",
     "@stripe/react-stripe-js": "^6.2.0",
     "@stripe/stripe-js": "^9.3.0"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.7"
   }
 }

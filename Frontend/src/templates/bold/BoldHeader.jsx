@@ -4,6 +4,7 @@ import { Search, User, Heart, X, ArrowUpRight } from 'lucide-react'
 import { useShop } from '../../context/ShopContext'
 import CartDrawer from '../../components/CartDrawer'
 import NotificationBell from '../../components/NotificationBell'
+import { useStore } from '../../context/StoreContext'
 import { useNav } from '../shared/useNav'
 import { Logo, AccountMenu, SearchOverlay, useOutsideClose, useScrollLock, hideBroken } from '../shared/ui'
 
@@ -33,7 +34,9 @@ export default function BoldHeader() {
 
   useEffect(() => setMenu(false), [pathname])
 
-  const overlay = isHome && !scrolled
+  // Transparent over the home banner, unless the merchant chose a navbar colour.
+  const { theme } = useStore()
+  const overlay = isHome && !scrolled && !theme?.navBg
   const active = categories[hovered]
   const btn = 't-nav-link relative uppercase text-[12px] font-bold tracking-[0.12em] hover:opacity-60 transition-opacity'
 
