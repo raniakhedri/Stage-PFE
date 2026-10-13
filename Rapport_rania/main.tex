@@ -1,0 +1,160 @@
+\documentclass[a4paper,12pt]{report}
+\usepackage[left=2.5cm, right=2.5cm, top=2cm, bottom=2.2cm]{geometry}
+\usepackage{amssymb}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{pdfpages}
+\usepackage{amsmath}
+\usepackage{supertabular}
+\usepackage[table]{xcolor}
+\renewcommand{\footrulewidth}{0.4pt}
+\fancyfoot[L]{Projet de fin d'études}
+\rhead{\leftmark}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{longtable}
+\usepackage{indentfirst}
+\usepackage{subcaption}
+\usepackage[export]{adjustbox}
+\usepackage{wrapfig}
+\usepackage{color}
+\usepackage{titletoc}
+\usepackage{titlesec}
+\usepackage{lastpage}
+\usepackage[Lenny]{fncychap}
+\usepackage{enumitem}
+\usepackage{pifont}
+\usepackage{etoc}
+\usepackage{mdframed}
+\usepackage{tikz}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{needspace}
+\usepackage{caption}
+\usepackage{tabularx}
+
+\captionsetup[longtable]{
+    labelfont=normalfont,
+    textfont=normalfont,
+    format=plain
+}
+
+% ---------------------------------------------------------------
+% \img{largeur}{fichier} : insère Image/fichier s'il existe,
+% sinon affiche un cadre « image à insérer » pour que le rapport
+% compile même avant d'avoir ajouté toutes les captures.
+% ---------------------------------------------------------------
+\newcommand{\img}[2]{%
+  \IfFileExists{Image/#2}%
+    {\includegraphics[width=#1\textwidth]{Image/#2}}%
+    {\fbox{\parbox[c][4.5cm][c]{#1\textwidth}{\centering\small\textit{Image à insérer :}\\[4pt]\texttt{\detokenize{#2}}}}}%
+}
+\newcommand{\logo}[2]{%
+  \IfFileExists{Image/#2}%
+    {\includegraphics[height=#1]{Image/#2}}%
+    {\fbox{\parbox[c][#1][c]{1.4cm}{\centering\tiny logo}}}%
+}
+
+\begin{document}
+
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{2}
+
+% Page de garde : remplacer par le PDF officiel ESPRIT si disponible
+\IfFileExists{firstpage.pdf}
+  {\includepdf[pages=-,pagecommand={\thispagestyle{empty}}]{firstpage.pdf}}
+  {\input{PageDeGarde}}
+\IfFileExists{secondpage.pdf}
+  {\includepdf[pages=-,pagecommand={\thispagestyle{empty}}]{secondpage.pdf}}
+  {}
+
+\cleardoublepage
+\pagenumbering{Roman}
+\setcounter{page}{1}
+\pagestyle{plain}
+
+\include{Remerciments}
+\include{Dedicace}
+\cleardoublepage
+
+\tableofcontents
+\listoffigures
+\cleardoublepage
+\listoftables
+
+\cleardoublepage
+\pagenumbering{arabic}
+\setcounter{page}{1}
+\newpage
+
+\vspace*{-1.7cm}
+\begin{center}
+\noindent\textbf{\rule{\textwidth}{1.2pt}}
+
+\vspace{1.2cm}
+{\Huge \textbf{Introduction Générale}}
+\vspace{0.5cm}
+\end{center}
+
+\addcontentsline{toc}{chapter}{Introduction Générale}
+
+Le commerce en ligne occupe aujourd'hui une place importante dans le développement des petites marques. En Tunisie, beaucoup d'entre elles s'appuient encore principalement sur Instagram, WhatsApp et une gestion manuelle des commandes. Cette organisation devient rapidement difficile à maintenir lorsque l'activité augmente, notamment pour le suivi des stocks, des paiements, des livraisons et du comportement des clients. Des solutions comme Shopify ou WooCommerce existent, mais elles restent peu adaptées à certaines spécificités locales telles que le dinar tunisien, la TVA ou les zones de livraison, et nécessitent souvent des extensions payantes pour les fonctions avancées.
+
+\vspace{0.5cm}
+
+Antigone, agence tunisienne de conseil en stratégie et en marketing digital, accompagne plusieurs marques confrontées à ces besoins. Après avoir développé une boutique en ligne pour NaturEssence, spécialisée dans les cosmétiques naturels, l'agence a constaté que les mêmes attentes revenaient chez plusieurs clients : gestion des variantes produits, personnalisation de la vitrine, commandes, marketing et analyse du comportement client. Cette expérience a conduit à l'idée de créer une solution commune et multi-boutiques.
+
+\vspace{0.5cm}
+
+C'est dans ce cadre que s'inscrit notre projet de fin d'études, réalisé au sein d'Antigone dans le cadre du cycle ingénieur à l'École ESPRIT. Il consiste à concevoir et développer \textsf{\textbf{« Sellio »}}, une plateforme SaaS intelligente permettant à chaque commerçant de créer et gérer sa propre boutique dans l'un des huit secteurs proposés : mode, beauté, sport, high-tech, maison, épicerie, bijoux et enfants.
+
+\vspace{0.5cm}
+
+Chaque boutique passe par une étape de vérification avant activation. Le commerçant peut ensuite choisir parmi huit modèles de vitrine, personnaliser l'apparence de sa boutique et gérer son catalogue, ses commandes, ses promotions et son programme de fidélité. La plateforme repose sur une architecture microservices avec Spring Boot, une passerelle API, PostgreSQL et des interfaces React. Elle intègre également Stripe pour le paiement en ligne et l'API Decart pour l'essayage virtuel en temps réel.
+
+\vspace{0.5cm}
+
+Sellio comporte aussi un volet d'apprentissage automatique comprenant le suivi comportemental des visiteurs, un moteur de recommandation hybride, la segmentation des visiteurs et la prédiction de l'attrition, à partir de jeux de données publics réels. La plateforme est enfin testée, conteneurisée avec Docker et intégrée à un pipeline GitHub Actions.
+
+\vspace{0.5cm}
+
+Ce rapport est organisé en neuf chapitres :
+
+\begin{itemize}
+\item Le \textbf{chapitre 1} présente le contexte du projet, l'organisme d'accueil, la problématique, l'étude de l'existant et la méthodologie.
+\item Le \textbf{chapitre 2} traite de l'analyse des besoins, de l'architecture, du backlog produit et de la planification des sprints.
+\item Le \textbf{chapitre 3} présente la Release 1 : authentification, rôles, création de boutique, KYC et administration Sellio.
+\item Le \textbf{chapitre 4} couvre la Release 2 : catalogue, huit secteurs, huit modèles de vitrine et personnalisation.
+\item Le \textbf{chapitre 5} présente la Release 3 : panier, commande, paiement Stripe, retours, TVA, livraison et avis.
+\item Le \textbf{chapitre 6} est consacré à la Release 4 : promotions, bannières, e-mailing, fidélité et segments.
+\item Le \textbf{chapitre 7} présente la Release 5 : essayage virtuel en temps réel avec l'API Decart.
+\item Le \textbf{chapitre 8} traite de la Release 6 : recommandation, segmentation et prédiction de l'attrition.
+\item Le \textbf{chapitre 9} présente la Release 7 : tests, Docker, intégration et livraison continues.
+\end{itemize}
+
+Le rapport se termine par une conclusion générale présentant les résultats obtenus et les perspectives d'évolution de Sellio.
+
+\include{chapter1}
+\include{chapter2}
+\include{chapter3}
+\include{chapter4}
+\include{chapter5}
+\include{chapter6}
+\include{chapter7}
+\include{chapter8}
+\include{chapter9}
+
+\include{Conclusion et perspective}
+
+\bibliographystyle{unsrt}
+\bibliography{References}
+
+\IfFileExists{lastpage.pdf}
+  {\includepdf[pages=-,pagecommand={\thispagestyle{empty}}]{lastpage.pdf}}
+  {\input{Resume}}
+
+\end{document}

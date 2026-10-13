@@ -1,0 +1,486 @@
+\thispagestyle{fancy}
+\fancyhead[R]{A.U 2025-2026}
+\fancyhead[L]{ chapitre 4: Release 2 : Catalogue et vitrine }
+\chapter{Release 2 : Catalogue produit et vitrine personnalisable}
+\section*{Introduction}
+Ce chapitre présente la deuxième release, qui donne à chaque boutique son contenu et son apparence. Le Sprint 3 met en place un catalogue capable de servir huit secteurs d'activité : la fiche d'un produit s'adapte au secteur de la boutique et au type du produit (une bague n'a pas les mêmes caractéristiques qu'une montre, une chaussure de trail pas les mêmes qu'un tapis de course). Le Sprint 4 livre huit modèles de vitrine et deux éditeurs, « Apparence » et « Page d'accueil », qui permettent au commerçant de tout personnaliser, logo, couleurs, polices, sections et textes, avec un aperçu en direct de sa vraie vitrine.
+
+%==================================================================
+\section{Backlog du Sprint 3}
+\Needspace{18\baselineskip}
+Le tableau~\ref{tab:backlog-sprint3} présente le \textbf{backlog du Sprint 3}.
+
+\renewcommand{\arraystretch}{1.05}
+\setlength{\tabcolsep}{3pt}
+\begin{longtable}{|>{\raggedright\arraybackslash}p{4cm}|>{\raggedright\arraybackslash}p{9cm}|>{\centering\arraybackslash}p{1.2cm}|}
+\hline
+\textbf{User Story} & \textbf{Tâches} & \textbf{Estimation} \\
+\hline
+\endfirsthead
+\hline
+\textbf{User Story} & \textbf{Tâches} & \textbf{Estimation} \\
+\hline
+\endhead
+\hline
+\multicolumn{3}{r}{\textit{Suite à la page suivante}} \\
+\endfoot
+\hline
+\endlastfoot
+
+\textbf{En tant que commerçant, je souhaite gérer mes produits}
+& Développer les entités \texttt{Product} et \texttt{ProductVariant} (prix, stock, statut, images). & 1 \\
+\cline{2-3}
+& Développer l'API CRUD des produits, avec archivage, désactivation et statistiques. & 1 \\
+\cline{2-3}
+& Développer l'API de téléversement d'images. & 1 \\
+\cline{2-3}
+& Développer les interfaces « Produits », « Ajouter un produit » et « Modifier un produit ». & 1 \\
+\cline{2-3}
+& Tester la fonctionnalité. & 1 \\
+\hline
+
+\textbf{En tant que commerçant, je souhaite une fiche produit adaptée à mon secteur}
+& Définir les huit secteurs côté serveur (\texttt{ShopCatalog}) et refuser tout secteur inconnu. & 1 \\
+\cline{2-3}
+& Définir, pour chaque secteur générique, ses types de produits avec leurs tailles et leurs champs (registre \texttt{sectors.js}). & 1 \\
+\cline{2-3}
+& Stocker les caractéristiques dans un objet JSON (\texttt{Product.attributes}) validé côté serveur (objet plat, 40 clés au plus). & 1 \\
+\cline{2-3}
+& Lire le secteur depuis le serveur avant d'afficher la fiche, jamais depuis le profil gardé par le navigateur. & 1 \\
+\cline{2-3}
+& Afficher les caractéristiques sur la vitrine : puces sous le titre, tableau technique, onglets pour les textes longs. & 1 \\
+\hline
+
+\textbf{En tant que commerçant, je souhaite choisir le type de chaque produit}
+& Proposer les types du secteur (bague, collier, montre, sac\dots ; vêtement, chaussures, équipement, machine, nutrition\dots). & 1 \\
+\cline{2-3}
+& Adapter au type ce que le client choisit (tour de doigt, pointure, stockage, format) ou ne rien demander pour un modèle unique. & 1 \\
+\cline{2-3}
+& Retirer les champs de l'ancien type quand le commerçant en change ; reconnaître le type des produits existants à partir de leurs tailles. & 1 \\
+\hline
+
+\textbf{En tant que commerçant, je souhaite gérer mes catégories}
+& Développer l'API des catégories hiérarchiques (parent, enfants, ordre d'affichage). & 1 \\
+\cline{2-3}
+& Développer les interfaces de gestion et de réordonnancement des catégories. & 1 \\
+\hline
+
+\textbf{En tant que commerçant, je souhaite choisir les valeurs dans des listes, et en ajouter}
+& Définir les listes de valeurs : tailles par groupe, 28 couleurs nommées, tissus, et plus de soixante listes propres aux secteurs (matières, pierres, mouvements, connectiques, allergènes\dots). & 1 \\
+\cline{2-3}
+& Développer le sélecteur de couleurs avec ajout d'une couleur libre (sélecteur RVB et nom). & 1 \\
+\cline{2-3}
+& Stocker les valeurs ajoutées par la boutique (\texttt{customOptions}) et les fusionner avec les listes par défaut. & 1 \\
+\cline{2-3}
+& Tester la fonctionnalité dans chaque secteur. & 1 \\
+\hline
+
+\multicolumn{2}{|r|}{\textbf{Total}} & \textbf{19} \\
+\hline
+\caption{Backlog du Sprint 3}
+\label{tab:backlog-sprint3}
+\end{longtable}
+
+\section{Diagramme de cas d'utilisation du Sprint 3}
+\Needspace{20\baselineskip}
+La figure~\ref{fig:cu-sprint3} présente le diagramme de cas d'utilisation du troisième sprint.
+\begin{figure}[H]
+    \centering
+    \img{0.8}{cu_sprint3.png}
+    \caption{Diagramme de cas d'utilisation du Sprint 3}
+    \label{fig:cu-sprint3}
+\end{figure}
+
+\section{Services web du Sprint 3}
+Le tableau~\ref{tab:ws-sprint3} présente les services web du Sprint 3, exposés par le microservice \texttt{catalog-service}.
+\renewcommand{\arraystretch}{1.15}
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{|p{1.5cm}|p{6.8cm}|p{6.2cm}|}
+\hline
+\textbf{Méthode} & \textbf{URL} & \textbf{Description} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Méthode} & \textbf{URL} & \textbf{Description} \\
+\hline
+\endhead
+\multicolumn{3}{|c|}{\textbf{Produits (administration) --- /api/v1/admin/products}} \\
+\hline
+GET & /api/v1/admin/products & Lister les produits de la boutique. \\
+\hline
+GET & /api/v1/admin/products/stats & Statistiques du catalogue. \\
+\hline
+POST & /api/v1/admin/products & Créer un produit, ses variantes et ses caractéristiques (\texttt{attributes}). \\
+\hline
+PUT & /api/v1/admin/products/\{id\} & Modifier un produit. \\
+\hline
+PATCH & /api/v1/admin/products/\{id\}/archive & Archiver un produit. \\
+\hline
+PATCH & /api/v1/admin/products/\{id\}/deactivate & Désactiver un produit. \\
+\hline
+DELETE & /api/v1/admin/products/\{id\} & Supprimer un produit. \\
+\hline
+POST & /api/v1/admin/upload & Téléverser une image. \\
+\hline
+\multicolumn{3}{|c|}{\textbf{Catégories (administration)}} \\
+\hline
+GET, POST & /api/v1/admin/categories & Lister, créer une catégorie. \\
+\hline
+PUT, DELETE & /api/v1/admin/categories/\{id\} & Modifier, supprimer une catégorie. \\
+\hline
+PUT & /api/v1/admin/categories/reorder & Réordonner les catégories. \\
+\hline
+\multicolumn{3}{|c|}{\textbf{Catalogue public (vitrine)}} \\
+\hline
+GET & /api/v1/public/products & Lister et filtrer les produits publiés. \\
+\hline
+GET & /api/v1/public/products/\{slug\} & Fiche d'un produit. \\
+\hline
+GET & /api/v1/public/products/category/\{categoryId\} & Produits d'une catégorie. \\
+\hline
+GET & /api/v1/public/products/by-ids & Produits à partir d'une liste d'identifiants (recommandations, sélections). \\
+\hline
+GET & /api/v1/public/categories/menu & Arborescence du menu de la vitrine. \\
+\hline
+GET & /api/v1/public/categories/homepage & Catégories mises en avant sur l'accueil. \\
+\hline
+GET & /api/v1/public/categories/footer & Catégories du pied de page. \\
+\hline
+\caption{Services web du Sprint 3}
+\label{tab:ws-sprint3}
+\end{longtable}
+
+\section{Les cas d'utilisation du Sprint 3}
+\subsection{Cas d'utilisation « Ajouter un produit »}
+\subsubsection{Description textuelle}
+Le tableau~\ref{tab:uc-produit} présente la description textuelle de ce cas.
+\renewcommand{\arraystretch}{1.5}
+\begin{longtable}{|p{4cm}|p{11cm}|}
+\hline
+\textbf{Acteurs} & Commerçant, Collaborateur disposant de la permission « Produits » \\
+\hline
+\textbf{Objectif} & Publier un produit dont les caractéristiques correspondent à son secteur et à son type, exploitables par la vitrine et par le moteur de recommandation. \\
+\hline
+\textbf{Pré-condition} & L'utilisateur est connecté et sa boutique est active. \\
+\hline
+\textbf{Scénario principal} &
+1. L'utilisateur ouvre « Ajouter un produit » ; le système lit le secteur de la boutique sur le serveur et affiche la fiche correspondante.\newline
+2. Il saisit le nom, la description, le prix, la catégorie et téléverse les images.\newline
+3. Dans une boutique de bijoux, de sport, de high-tech, de maison, d'épicerie ou pour enfants, il choisit d'abord le type du produit ; les tailles proposées et les champs de la fiche s'adaptent (pour une bague : tour de doigt, matière, pierre, largeur ; pour une montre : mouvement, boîtier, étanchéité, sans taille à choisir).\newline
+4. Il choisit les valeurs dans les listes (tailles, couleurs, matières\dots) et définit le stock de chaque variante.\newline
+5. L'utilisateur enregistre ; le système valide les données et les caractéristiques, puis crée le produit rattaché à sa boutique.\newline
+6. Le produit apparaît dans la liste et, s'il est publié, sur la vitrine avec ses caractéristiques. \\
+\hline
+\textbf{Scénario alternatif} &
+\textbf{Valeur absente d'une liste :} à l'étape 4, l'utilisateur ajoute une valeur (une couleur libre avec son code RVB, une nouvelle matière) ; elle est enregistrée dans les options de la boutique et proposée pour les produits suivants.\newline
+\textbf{Changement de type :} les tailles et les champs du type précédent sont retirés, pour qu'aucune caractéristique incohérente ne reste sur le produit.\newline
+\textbf{Données invalides :} à l'étape 5, le système signale les champs erronés (prix négatif, nom manquant, caractéristiques mal formées) sans perdre la saisie. \\
+\hline
+\caption{Description textuelle du cas « Ajouter un produit »}
+\label{tab:uc-produit}
+\end{longtable}
+
+\subsubsection{Diagramme de séquence système}
+\Needspace{18\baselineskip}
+\begin{figure}[H]
+    \centering
+    \img{0.65}{dss_produit.png}
+    \caption{Diagramme de séquence système du cas « Ajouter un produit »}
+    \label{fig:dss-produit}
+\end{figure}
+
+\subsubsection{Diagramme de séquence objet}
+\Needspace{20\baselineskip}
+\begin{figure}[H]
+    \centering
+    \img{0.9}{dso_produit.png}
+    \caption{Diagramme de séquence objet du cas « Ajouter un produit »}
+    \label{fig:dso-produit}
+\end{figure}
+
+\section{Réalisation du Sprint 3}
+\Needspace{20\baselineskip}
+\textbf{Liste des produits :} la figure~\ref{fig:ui-produits} présente la liste des produits avec leurs statistiques, filtres et actions.
+\begin{figure}[H]
+    \centering
+    \img{0.85}{ui_produits.png}
+    \caption{Liste des produits de la boutique}
+    \label{fig:ui-produits}
+\end{figure}
+
+\Needspace{20\baselineskip}
+\textbf{Fiche selon le type de produit :} la figure~\ref{fig:ui-types} présente la fiche d'un produit dans une boutique de bijoux. Le commerçant choisit le type « Bague » : le client devra choisir un tour de doigt, et les champs proposés sont ceux d'une bague. Le tableau~\ref{tab:types-produit} résume les types disponibles.
+\begin{figure}[H]
+    \centering
+    \img{0.85}{ui_types_produit.png}
+    \caption{Fiche d'un produit de type « Bague » dans une boutique de bijoux}
+    \label{fig:ui-types}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\small
+\begin{tabular}{|p{2.4cm}|p{12.4cm}|}
+\hline
+\textbf{Secteur} & \textbf{Types de produits (ce que choisit le client)} \\
+\hline
+Bijoux & Bague (tour de doigt), collier (longueur), bracelet (tour de poignet), boucles d'oreilles, montre, sac, accessoire (taille) \\
+\hline
+Sport & Vêtement (taille), chaussures (pointure), équipement (taille ou poids), machine de fitness, nutrition sportive (format) \\
+\hline
+High-tech & Smartphone (stockage), ordinateur (configuration), audio, TV (taille d'écran), électroménager, accessoire \\
+\hline
+Maison & Mobilier, linge (dimensions), décoration (format), cuisine (format), luminaire \\
+\hline
+Épicerie & Huiles, douceurs, épices, boissons (format), coffrets \\
+\hline
+Enfants & Vêtement (taille), chaussures (pointure), jouet, puériculture, livres et loisirs créatifs \\
+\hline
+Mode, beauté & Fiches dédiées : tailles, tissu, coupe, couleur ; contenance, composition INCI, origine, certifications \\
+\hline
+\end{tabular}
+\caption{Types de produits par secteur}
+\label{tab:types-produit}
+\end{table}
+
+\Needspace{20\baselineskip}
+\textbf{Sélecteurs d'attributs :} la figure~\ref{fig:ui-attributs} présente la fiche d'un produit cosmétique. Remplacer la saisie libre par des listes évite les doublons (« bleu marine », « Marine », « navy ») qui fausseraient les filtres et les recommandations.
+\begin{figure}[H]
+    \centering
+    \img{0.85}{ui_attributs.png}
+    \caption{Fiche d'un produit cosmétique}
+    \label{fig:ui-attributs}
+\end{figure}
+
+\Needspace{20\baselineskip}
+\textbf{Catégories :} la figure~\ref{fig:ui-categories} présente la gestion des catégories hiérarchiques.
+\begin{figure}[H]
+    \centering
+    \img{0.85}{ui_categories.png}
+    \caption{Gestion des catégories}
+    \label{fig:ui-categories}
+\end{figure}
+
+%==================================================================
+\section{Backlog du Sprint 4}
+\Needspace{18\baselineskip}
+Le tableau~\ref{tab:backlog-sprint4} présente le \textbf{backlog du Sprint 4}, consacré à la vitrine et à sa personnalisation.
+
+\renewcommand{\arraystretch}{1.05}
+\setlength{\tabcolsep}{3pt}
+\begin{longtable}{|>{\raggedright\arraybackslash}p{4cm}|>{\raggedright\arraybackslash}p{9cm}|>{\centering\arraybackslash}p{1.2cm}|}
+\hline
+\textbf{User Story} & \textbf{Tâches} & \textbf{Estimation} \\
+\hline
+\endfirsthead
+\hline
+\textbf{User Story} & \textbf{Tâches} & \textbf{Estimation} \\
+\hline
+\endhead
+\hline
+\multicolumn{3}{r}{\textit{Suite à la page suivante}} \\
+\endfoot
+\hline
+\endlastfoot
+
+\textbf{En tant que commerçant, je souhaite choisir l'un des huit modèles de vitrine}
+& Concevoir l'architecture des modèles : en-tête, accueil et pied de page par modèle, briques partagées (navigation, données d'accueil, tiroir mobile, recherche). & 1 \\
+\cline{2-3}
+& Développer les modèles Minimal, Bold et Luxury. & 1 \\
+\cline{2-3}
+& Développer les modèles Sport, Tech, Artisan, Pop et Éditorial, avec leurs polices et leurs palettes. & 1 \\
+\cline{2-3}
+& Écrire les textes par défaut de chaque secteur, en trois tons (doux, percutant, haut de gamme) selon le modèle. & 1 \\
+\cline{2-3}
+& Recommander les modèles adaptés au secteur et permettre la prévisualisation (\texttt{?preview=}). & 1 \\
+\hline
+
+\textbf{En tant que visiteur, je souhaite parcourir la vitrine et consulter un produit}
+& Développer les menus alimentés par l'arborescence des catégories et la page de catégorie avec filtres. & 1 \\
+\cline{2-3}
+& Développer la fiche produit (galerie, variantes, caractéristiques du secteur, avis). & 1 \\
+\cline{2-3}
+& Afficher le logo de la boutique comme icône de l'onglet du navigateur, ou son initiale sur sa couleur. & 1 \\
+\hline
+
+\textbf{En tant que commerçant, je souhaite personnaliser l'apparence de ma boutique}
+& Stocker la personnalisation de chaque boutique (\texttt{Shop.settings}, objet JSON) et la valider côté serveur : objet, 100 Ko au plus, liens en \texttt{https} uniquement. & 1 \\
+\cline{2-3}
+& Développer la page « Apparence » : logo et taille du logo, nom, coordonnées et réseaux sociaux, polices, barre d'annonce, couleurs du back-office. & 1 \\
+\cline{2-3}
+& Développer l'éditeur de couleurs (20 réglages : marque, navigation, boutons, prix, badges, pied de page\dots) et leurs palettes prédéfinies. & 1 \\
+\cline{2-3}
+& Appliquer couleurs et polices sur la vitrine (variables \texttt{--t-*}, classes d'ancrage \texttt{t-nav}, \texttt{t-btn}\dots) ; la couleur de navigation choisie s'applique aussi au-dessus de la bannière. & 1 \\
+\hline
+
+\textbf{En tant que commerçant, je souhaite personnaliser ma page d'accueil}
+& Découper l'accueil des huit modèles en sections nommées et définir leur ordre par défaut (\texttt{sectionRegistry}). & 1 \\
+\cline{2-3}
+& Développer la page « Page d'accueil » : afficher, masquer et réordonner les sections, réécrire tous les textes (le texte du secteur est proposé). & 1 \\
+\cline{2-3}
+& Choisir les produits mis en avant et composer une section « Sélection » personnalisée. & 1 \\
+\cline{2-3}
+& Afficher la vraie vitrine dans l'éditeur et lui transmettre les modifications non enregistrées (\texttt{postMessage}). & 1 \\
+\cline{2-3}
+& Tester la personnalisation sur les huit modèles. & 1 \\
+\hline
+
+\multicolumn{2}{|r|}{\textbf{Total}} & \textbf{17} \\
+\hline
+\caption{Backlog du Sprint 4}
+\label{tab:backlog-sprint4}
+\end{longtable}
+
+\section{Diagramme de cas d'utilisation du Sprint 4}
+\Needspace{20\baselineskip}
+\begin{figure}[H]
+    \centering
+    \img{0.85}{cu_sprint4.png}
+    \caption{Diagramme de cas d'utilisation du Sprint 4}
+    \label{fig:cu-sprint4}
+\end{figure}
+
+\section{Services web du Sprint 4}
+Le tableau~\ref{tab:ws-sprint4} présente les services web du Sprint 4.
+\renewcommand{\arraystretch}{1.15}
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{|p{1.5cm}|p{6.8cm}|p{6.2cm}|}
+\hline
+\textbf{Méthode} & \textbf{URL} & \textbf{Description} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Méthode} & \textbf{URL} & \textbf{Description} \\
+\hline
+\endhead
+\multicolumn{3}{|c|}{\textbf{Boutique et personnalisation (auth-service)}} \\
+\hline
+GET & /api/v1/auth/my-shop & Lire sa boutique : modèle, secteur, couleurs, personnalisation. \\
+\hline
+PATCH & /api/v1/auth/my-shop & Enregistrer le modèle, le secteur, le nom, le logo, les couleurs (\texttt{theme}) ou la personnalisation (\texttt{settings}). \\
+\hline
+GET & /api/v1/public/shops/\{slug\} & Charger tout ce que la vitrine affiche d'une boutique. \\
+\hline
+\caption{Services web du Sprint 4}
+\label{tab:ws-sprint4}
+\end{longtable}
+
+Toute la personnalisation passe par une seule ressource, la boutique : la vitrine la charge en une requête et le commerçant ne peut modifier que la sienne. L'ancienne table d'apparence globale, commune à toutes les boutiques, n'est plus modifiable que par le super administrateur, pour le style par défaut de Sellio.
+
+\section{Les cas d'utilisation du Sprint 4}
+\subsection{Cas d'utilisation « Personnaliser la page d'accueil »}
+\subsubsection{Description textuelle}
+Le tableau~\ref{tab:uc-theme} présente la description textuelle de ce cas.
+\renewcommand{\arraystretch}{1.5}
+\begin{longtable}{|p{4cm}|p{11cm}|}
+\hline
+\textbf{Acteurs} & Commerçant, Collaborateur disposant de la permission « Apparence » \\
+\hline
+\textbf{Objectif} & Composer la page d'accueil de la vitrine sans écrire de code, en voyant le résultat avant de le publier. \\
+\hline
+\textbf{Pré-condition} & Le commerçant est connecté et possède une boutique. \\
+\hline
+\textbf{Scénario principal} &
+1. Le commerçant ouvre « Page d'accueil ». Le système affiche la liste des sections du modèle de la boutique et, à côté, la vraie vitrine.\newline
+2. Il masque une section, en déplace une autre ; l'aperçu se met à jour immédiatement, sans rien enregistrer.\newline
+3. Il ouvre une section et réécrit ses textes ; chaque champ montre le texte proposé pour son secteur, qu'il suffit de laisser vide pour le garder.\newline
+4. Il choisit les produits mis en avant ou compose une section « Sélection » avec ses propres produits.\newline
+5. Il enregistre ; le système valide la personnalisation et la stocke dans la boutique.\newline
+6. Les visiteurs voient la nouvelle page d'accueil dès leur prochaine visite. \\
+\hline
+\textbf{Scénario alternatif} &
+\textbf{Changement de modèle :} les sections que le nouveau modèle ne possède pas sont ignorées ; ses autres sections gardent l'ordre choisi.\newline
+\textbf{Réinitialisation :} le commerçant revient à la page d'accueil d'origine du modèle.\newline
+\textbf{Lien invalide :} un lien de réseau social qui ne commence pas par \texttt{https://} est refusé, pour qu'aucun lien ne puisse exécuter de script. \\
+\hline
+\caption{Description textuelle du cas « Personnaliser la page d'accueil »}
+\label{tab:uc-theme}
+\end{longtable}
+
+\subsubsection{Diagramme de séquence système}
+\Needspace{18\baselineskip}
+\begin{figure}[H]
+    \centering
+    \img{0.7}{dss_theme.png}
+    \caption{Diagramme de séquence système du cas « Personnaliser la page d'accueil »}
+    \label{fig:dss-theme}
+\end{figure}
+
+\subsubsection{Diagramme de séquence objet}
+\Needspace{20\baselineskip}
+La figure~\ref{fig:dso-theme} montre le mécanisme d'aperçu : l'éditeur affiche la vitrine dans un cadre (\textit{iframe}) et lui envoie les réglages non enregistrés par \texttt{postMessage} ; la vitrine n'accepte ces messages que de l'origine du back-office, puis recalcule l'ordre des sections et les textes.
+\begin{figure}[H]
+    \centering
+    \img{0.95}{dso_theme.png}
+    \caption{Diagramme de séquence objet du cas « Personnaliser la page d'accueil »}
+    \label{fig:dso-theme}
+\end{figure}
+
+\section{Réalisation du Sprint 4}
+\Needspace{30\baselineskip}
+\textbf{Les huit modèles :} la figure~\ref{fig:ui-modeles} présente la même boutique affichée avec chacun des huit modèles. Le contenu (produits, catégories, bannières) est identique ; la structure, les polices et le style changent.
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.48\textwidth}\centering\img{1}{ui_vitrine_minimal.png}\caption{Minimal}\end{subfigure}\hfill
+    \begin{subfigure}{0.48\textwidth}\centering\img{1}{ui_vitrine_bold.png}\caption{Bold}\end{subfigure}\\[4pt]
+    \begin{subfigure}{0.48\textwidth}\centering\img{1}{ui_vitrine_luxury.png}\caption{Luxury}\end{subfigure}\hfill
+    \begin{subfigure}{0.48\textwidth}\centering\img{1}{ui_vitrine_sport.png}\caption{Sport}\end{subfigure}\\[4pt]
+    \begin{subfigure}{0.48\textwidth}\centering\img{1}{ui_vitrine_tech.png}\caption{Tech}\end{subfigure}\hfill
+    \begin{subfigure}{0.48\textwidth}\centering\img{1}{ui_vitrine_artisan.png}\caption{Artisan}\end{subfigure}\\[4pt]
+    \begin{subfigure}{0.48\textwidth}\centering\img{1}{ui_vitrine_pop.png}\caption{Pop}\end{subfigure}\hfill
+    \begin{subfigure}{0.48\textwidth}\centering\img{1}{ui_vitrine_editorial.png}\caption{Éditorial}\end{subfigure}
+    \caption{Une même boutique dans les huit modèles de vitrine}
+    \label{fig:ui-modeles}
+\end{figure}
+
+\Needspace{20\baselineskip}
+\textbf{Type de boutique :} la figure~\ref{fig:ui-configuration} présente la page où le commerçant change de modèle (les modèles recommandés pour son secteur sont signalés) ou de secteur.
+\begin{figure}[H]
+    \centering
+    \img{0.85}{ui_configuration.png}
+    \caption{Choix du modèle et du secteur}
+    \label{fig:ui-configuration}
+\end{figure}
+
+\Needspace{20\baselineskip}
+\textbf{Apparence :} la figure~\ref{fig:ui-apparence} présente la page « Apparence », onglet « Logo \& identité » : le logo, sa taille réglable, le nom de la boutique, ses coordonnées et ses réseaux sociaux, avec à droite la vitrine qui reflète chaque modification. Les onglets « Couleurs » (figure~\ref{fig:ui-theme}), « Polices », « Barre d'annonce » et « Back-office » complètent la page.
+\begin{figure}[H]
+    \centering
+    \img{0.9}{ui_apparence.png}
+    \caption{Page « Apparence » avec l'aperçu en direct de la vitrine}
+    \label{fig:ui-apparence}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \img{0.9}{ui_editeur_theme.png}
+    \caption{Onglet « Couleurs » : palettes et réglages par élément}
+    \label{fig:ui-theme}
+\end{figure}
+
+\Needspace{20\baselineskip}
+\textbf{Page d'accueil :} la figure~\ref{fig:ui-page-accueil} présente l'éditeur de la page d'accueil : chaque section peut être masquée, déplacée et ses textes réécrits ; l'aperçu de droite est la vraie vitrine.
+\begin{figure}[H]
+    \centering
+    \img{0.9}{ui_page_accueil.png}
+    \caption{Éditeur de la page d'accueil}
+    \label{fig:ui-page-accueil}
+\end{figure}
+
+\Needspace{20\baselineskip}
+\textbf{Fiche produit :} les figures~\ref{fig:ui-fiche} et~\ref{fig:ui-fiche-bijou} présentent la fiche d'un produit sur la vitrine : le client choisit la contenance d'un produit de beauté, le tour de doigt d'une bague, et retrouve les caractéristiques propres au type du produit.
+\begin{figure}[H]
+    \centering
+    \img{0.85}{ui_fiche_produit.png}
+    \caption{Fiche produit sur la vitrine}
+    \label{fig:ui-fiche}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \img{0.85}{ui_fiche_bijou.png}
+    \caption{Fiche d'une bague : choix du tour de doigt et caractéristiques}
+    \label{fig:ui-fiche-bijou}
+\end{figure}
+
+\subsection*{Conclusion}
+Cette release a doté chaque boutique d'un catalogue adapté à son secteur et d'une vitrine qui lui ressemble, que le commerçant compose lui-même en voyant le résultat. Les caractéristiques des produits ne servent pas qu'à l'affichage : elles alimentent aussi la partie « contenu » du moteur de recommandation présenté au chapitre 8. La release suivante porte sur le parcours d'achat.

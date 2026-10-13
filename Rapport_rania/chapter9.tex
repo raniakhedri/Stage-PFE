@@ -1,0 +1,234 @@
+\thispagestyle{fancy}
+\fancyhead[R]{A.U 2025-2026}
+\fancyhead[L]{ chapitre 9: Release 7 : Qualité et DevOps }
+\chapter{Release 7 : Qualité, conteneurisation et intégration continue}
+\section*{Introduction}
+Les releases précédentes ont livré les fonctionnalités de Sellio. Cette dernière release s'attache à la manière de les livrer : une plateforme de six microservices, deux applications React et des modèles Python ne peut pas être vérifiée à la main à chaque modification. Le Sprint 12 met en place des tests automatisés sur les trois technologies du projet, conteneurise l'ensemble de la plateforme avec Docker et automatise sa construction, ses tests et la publication de ses images avec GitHub Actions.
+
+%==================================================================
+\section{Backlog du Sprint 12}
+\Needspace{18\baselineskip}
+Le tableau~\ref{tab:backlog-sprint12} présente le \textbf{backlog du Sprint 12}.
+
+\renewcommand{\arraystretch}{1.05}
+\setlength{\tabcolsep}{3pt}
+\begin{longtable}{|>{\raggedright\arraybackslash}p{4cm}|>{\raggedright\arraybackslash}p{9cm}|>{\centering\arraybackslash}p{1.2cm}|}
+\hline
+\textbf{User Story} & \textbf{Tâches} & \textbf{Estimation} \\
+\hline
+\endfirsthead
+\hline
+\textbf{User Story} & \textbf{Tâches} & \textbf{Estimation} \\
+\hline
+\endhead
+\hline
+\multicolumn{3}{r}{\textit{Suite à la page suivante}} \\
+\endfoot
+\hline
+\endlastfoot
+
+\textbf{En tant que développeuse, je veux que les règles critiques soient vérifiées automatiquement}
+& Tests JUnit de la sécurité multi-boutiques : isolation des boutiques, permissions d'équipe, périmètre de l'équipe Sellio, jetons JWT, \texttt{TenantGuard}. & 1 \\
+\cline{2-3}
+& Tests JUnit de la validation de la personnalisation et des secteurs. & 1 \\
+\cline{2-3}
+& Tests Vitest du front-end : ordre des sections, textes personnalisés, types de produits, synchronisation des registres vitrine et back-office. & 1 \\
+\cline{2-3}
+& Tests pytest des modèles : recommandation hybride, segmentation, chargement et cohérence des modèles d'attrition. & 1 \\
+\hline
+
+\textbf{En tant que développeuse, je veux lancer toute la plateforme en une commande}
+& Externaliser la configuration (base de données, adresses des services dans la passerelle, CORS) en variables d'environnement. & 1 \\
+\cline{2-3}
+& Écrire le \texttt{Dockerfile} multi-étapes des services Java, avec une cible dédiée au service d'analyse (Java et Python). & 1 \\
+\cline{2-3}
+& Écrire le \texttt{Dockerfile} des deux front-ends (build Vite puis serveur nginx). & 1 \\
+\cline{2-3}
+& Écrire le fichier \texttt{docker-compose.yml} (PostgreSQL et ses cinq bases, six services, deux front-ends, volumes). & 1 \\
+\hline
+
+\textbf{En tant que développeuse, je veux que chaque modification soit construite et testée}
+& Écrire le workflow GitHub Actions : trois tâches parallèles (backend, frontend, ML) avec cache des dépendances. & 1 \\
+\cline{2-3}
+& Construire les huit images Docker une fois les tests passés, avec cache BuildKit. & 1 \\
+\cline{2-3}
+& Publier les images sur GitHub Container Registry à chaque intégration dans \texttt{main}. & 1 \\
+\cline{2-3}
+& Conserver les rapports de tests JUnit comme artefacts du pipeline. & 1 \\
+\hline
+
+\textbf{En tant que développeuse, je veux un dépôt sain et des dépendances à jour}
+& Configurer Dependabot (Maven, npm, pip, actions, images Docker). & 1 \\
+\cline{2-3}
+& Figer les versions Python sur celles des modèles entraînés et commiter le fichier de verrouillage npm. & 1 \\
+\cline{2-3}
+& Retirer les secrets du code source et nettoyer le dépôt (ancien monolithe, sorties de build, code mort). & 1 \\
+\hline
+
+\multicolumn{2}{|r|}{\textbf{Total}} & \textbf{15} \\
+\hline
+\caption{Backlog du Sprint 12}
+\label{tab:backlog-sprint12}
+\end{longtable}
+
+\section{Diagramme de cas d'utilisation du Sprint 12}
+\Needspace{20\baselineskip}
+La figure~\ref{fig:cu-sprint12} présente le diagramme de cas d'utilisation de ce sprint. Les acteurs ne sont plus des utilisateurs de la plateforme mais ceux de sa chaîne de livraison : la développeuse, GitHub Actions et Dependabot.
+\begin{figure}[H]
+    \centering
+    \img{0.85}{cu_sprint12.png}
+    \caption{Diagramme de cas d'utilisation du Sprint 12}
+    \label{fig:cu-sprint12}
+\end{figure}
+
+\section{Choix des outils}
+Le tableau~\ref{tab:choix-ci} compare trois solutions d'intégration continue.
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.35}
+\small
+\begin{tabular}{|p{3.6cm}|p{3.7cm}|p{3.7cm}|p{3.7cm}|}
+\hline
+\textbf{Critère} & \textbf{GitHub Actions} & \textbf{GitLab CI} & \textbf{Jenkins} \\
+\hline
+Intégration au dépôt & Native (le code est sur GitHub) & Nécessite GitLab & Serveur et extensions à installer \\
+\hline
+Infrastructure & Machines fournies & Machines fournies & À héberger et maintenir \\
+\hline
+Registre d'images & GitHub Container Registry inclus & Registre inclus & Externe \\
+\hline
+Coût pour un dépôt public & Gratuit & Gratuit (quota) & Coût du serveur \\
+\hline
+\end{tabular}
+\caption{Comparaison des solutions d'intégration continue}
+\label{tab:choix-ci}
+\end{table}
+Le code de Sellio étant hébergé sur GitHub, \textbf{GitHub Actions}~\cite{githubactions} s'impose : aucun serveur à maintenir, des machines Linux fournies, et le registre d'images intégré. \textbf{Docker}~\cite{docker} est retenu pour la conteneurisation : chaque service embarque son environnement d'exécution (Java 17, ou Java 17 et Python 3.12 pour l'analyse), ce qui supprime les différences entre le poste de développement, la machine d'intégration continue et le serveur.
+
+\section{Stratégie de tests}
+Les tests portent en priorité sur ce qui serait le plus grave en cas d'erreur : la séparation des données entre boutiques, les droits de chaque rôle et les modèles d'apprentissage. Ce sont des tests unitaires rapides, sans base de données : l'ensemble s'exécute en moins de deux minutes. Le tableau~\ref{tab:tests} les résume.
+\begin{longtable}{|p{2.4cm}|p{4.2cm}|p{7cm}|p{1.2cm}|}
+\hline
+\textbf{Outil} & \textbf{Suite} & \textbf{Ce qui est vérifié} & \textbf{Tests} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Outil} & \textbf{Suite} & \textbf{Ce qui est vérifié} & \textbf{Tests} \\
+\hline
+\endhead
+JUnit 5 & \texttt{JwtAuthenticationFilterTest} & Un commerçant ne lit pas une autre boutique ; ses requêtes sont rattachées à sa boutique ; un membre d'équipe n'atteint que ses modules ; l'équipe Sellio n'atteint ni les clients, ni les commandes, ni les analyses ; un jeton falsifié reste anonyme. & 5 \\
+\hline
+JUnit 5 & \texttt{JwtUtilTest} & Contenu du jeton (utilisateur, rôle, boutique, permissions), rejet des jetons falsifiés, signés avec une autre clé ou expirés. & 4 \\
+\hline
+JUnit 5 & \texttt{TenantGuardTest} & Création toujours dans la boutique de l'appelant ; un enregistrement d'une autre boutique est introuvable (404). & 3 \\
+\hline
+JUnit 5 & \texttt{ShopCatalogTest} & Secteurs acceptés et refusés, secteurs « mode » pour l'attrition, correspondance des anciens thèmes. & 4 \\
+\hline
+JUnit 5 & \texttt{ShopSettingsValidatorTest} & Personnalisation valide conservée ; liens \texttt{javascript:} refusés même imbriqués ; taille maximale ; JSON invalide refusé. & 5 \\
+\hline
+Vitest & \texttt{sectionRegistry}, \texttt{copyTexts} & Ordre des sections, sections masquées, changement de modèle, textes personnalisés et valeurs par défaut. & 11 \\
+\hline
+Vitest & \texttt{sectors} (vitrine, back-office) & Types de produits, tailles et champs par type, absence de doublons, listes de valeurs complètes, choix de taille dans le panier. & 10 \\
+\hline
+Vitest & \texttt{homeSections} & Le back-office utilise exactement le registre et les textes de la vitrine. & 3 \\
+\hline
+pytest & \texttt{test\_recommender} & Signal collaboratif, recommandation d'un produit neuf par son contenu, règles d'association, exclusion des produits déjà achetés. & 6 \\
+\hline
+pytest & \texttt{test\_segmentation}, \texttt{test\_churn\_models} & Segments distincts trouvés ; seuil de visiteurs ; les deux modèles d'attrition se chargent et jugent plus risqué un client inactif. & 5 \\
+\hline
+\multicolumn{3}{|r|}{\textbf{Total}} & \textbf{56} \\
+\hline
+\caption{Tests automatisés de Sellio}
+\label{tab:tests}
+\end{longtable}
+
+Le test \texttt{homeSections} illustre l'intérêt de cette démarche : la liste des sections et les textes par défaut existent à la fois dans la vitrine et dans le back-office. Si l'un des deux est modifié sans l'autre, le test échoue, au lieu qu'un commerçant découvre un éditeur qui ne correspond plus à sa vitrine.
+
+\section{Conteneurisation}
+\subsection{Images}
+Le tableau~\ref{tab:images} présente les huit images de la plateforme.
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\small
+\begin{tabular}{|p{3.6cm}|p{4.4cm}|p{6.6cm}|}
+\hline
+\textbf{Image} & \textbf{Base d'exécution} & \textbf{Construction} \\
+\hline
+auth, catalog, order, marketing, api-gateway & \texttt{eclipse-temurin:17-jre} & Étape de build Maven (\texttt{-pl service -am}), puis seul le JAR est copié ; exécution sous un utilisateur non privilégié. \\
+\hline
+analytics-service & \texttt{python:3.12-slim} et JRE 17 & Mêmes étapes, plus les bibliothèques Python aux versions des modèles et le dossier \texttt{python/} (scripts et modèles). \\
+\hline
+storefront, backoffice & \texttt{nginx:1.27-alpine} & Build Vite avec Node 22, puis fichiers statiques servis par nginx (routes de l'application et cache des fichiers versionnés). \\
+\hline
+\end{tabular}
+\caption{Images Docker de Sellio}
+\label{tab:images}
+\end{table}
+
+Le \texttt{Dockerfile} des services est \textbf{multi-étapes} : la première étape contient Maven et le JDK, la seconde uniquement l'environnement d'exécution et le JAR, ce qui réduit la taille des images et leur surface d'attaque. Un seul fichier sert les six services grâce à un argument de construction (\texttt{SERVICE}) et à deux cibles (\texttt{service}, \texttt{analytics}).
+
+\subsection{Composition de la plateforme}
+Le fichier \texttt{docker-compose.yml} décrit la plateforme complète présentée à la figure~\ref{fig:archi_physique} du chapitre 2 : PostgreSQL avec un volume persistant, un contrôle de santé et un script d'initialisation qui crée les cinq bases des microservices, les six services, chacun relié à sa base et qui attendent qu'elle soit prête, et les deux front-ends. Les secrets (clé JWT, Stripe, Brevo, Decart) ne sont jamais dans les images : ils sont lus au démarrage depuis le fichier \texttt{.env}, exclu du dépôt, dont un modèle documenté (\texttt{.env.example}) est versionné. Dans les conteneurs, la passerelle joint les services par leur nom (\texttt{http://auth-service:8081}\dots) grâce aux variables \texttt{*\_SERVICE\_URL}, alors qu'elle utilise \texttt{localhost} lorsqu'ils sont lancés depuis l'IDE : le même code fonctionne dans les deux cas.
+
+\section{Pipeline d'intégration et de déploiement continus}
+La figure~\ref{fig:pipeline} présente le pipeline exécuté à chaque \textit{push} et à chaque \textit{pull request}.
+\begin{figure}[H]
+    \centering
+    \img{0.85}{pipeline_ci.png}
+    \caption{Pipeline d'intégration et de déploiement continus}
+    \label{fig:pipeline}
+\end{figure}
+
+Les trois familles de tests s'exécutent en parallèle sur des machines Ubuntu 24.04 fournies par GitHub, avec mise en cache des dépendances Maven, npm et pip. Les images ne sont construites que si les trois réussissent ; elles sont alors publiées sur le registre lorsque la modification arrive sur la branche \texttt{main}. Le tableau~\ref{tab:jobs} donne la durée de chaque tâche lors d'une exécution réelle.
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|p{6.5cm}|p{3cm}|p{2.2cm}|}
+\hline
+\textbf{Tâche} & \textbf{Résultat} & \textbf{Durée} \\
+\hline
+Backend : Maven + JUnit & Succès & 33 s \\
+\hline
+Frontend : Vitest + builds de production & Succès & 30 s \\
+\hline
+Machine learning : pytest & Succès & 30 s \\
+\hline
+8 images Docker (en parallèle) & Succès & 18 à 32 s chacune \\
+\hline
+\textbf{Pipeline complet} & \textbf{Succès} & \textbf{1 min 12 s} \\
+\hline
+\end{tabular}
+\caption{Durées d'une exécution du pipeline}
+\label{tab:jobs}
+\end{table}
+
+La figure~\ref{fig:archi-devops} replace ce pipeline dans la chaîne complète, du poste de développement jusqu'au serveur qui exécute les conteneurs.
+\begin{figure}[H]
+    \centering
+    \img{0.9}{architecture_devops.png}
+    \caption{Chaîne DevOps de Sellio}
+    \label{fig:archi-devops}
+\end{figure}
+
+\section{Réalisation du Sprint 12}
+\Needspace{20\baselineskip}
+\textbf{Exécution du pipeline :} la figure~\ref{fig:ui-actions} présente une exécution réussie sur GitHub : les trois tâches de tests puis la matrice de huit constructions d'images.
+\begin{figure}[H]
+    \centering
+    \img{0.9}{ui_github_actions.png}
+    \caption{Exécution du pipeline dans GitHub Actions}
+    \label{fig:ui-actions}
+\end{figure}
+
+\Needspace{20\baselineskip}
+\textbf{Historique des exécutions :} la figure~\ref{fig:ui-runs} présente l'historique des exécutions du workflow, une par modification poussée.
+\begin{figure}[H]
+    \centering
+    \img{0.9}{ui_github_runs.png}
+    \caption{Historique des exécutions du workflow CI}
+    \label{fig:ui-runs}
+\end{figure}
+
+\section*{Conclusion}
+Cette release a rendu la livraison de Sellio reproductible : chaque modification est compilée et testée sur les trois technologies du projet, la plateforme se lance en une commande, et les images publiées sont exactement celles qui ont passé les tests. Les tests écrits portent sur les règles dont la violation aurait les conséquences les plus graves, en particulier l'isolation des données entre boutiques.

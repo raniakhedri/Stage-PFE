@@ -1,0 +1,508 @@
+\thispagestyle{fancy}
+\fancyhead[R]{A.U 2025-2026}
+\fancyhead[L]{ chapitre 1: Cadre général du projet }
+\chapter{Cadre général du projet}
+\section*{Introduction}
+Ce premier chapitre pose les bases du projet. Nous présentons d'abord l'organisme d'accueil, puis le contexte qui a conduit à la naissance de Sellio et la problématique à laquelle il répond. Nous étudions ensuite les principales solutions de création de boutiques en ligne afin d'en dégager les limites, avant de décrire la solution proposée. Nous terminons par l'étude des méthodologies de développement ayant conduit au choix de Scrum.
+
+\section{Cadre général}
+Ce projet s'inscrit dans le cadre du projet de fin d'études en vue de l'obtention du Diplôme National d'Ingénieur en Informatique, option \textbf{TWIN} (Technologies du Web et de l'Internet), à l'École ESPRIT. Il a été réalisé au sein de l'agence Antigone dans le cadre d'un stage initialement prévu pour une durée de six mois, débuté le \textbf{2 février 2026}, puis prolongé par avenant jusqu'au \textbf{29 octobre 2026}.
+
+Le sujet officiel, « \textit{Conception et développement d'une plateforme transactionnelle intelligente} », consiste à concevoir une plateforme de commerce électronique distribuée, capable d'analyser en temps réel les interactions des utilisateurs et d'exploiter ces données à l'aide de techniques d'apprentissage automatique afin de personnaliser l'expérience d'achat.
+
+Ce sujet s'est concrétisé sous la forme de \textbf{Sellio}, une plateforme SaaS permettant à des commerçants issus de huit secteurs d'activité : mode, beauté, sport, high-tech, maison, épicerie, bijoux et articles pour enfants , de créer et d'exploiter leur propre boutique en ligne.
+\section{Présentation de l'organisme d'accueil}
+\begin{samepage}
+\noindent
+\begin{minipage}{\textwidth}
+Antigone est une agence de stratégie et de marketing digital basée à Radès, fondée en 2021. Elle accompagne ses clients dans la construction de leur stratégie digitale : diagnostic de la situation existante, définition des axes de communication, puis mise en œuvre à travers la création de sites web, d'applications mobiles et de campagnes. Une partie croissante de ses clients sont de petites marques qui souhaitent vendre en ligne, ce qui a naturellement conduit l'agence à s'intéresser au commerce électronique.
+\begin{figure}[H]
+    \centering
+    \img{0.40}{Antigonelogo.jpg}
+    \caption{Logo d'Antigone}
+    \label{fig:Antigone_logo}
+\end{figure}
+\end{minipage}
+\end{samepage}
+
+\subsection{Fiche d'identité d'Antigone}
+Le tableau~\ref{tab:coordonnees} présente la fiche d'identité d'Antigone.
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Nom de la société} & \textbf{Antigone} \\
+\hline
+Fondateur et représentant & M. Malek Naouar \\
+\hline
+Adresse & 12, Rue Habib Thameur, Radès 2040, Ben Arous \\
+\hline
+Téléphone & (+216) 55 557 193 \\
+\hline
+Adresse e-mail & antigoneconsulting.info@gmail.com \\
+\hline
+Site web & https://antigoneagency.com/ \\
+\hline
+Logo & \logo{1.2cm}{Antigonelogo.jpg} \\
+\hline
+\end{tabular}
+\caption{Fiche d'identité d'Antigone~\cite{Antigone2026}}
+\label{tab:coordonnees}
+\end{table}
+
+\subsection{Domaines d'activité d'Antigone}
+Les activités d'Antigone s'organisent autour de trois axes :
+\begin{enumerate}
+  \item \textbf{Stratégie de marketing digital :}
+  \begin{itemize}
+    \item réalisation d'un \textbf{diagnostic} de la présence digitale du client ;
+    \item définition des \textbf{axes de communication} les plus pertinents ;
+    \item accompagnement dans la \textbf{construction et l'optimisation} de la stratégie marketing.
+  \end{itemize}
+  \item \textbf{Conseil, études et accompagnement :}
+  \begin{itemize}
+    \item \textbf{conseils et études} sur mesure ;
+    \item démarche pragmatique fondée sur le \textbf{marketing des services} et le \textbf{marketing de l'innovation}.
+  \end{itemize}
+  \item \textbf{Création et développement digital :}
+  \begin{itemize}
+    \item conception et développement de \textbf{sites web} et de \textbf{boutiques en ligne} ;
+    \item conception et développement d'\textbf{applications mobiles} ;
+    \item mise à disposition de solutions adaptées à la réussite des projets clients.
+  \end{itemize}
+\end{enumerate}
+
+\section{Contexte du projet}
+Dans cette section, nous décrivons le problème, examinons les solutions existantes, puis présentons la solution proposée.
+
+\subsection{Problématique}
+Le projet est né d'un développement précédent : \textbf{NaturEssence}, une boutique en ligne de cosmétiques naturels réalisée par Antigone pour l'un de ses clients. Au fil des échanges avec d'autres marques accompagnées par l'agence, un constat s'est imposé : une boutique de vêtements, une bijouterie, une épicerie fine ou une autre marque de cosmétiques avaient au fond les mêmes besoins, un catalogue avec variantes, une vitrine à l'image de la marque, un tunnel de commande, des promotions, un suivi des clients. Refaire ce travail boutique par boutique coûte cher et produit des applications isolées, chacune à maintenir séparément.\newline
+
+\vspace{6pt}
+Du côté des commerçants, la situation n'est pas meilleure. Beaucoup vendent aujourd'hui via Instagram ou WhatsApp : les commandes sont prises en message privé, le stock est tenu dans un carnet ou un tableur, les tailles et les couleurs disponibles sont communiquées au cas par cas, et aucune donnée n'est conservée sur ce que les visiteurs regardent, ajoutent au panier puis abandonnent. Ceux qui passent à une plateforme comme Shopify se heurtent à d'autres obstacles : abonnement en devises, paramétrage de la TVA et des zones de livraison tunisiennes, et fonctions avancées (recommandations, essayage virtuel, analyse prédictive) proposées sous forme d'extensions payantes indépendantes, qui ne partagent pas leurs données.\newline
+
+\vspace{6pt}
+Enfin, une plateforme qui héberge plusieurs commerçants pose des questions propres au modèle SaaS : comment s'assurer qu'un commerçant est bien celui qu'il prétend être avant de le laisser encaisser des paiements, comment isoler strictement les données d'une boutique de celles d'une autre, y compris ses clients, et comment offrir à chacun une vitrine et une fiche produit réellement adaptées à son métier sans développer un site par client. Enfin, une plateforme de cette taille doit pouvoir être modifiée sans régression : chaque évolution doit être construite, testée et livrée de façon automatique.\newline
+
+\vspace{6pt}
+\textbf{La problématique de ce projet peut être résumée ainsi :}
+\vspace{6pt}
+\begin{center}
+\fbox{
+    \begin{minipage}{0.85\textwidth}
+        \vspace{8pt}
+        \begin{center}
+        \textbf{Comment concevoir une plateforme transactionnelle distribuée, fondée sur une architecture microservices, qui permette à des commerçants de secteurs variés de créer, personnaliser et exploiter leur propre boutique en ligne en toute sécurité, tout en analysant en temps réel les interactions de leurs visiteurs grâce à l'apprentissage automatique afin de personnaliser l'expérience d'achat et d'anticiper la perte de clients ?}
+        \end{center}
+        \vspace{8pt}
+    \end{minipage}
+}
+\end{center}
+\vspace{6pt}
+
+\subsection{Étude de l'existant}
+
+Avant de concevoir Sellio, nous avons étudié plusieurs solutions de création et de gestion
+de boutiques en ligne afin d'identifier leurs principaux apports et leurs limites par rapport
+aux besoins du projet. Trois plateformes internationales largement utilisées ont été retenues,
+auxquelles nous avons ajouté Converty, une solution tunisienne permettant de mieux
+situer Sellio par rapport aux réalités du marché local.
+
+\begin{itemize}
+
+\item \textbf{Shopify}~\cite{Shopify2026} est l'une des principales plateformes SaaS
+de création de boutiques en ligne. Elle propose des thèmes personnalisables, une gestion
+du catalogue avec variantes, des outils de paiement ainsi qu'un vaste écosystème
+d'applications. Cependant, son fonctionnement reste principalement pensé pour un marché
+international. L'abonnement est facturé en devises et certaines adaptations au contexte
+tunisien nécessitent des configurations ou des applications supplémentaires. Plusieurs
+fonctionnalités avancées, telles que la recommandation, la fidélisation ou l'essayage
+virtuel, reposent également sur des applications tierces.
+
+\item \textbf{WooCommerce}~\cite{WooCommerce2026} est une extension open source
+de WordPress permettant de transformer un site en boutique en ligne. Elle se distingue
+par sa grande flexibilité et par l'absence d'abonnement obligatoire à la plateforme
+elle-même. En contrepartie, le commerçant doit gérer son hébergement, les mises à jour,
+la sécurité et la compatibilité entre les différentes extensions. WooCommerce n'est pas
+une plateforme multi-boutiques SaaS par nature : chaque boutique repose généralement
+sur sa propre installation.
+
+\item \textbf{Wix eCommerce}~\cite{Wix2026} privilégie la simplicité de prise en main.
+Son éditeur visuel permet de construire et de personnaliser une boutique sans connaissances
+techniques particulières. La plateforme fournit les fonctions courantes de gestion des
+produits, des commandes et du contenu. Ses possibilités deviennent cependant plus
+limitées lorsqu'il s'agit de représenter des caractéristiques métier complexes ou de mettre
+en place des mécanismes avancés d'analyse comportementale et de prédiction.
+
+\item \textbf{Converty}~\cite{Converty2026} constitue une alternative particulièrement
+intéressante dans le contexte tunisien. Il s'agit d'une plateforme SaaS permettant aux
+commerçants de créer et de gérer une boutique en ligne sans avoir à développer leur propre
+solution. Elle propose notamment la gestion des produits, des commandes, des clients et
+des stocks, ainsi que des modèles de boutiques personnalisables et une application mobile
+de gestion.
+
+Contrairement aux solutions internationales étudiées, Converty est directement orientée
+vers le marché tunisien et prend en compte plusieurs pratiques locales, telles que
+l'utilisation du dinar tunisien, le paiement à la livraison et l'intégration avec des acteurs
+locaux de la livraison. La plateforme met également en avant certaines fonctionnalités
+basées sur l'intelligence artificielle, notamment des outils d'assistance à la création et à
+la vente.
+
+
+\end{itemize}
+
+\Needspace{15cm}
+
+Le tableau~\ref{tab:existing} compare ces quatre solutions selon les critères les plus
+pertinents pour notre projet.
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.35}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{|p{4.8cm}|p{2.7cm}|p{2.7cm}|p{2.7cm}|p{3cm}|}
+\hline
+
+\textbf{Critères}
+& \textbf{Shopify}
+& \textbf{WooCommerce}
+& \textbf{Wix eCommerce}
+& \textbf{Converty} \\
+
+\hline
+
+Plateforme SaaS hébergeant plusieurs boutiques
+& Oui
+& Non
+& Oui
+& Oui \\
+
+\hline
+
+Fiches produit adaptées au secteur
+(tour de doigt, pointure, allergènes\dots)
+& Partiel (métachamps)
+& Extensions
+& Partiel
+& Non \\
+
+\hline
+
+Gabarits de vitrine personnalisables sans code
+& Oui
+& Partiel
+& Oui
+& Oui \\
+
+\hline
+
+Adaptation au marché tunisien
+(dinar, livraison, pratiques locales)
+& Configuration nécessaire
+& Configuration nécessaire
+& Configuration nécessaire
+& Oui \\
+
+\hline
+
+Paiement à la livraison
+& Selon configuration
+& Via extensions
+& Selon configuration
+& Oui \\
+
+\hline
+
+Intégration avec des transporteurs tunisiens
+& Via applications ou configuration
+& Via extensions
+& Limitée
+& Oui \\
+
+\hline
+
+Vérification d'identité du commerçant (KYC)
+& Via le prestataire de paiement
+& Non native
+& Via le prestataire de paiement
+& Non \\
+
+\hline
+
+Recommandations personnalisées
+& Applications tierces
+& Extensions
+& Limitées
+& Non \\
+
+\hline
+
+Prédiction de l'attrition
+& Applications tierces possibles
+& Non native
+& Non native
+& Non \\
+
+\hline
+
+Essayage virtuel
+& Applications tierces
+& Extensions
+& Non natif
+& Non \\
+
+\hline
+
+Fonctionnalités basées sur l'intelligence artificielle
+& Oui, natives ou via applications
+& Via extensions
+& Certaines fonctionnalités
+& Oui, certaines fonctions d'assistance \\
+
+\hline
+
+Programme de fidélité
+& Applications tierces
+& Extensions
+& Applications ou extensions
+& Non  \\
+
+\hline
+
+Application mobile de gestion
+& Oui
+& Selon extensions
+& Oui
+& Oui \\
+
+\hline
+
+Modèle économique
+& Abonnement mensuel en devises
+& Logiciel gratuit + hébergement et extensions
+& Abonnement mensuel en devises
+& Offre adaptée au marché tunisien \\
+
+\hline
+
+\end{tabular}
+}
+\caption{Comparaison de solutions existantes de création et de gestion de boutiques en ligne~
+\cite{Shopify2026,WooCommerce2026,Wix2026,Converty2026}}
+\label{tab:existing}
+\end{table}
+
+Cette comparaison montre que Converty répond déjà à plusieurs besoins propres au marché tunisien, notamment le dinar, le paiement à la livraison et l'intégration avec des services locaux.
+
+Sellio se différencie toutefois par une approche plus intégrée : une plateforme multi-boutiques adaptée à huit secteurs, avec personnalisation avancée des vitrines et exploitation des données transactionnelles et comportementales.
+
+Elle intègre directement un moteur de recommandation, la segmentation des visiteurs, la prédiction de l'attrition et l'essayage virtuel en temps réel.
+
+Sellio se positionne ainsi comme une solution SaaS locale enrichie par une couche d'intelligence comportementale intégrée.
+
+\section{Solution proposée}
+La solution retenue est une plateforme web baptisée \textbf{Sellio}. Elle se compose de trois espaces : le \textbf{site de la plateforme} (présentation, inscription des commerçants et console d'administration), le \textbf{back-office du commerçant} pour gérer sa boutique, et la \textbf{vitrine} publique de chaque boutique, sur laquelle ses clients achètent.
+
+\subsection{Espace plateforme et intégration des commerçants}
+\begin{itemize}
+    \item Page d'accueil Sellio, inscription et connexion des commerçants ;
+    \item Inscription des commerçants confirmée par un code envoyé par e-mail, réinitialisation du mot de passe ;
+    \item Assistant de création de boutique : informations, secteur parmi huit, modèle de vitrine parmi huit, identité visuelle, carte bancaire, pièce d'identité et selfie ;
+    \item Vérification KYC (\textit{Know Your Customer}) par l'équipe Sellio, qui approuve ou refuse la boutique avec un motif ;
+    \item Console d'administration : statistiques globales, boutiques et propriétaires, blocage, suspension ou suppression d'un commerçant et de sa boutique ; le super administrateur ajoute des administrateurs et gère les rôles. L'équipe Sellio n'a jamais accès aux clients des boutiques.
+\end{itemize}
+
+\subsection{Catalogue et vitrine personnalisable}
+\begin{itemize}
+    \item Gestion des produits et des catégories ; fiche produit adaptée au secteur et au type du produit (bague, montre, chaussures, machine de fitness, smartphone\dots) ;
+    \item Valeurs choisies dans des listes normalisées (tailles, couleurs, matières, pierres, allergènes\dots), extensibles par chaque boutique ;
+    \item Huit modèles de vitrine complets (\textbf{Minimal}, \textbf{Bold}, \textbf{Luxury}, \textbf{Sport}, \textbf{Tech}, \textbf{Artisan}, \textbf{Pop}, \textbf{Éditorial}) ;
+    \item Personnalisation sans code avec aperçu en direct : logo et taille, couleurs, polices, barre d'annonce, coordonnées et réseaux sociaux, et page d'accueil (sections affichées et ordonnées, textes, produits mis en avant).
+\end{itemize}
+
+\subsection{Parcours transactionnel}
+\begin{itemize}
+    \item Panier dynamique avec choix obligatoire de la taille, de la pointure ou du format pour les articles concernés ;
+    \item Tunnel de commande avec zones de livraison, TVA et codes promotionnels ;
+    \item Paiement en ligne sécurisé par \textbf{Stripe} ;
+    \item Suivi des statuts de commande, historique client, demandes de retour et politique de retour ;
+    \item Avis clients modérés par le commerçant.
+\end{itemize}
+
+\subsection{Marketing et fidélisation}
+\begin{itemize}
+    \item Promotions : codes promo et remises automatiques ;
+    \item Bannières de page d'accueil ciblées par segment de clientèle ;
+    \item Campagnes e-mail (newsletter, contact individuel) via l'API Brevo ;
+    \item Programme de fidélité à points avec niveaux (Nouveau, Fidèle, VIP, Inactif) et montée de niveau automatique.
+\end{itemize}
+
+\subsection{Essayage virtuel et intelligence comportementale}
+\begin{itemize}
+    \item \textbf{Cabine d'essayage virtuel en temps réel} : le client active sa caméra et voit le vêtement porté sur lui, généré en direct par le modèle \textit{Lucy VTON} de l'API \textbf{Decart} ;
+    \item \textbf{Suivi comportemental} : collecte des événements de navigation (vues, recherches, ajouts au panier, achats) dans une table partitionnée ;
+    \item \textbf{Moteur de recommandation hybride} : « produits similaires », « pour vous », « souvent achetés ensemble » et « populaires » ;
+    \item \textbf{Segmentation} des visiteurs par K-Means et \textbf{prédiction de l'attrition} des clients par forêt aléatoire ou gradient boosting selon le secteur ;
+    \item Tableau de bord « Comportement » destiné au commerçant.
+\end{itemize}
+
+\subsection{Qualité et déploiement}
+\begin{itemize}
+    \item Tests automatisés des règles critiques (isolation des boutiques, droits, modèles d'apprentissage) ;
+    \item Conteneurisation de toute la plateforme avec Docker et lancement en une commande ;
+    \item Intégration et livraison continues avec GitHub Actions : chaque modification est construite et testée, et les images sont publiées automatiquement.
+\end{itemize}
+
+\subsection{Apports de la solution}
+\begin{itemize}
+    \item \textbf{Une plateforme pour plusieurs boutiques} : un seul code, une seule infrastructure, et une boutique opérationnelle en quelques minutes au lieu d'un développement sur mesure .
+    \item \textbf{Une confiance vérifiée} : aucun commerçant ne peut vendre avant la validation de son identité et de son moyen de paiement ; seules les informations non sensibles de la carte sont conservées, conformément à la norme PCI-DSS .
+    \item \textbf{Une isolation stricte des données} : chaque requête est rattachée à la boutique de l'utilisateur connecté ; chaque client appartient à une seule boutique, et même l'équipe Sellio n'accède pas aux clients des commerçants .
+    \item \textbf{Une vitrine à l'image de la marque et adaptée à son métier} sans écrire de code, grâce aux huit modèles, aux fiches produit par secteur et aux éditeurs avec aperçu en direct .
+\item \textbf{Une adaptation au contexte local et international} : gestion multidevise, prise en charge du dinar tunisien, TVA configurable et zones de livraison paramétrables.
+    \item \textbf{Une intelligence intégrée} : recommandation, segmentation et prédiction de l'attrition partagent les mêmes données que le reste de la plateforme, et chaque modèle a été évalué sur des données publiques réelles, avec comparaison à une référence simple .
+    \item \textbf{Une expérience d'achat différenciante} grâce à l'essayage virtuel, qui réduit l'incertitude sur le rendu d'un vêtement, principale cause d'hésitation et de retours dans la mode en ligne .
+    \item \textbf{Une architecture évolutive}, où chaque domaine (identité, catalogue, commandes, marketing, analyse) est un microservice qui peut évoluer et être déployé séparément ;
+    \item \textbf{Une livraison fiable}, chaque modification étant testée et conteneurisée automatiquement avant d'être publiée.
+\end{itemize}
+
+\section{Étude des méthodologies de développement}
+Avant de présenter les différentes approches, il convient de distinguer la \textbf{méthodologie}, qui définit les principes généraux du processus de développement, du \textbf{cadre de développement}, qui fournit une structure concrète (rôles, cérémonies, artefacts) pour appliquer ces principes.
+
+\subsection{Choix de la méthodologie}
+Le tableau~\ref{tab:comparaison-methodologies} compare les principales méthodologies de développement logiciel.
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{|p{3cm}|p{6.2cm}|p{6.2cm}|}
+\hline
+\textbf{Méthodologie} & \textbf{Avantages} & \textbf{Inconvénients} \\
+\hline
+\textbf{Waterfall}
+&
+\textemdash\ Phases claires et structurées.\newline
+\textemdash\ Planification simple du projet.
+&
+\textemdash\ Difficulté à s'adapter aux changements des besoins.\newline
+\textemdash\ Retour d'information tardif.
+\\
+\hline
+\textbf{RUP}
+&
+\textemdash\ Forte traçabilité.\newline
+\textemdash\ Processus orienté vers la gestion des risques.
+&
+\textemdash\ Gestion complexe.\newline
+\textemdash\ Charge documentaire importante.
+\\
+\hline
+\textbf{2TUP}
+&
+\textemdash\ Approche itérative séparant branche fonctionnelle et branche technique.\newline
+\textemdash\ Prise en compte des risques techniques.
+&
+\textemdash\ Moins flexible lorsque les besoins évoluent.\newline
+\textemdash\ Approche davantage orientée processus.
+\\
+\hline
+\textbf{Agile}
+&
+\textemdash\ Approche itérative et adaptative.\newline
+\textemdash\ Retour d'information continu.\newline
+\textemdash\ Bonne adaptation aux changements.
+&
+\textemdash\ Nécessite une communication régulière.\newline
+\textemdash\ Dépend de l'implication des parties prenantes.
+\\
+\hline
+\end{tabular}
+\caption{Étude comparative des méthodologies de développement}
+\label{tab:comparaison-methodologies}
+\end{table}
+
+L'\textbf{approche Agile} a été retenue. Le périmètre de Sellio a en effet beaucoup évolué pendant le stage : le projet a commencé comme une boutique unique (NaturEssence), a été découpé en microservices, puis transformé en plateforme multi-boutiques, avant d'intégrer l'essayage virtuel, l'apprentissage automatique, de nouveaux secteurs et une chaîne DevOps. Seule une démarche itérative permettait d'absorber ces évolutions sans remettre en cause le travail déjà livré.
+
+\subsection{Étude comparative des cadres de développement}
+Le tableau~\ref{tab:comparaison-cadres} compare les principaux cadres Agile : \textbf{Scrum}, \textbf{Kanban} et \textbf{Extreme Programming (XP)}.
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{|p{3cm}|p{6.2cm}|p{6.2cm}|}
+\hline
+\textbf{Cadre} & \textbf{Avantages} & \textbf{Inconvénients} \\
+\hline
+\textbf{Scrum}
+&
+\textemdash\ Organisation du travail en sprints.\newline
+\textemdash\ Backlog permettant de prioriser les fonctionnalités.\newline
+\textemdash\ Suivi régulier de l'avancement.\newline
+\textemdash\ Rôles clairement définis.
+&
+\textemdash\ Nécessite une organisation et une communication régulières.\newline
+\textemdash\ Moins adapté aux tâches très imprévisibles.
+\\
+\hline
+\textbf{Kanban}
+&
+\textemdash\ Gestion visuelle des tâches.\newline
+\textemdash\ Grande flexibilité des priorités.\newline
+\textemdash\ Limitation du travail en cours.
+&
+\textemdash\ Moins structuré que Scrum.\newline
+\textemdash\ Pas de rôles ni de sprints fixes.
+\\
+\hline
+\textbf{XP}
+&
+\textemdash\ Forte orientation vers la qualité du code.\newline
+\textemdash\ Tests fréquents et intégration continue.
+&
+\textemdash\ Nécessite une forte implication de l'équipe.\newline
+\textemdash\ Pratiques (programmation en binôme) difficiles à appliquer par une seule développeuse.
+\\
+\hline
+\end{tabular}
+\caption{Étude comparative des cadres de développement Agile}
+\label{tab:comparaison-cadres}
+\end{table}
+
+Nous avons retenu \textbf{Scrum}~\cite{ScrumGuide2020}. Son découpage en sprints de deux semaines correspond au rythme des points de suivi avec l'encadrant professionnel, et le backlog permet de prioriser les user stories d'un périmètre qui s'est élargi au fil du projet. Le projet a ainsi été organisé en sept releases et douze sprints, présentés au chapitre suivant.\newline
+
+\Needspace{12cm}
+La figure~\ref{fig:fonctionnement-scrum} présente le fonctionnement du cadre Scrum, depuis la planification du sprint jusqu'à la revue et à la rétrospective.
+\begin{figure}[H]
+    \centering
+    \img{0.9}{scrum-framework.png}
+    \caption{Fonctionnement du cadre Scrum~\cite{ScrumGuide2020}}
+    \label{fig:fonctionnement-scrum}
+\end{figure}
+
+\subsection{Les rôles dans la méthode Scrum}
+Scrum repose sur trois rôles :\\
+
+\noindent \textbf{- Product Owner :} il définit les besoins, priorise les fonctionnalités et maximise la valeur du produit.\\
+\noindent \textbf{- Scrum Master :} facilitateur, il veille à la bonne application de Scrum, anime les cérémonies et lève les obstacles.\\
+\noindent \textbf{- Équipe de développement :} elle réalise les tâches planifiées dans chaque sprint, de l'analyse jusqu'à la livraison.\\
+
+Le tableau~\ref{tab:roles_scrum} présente les personnes qui ont occupé ces rôles dans notre projet.
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{|p{5cm}|p{8cm}|}
+\hline
+\textbf{Rôle Scrum} & \textbf{Personne responsable} \\
+\hline
+Product Owner & M. Malek Naouar \\
+\hline
+Scrum Master & \textit{Karim Arouchi} \\
+\hline
+Équipe de développement & Rania Khedhri \\
+\hline
+\end{tabular}
+\caption{Répartition des rôles Scrum dans notre projet}
+\label{tab:roles_scrum}
+\end{table}
+
+\section*{Conclusion}
+Dans ce chapitre, nous avons présenté l'organisme d'accueil et le contexte du projet, formulé la problématique, étudié les solutions existantes et décrit la solution proposée. Nous avons enfin justifié le choix de Scrum. Le chapitre suivant détaille l'analyse et la spécification des besoins.

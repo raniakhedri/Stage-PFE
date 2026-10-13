@@ -1,0 +1,615 @@
+\thispagestyle{fancy}
+\fancyhead[R]{A.U 2025-2026}
+\fancyhead[L]{ chapitre 2: Analyse et spécification des besoins }
+\chapter{Analyse et spécification des besoins}
+\section*{Introduction}
+Dans ce chapitre, nous analysons en détail les besoins de la plateforme Sellio. Nous identifions d'abord les acteurs, puis les besoins fonctionnels et non fonctionnels. Nous présentons ensuite les diagrammes de cas d'utilisation, l'architecture retenue, le backlog produit et la planification des sprints, et enfin l'environnement de travail.
+
+\section{Analyse et spécification des besoins}
+La spécification des besoins fonctionnels et non fonctionnels est la première étape du cycle de développement : elle fixe ce que la plateforme doit offrir et les qualités qu'elle doit garantir.
+
+\subsection{Identification des acteurs}
+Sellio met en relation une plateforme, des commerçants et les clients de ces commerçants. Chaque acteur y joue un rôle distinct.
+\subsubsection*{\underline{\textbf{Acteurs principaux}}}
+\begin{itemize}[label=\ding{109}]
+\item \textbf{Administrateur Sellio :} membre de l'équipe de la plateforme. Il consulte les statistiques globales, la liste des boutiques et de leurs propriétaires, valide ou refuse les dossiers de vérification (KYC), suspend une boutique, bloque ou supprime un commerçant. Il n'a jamais accès aux clients, aux commandes ni aux analyses des boutiques.
+\item \textbf{Super administrateur Sellio :} administrateur Sellio qui, en plus, ajoute des administrateurs, change le rôle des comptes de la plateforme et supprime un compte Sellio.
+\item \textbf{Commerçant :} propriétaire d'une boutique. Il s'inscrit, crée sa boutique, soumet son dossier de vérification, puis gère depuis le back-office son catalogue, sa vitrine, ses commandes, ses retours, ses promotions, son programme de fidélité, ses campagnes e-mail et consulte l'analyse du comportement de ses visiteurs.
+\item \textbf{Collaborateur de boutique :} membre de l'équipe d'un commerçant, doté d'un rôle aux permissions limitées (par exemple gestion des commandes uniquement).
+\item \textbf{Visiteur :} internaute non connecté qui parcourt la vitrine d'une boutique, recherche des produits, reçoit des recommandations, remplit son panier et peut utiliser la cabine d'essayage virtuel.
+\item \textbf{Client :} visiteur inscrit sur une boutique ; son compte n'existe que dans cette boutique, et la même personne peut avoir un autre compte, avec un autre mot de passe, dans une autre boutique. En plus des actions du visiteur, il passe commande, paie en ligne, suit ses commandes, demande un retour, publie des avis et cumule des points de fidélité.
+\end{itemize}
+\subsubsection*{\underline{\textbf{Acteurs secondaires}}}
+\begin{itemize}[label=\ding{109}]
+\item \textbf{Stripe :} prestataire de paiement. Il traite les paiements des commandes (\textit{PaymentIntent}) et l'enregistrement de la carte du commerçant lors de la vérification (\textit{SetupIntent}).
+\item \textbf{Decart :} service d'intelligence artificielle générative qui produit en temps réel la vidéo d'essayage virtuel à partir du flux caméra du client et de l'image du vêtement.
+\item \textbf{Brevo~\cite{brevo} :} service d'envoi d'e-mails transactionnels et marketing (codes de vérification, réinitialisation du mot de passe, invitations, confirmations de commande, newsletters).
+\item \textbf{GitHub Actions et Dependabot :} services de GitHub qui construisent, testent et publient la plateforme à chaque modification, et proposent les mises à jour de dépendances.
+\item \textbf{Moteur d'apprentissage automatique :} ensemble de scripts Python (scikit-learn) appelés par le microservice d'analyse pour entraîner les modèles et produire recommandations, segments et scores d'attrition.
+\end{itemize}
+
+\subsection{Spécification des besoins}
+Nous classons les besoins en deux familles : les besoins fonctionnels, qui décrivent \textbf{ce que} le système doit faire, et les besoins non fonctionnels, qui décrivent \textbf{comment} il doit le faire.
+\subsubsection*{\underline{\textbf{Besoins fonctionnels}}}
+Les besoins sont regroupés par module, ce qui reflète le découpage de la plateforme en microservices. Pour chaque fonctionnalité, nous précisons le ou les acteurs concernés.
+
+\Needspace{20\baselineskip}
+\paragraph{Module Plateforme, authentification et vérification}
+Le tableau~\ref{tab:besoins-plateforme} présente les besoins de ce module.
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|p{9.5cm}|p{5.5cm}|}
+\hline
+\textbf{Fonctionnalité} & \textbf{Acteur(s) concerné(s)} \\
+\hline
+S'inscrire et s'authentifier de façon sécurisée (JWT et jeton de rafraîchissement) & Commerçant, Client, Administrateurs Sellio \\
+\hline
+Confirmer son adresse par un code envoyé par e-mail ; réinitialiser son mot de passe & Commerçant, Client, Brevo \\
+\hline
+Avoir un compte client distinct dans chaque boutique & Client \\
+\hline
+Créer une boutique (nom, secteur, identité visuelle) & Commerçant \\
+\hline
+Soumettre un dossier de vérification : carte bancaire, pièce d'identité (CIN ou passeport) et selfie & Commerçant \\
+\hline
+Valider ou refuser un dossier de vérification avec motif & Administrateur Sellio \\
+\hline
+Consulter les statistiques, les boutiques et leurs propriétaires & Administrateur Sellio \\
+\hline
+Suspendre une boutique, bloquer un commerçant & Administrateur Sellio \\
+\hline
+Supprimer un commerçant avec sa boutique et toutes ses données & Administrateur Sellio \\
+\hline
+Ajouter un administrateur, changer le rôle d'un compte de la plateforme & Super administrateur Sellio \\
+\hline
+Gérer les rôles et permissions de l'équipe de la boutique & Commerçant \\
+\hline
+\end{tabular}
+\caption{Besoins fonctionnels du module Plateforme, authentification et vérification}
+\label{tab:besoins-plateforme}
+\end{table}
+
+\Needspace{20\baselineskip}
+\paragraph{Module Catalogue et vitrine}
+Le tableau~\ref{tab:besoins-catalogue} présente les besoins de ce module.
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|p{9.5cm}|p{5.5cm}|}
+\hline
+\textbf{Fonctionnalité} & \textbf{Acteur(s) concerné(s)} \\
+\hline
+Gérer les produits, leurs images et leurs variantes & Commerçant, Collaborateur \\
+\hline
+Renseigner une fiche adaptée au secteur et au type du produit (bague, montre, chaussures, machine\dots) & Commerçant, Collaborateur \\
+\hline
+Choisir les valeurs dans des listes normalisées et les étendre & Commerçant, Collaborateur \\
+\hline
+Gérer les catégories & Commerçant, Collaborateur \\
+\hline
+Choisir le secteur et l'un des huit modèles de vitrine & Commerçant \\
+\hline
+Personnaliser l'apparence : logo et taille, couleurs, polices, barre d'annonce, coordonnées, réseaux sociaux & Commerçant \\
+\hline
+Personnaliser la page d'accueil (sections, ordre, textes, produits mis en avant) avec aperçu en direct & Commerçant \\
+\hline
+Parcourir la vitrine, filtrer et rechercher les produits & Visiteur, Client \\
+\hline
+\end{tabular}
+\caption{Besoins fonctionnels du module Catalogue et vitrine}
+\label{tab:besoins-catalogue}
+\end{table}
+
+\Needspace{20\baselineskip}
+\paragraph{Module Transactions}
+Le tableau~\ref{tab:besoins-transactions} présente les besoins de ce module.
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|p{9.5cm}|p{5.5cm}|}
+\hline
+\textbf{Fonctionnalité} & \textbf{Acteur(s) concerné(s)} \\
+\hline
+Gérer un panier (taille obligatoire pour les articles concernés) & Visiteur, Client \\
+\hline
+Passer commande avec livraison, TVA et code promo & Client \\
+\hline
+Payer en ligne par carte  & Client, Stripe \\
+\hline
+Suivre ses commandes et demander un retour & Client \\
+\hline
+Gérer les commandes, leurs statuts et les retours & Commerçant, Collaborateur \\
+\hline
+Paramétrer la TVA, les zones de livraison et la politique de retour & Commerçant \\
+\hline
+Publier un avis ; modérer et répondre aux avis & Client ,Commerçant \\
+\hline
+\end{tabular}
+\caption{Besoins fonctionnels du module Transactions}
+\label{tab:besoins-transactions}
+\end{table}
+
+\Needspace{20\baselineskip}
+\paragraph{Module Marketing et fidélisation}
+Le tableau~\ref{tab:besoins-marketing} présente les besoins de ce module.
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|p{9.5cm}|p{5.5cm}|}
+\hline
+\textbf{Fonctionnalité} & \textbf{Acteur(s) concerné(s)} \\
+\hline
+Créer des codes promo et des remises automatiques & Commerçant \\
+\hline
+Publier des bannières ciblées par segment & Commerçant \\
+\hline
+Envoyer une newsletter ou contacter un client par e-mail & Commerçant, Brevo \\
+\hline
+Configurer le programme de fidélité et ses niveaux & Commerçant \\
+\hline
+Consulter son solde de points et son niveau & Client \\
+\hline
+\end{tabular}
+\caption{Besoins fonctionnels du module Marketing et fidélisation}
+\label{tab:besoins-marketing}
+\end{table}
+
+\Needspace{20\baselineskip}
+\paragraph{Module Intelligence (essayage virtuel et apprentissage automatique)}
+Le tableau~\ref{tab:besoins-ia} présente les besoins de ce module.
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|p{9.5cm}|p{5.5cm}|}
+\hline
+\textbf{Fonctionnalité} & \textbf{Acteur(s) concerné(s)} \\
+\hline
+Essayer virtuellement un vêtement en temps réel avec sa caméra & Visiteur, Client, Decart \\
+\hline
+Collecter les événements de navigation & Visiteur, Client (implicite) \\
+\hline
+Recevoir des recommandations : produits similaires, pour vous, souvent achetés ensemble, populaires & Visiteur, Client, Moteur ML \\
+\hline
+Consulter l'analyse comportementale : entonnoir, segments de visiteurs, produits consultés & Commerçant \\
+\hline
+Identifier les clients à risque d'attrition & Commerçant, Moteur ML \\
+\hline
+Ré-entraîner les modèles de la boutique & Commerçant, Moteur ML \\
+\hline
+\end{tabular}
+\caption{Besoins fonctionnels du module Intelligence}
+\label{tab:besoins-ia}
+\end{table}
+
+\Needspace{16\baselineskip}
+\paragraph{Module Qualité et déploiement}
+Le tableau~\ref{tab:besoins-devops} présente les besoins de ce module.
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|p{9.5cm}|p{5.5cm}|}
+\hline
+\textbf{Fonctionnalité} & \textbf{Acteur(s) concerné(s)} \\
+\hline
+Construire et tester automatiquement chaque modification & Équipe de développement , GitHub Actions \\
+\hline
+Construire et publier les images Docker de la plateforme & GitHub Actions \\
+\hline
+Lancer toute la plateforme en une commande & Équipe de développement  \\
+\hline
+Proposer les mises à jour de dépendances & Dependabot \\
+\hline
+\end{tabular}
+\caption{Besoins fonctionnels du module Qualité et déploiement}
+\label{tab:besoins-devops}
+\end{table}
+
+\subsubsection*{\underline{\textbf{Besoins non fonctionnels}}}
+Les besoins non fonctionnels définissent les qualités attendues du système. \newline
+\Needspace{20\baselineskip}
+Le tableau~\ref{tab:exigences-non-fonctionnelles} les présente selon le modèle de qualité ISO/IEC 25010~\cite{ISO25010}.
+
+\begin{longtable}{|p{3.2cm}|p{4cm}|p{8cm}|}
+\caption{Exigences non fonctionnelles du système}
+\label{tab:exigences-non-fonctionnelles} \\
+\hline
+\textbf{Caractéristique} & \textbf{Sous-caractéristique} & \textbf{Description} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Caractéristique} & \textbf{Sous-caractéristique} & \textbf{Description} \\
+\hline
+\endhead
+\hline \multicolumn{3}{r}{\textit{Suite à la page suivante}} \\
+\endfoot
+\hline
+\endlastfoot
+
+\multirow{5}{*}{Sécurité} & Authentification & Jeton d'accès JWT (24 h) et jeton de rafraîchissement (7 jours) ; mots de passe hachés avec BCrypt. \\
+\cline{2-3}
+ & Contrôle d'accès & Rôles et permissions vérifiés côté serveur ; un commerçant n'accède qu'aux données de sa propre boutique ; l'équipe Sellio n'accède à aucune donnée de client. \\
+\cline{2-3}
+ & Protection des paiements & Aucune donnée de carte ne transite par nos serveurs ; seuls la marque, les 4 derniers chiffres, l'expiration et la référence Stripe sont stockés (PCI-DSS). \\
+\cline{2-3}
+ & Confiance & Une boutique reste « en attente » tant que son dossier KYC n'est pas validé ; un compte bloqué ne peut plus se connecter. \\
+\cline{2-3}
+ & Secrets & Aucune clé dans le code ni dans les images : elles sont lues au démarrage depuis un fichier \texttt{.env} exclu du dépôt. \\
+\hline
+\multirow{2}{*}{Performance} & Temps de réponse & Recommandations servies depuis des modèles pré-entraînés ; les événements sont envoyés par lots pour ne pas ralentir la navigation. \\
+\cline{2-3}
+ & Volume de données & Table d'événements partitionnée par mois, index BRIN sur la date, agrégats quotidiens et rétention de 13 mois. \\
+\hline
+\multirow{2}{*}{Fiabilité} & Tolérance aux pannes & La panne d'un microservice (par exemple l'analyse) n'empêche pas les achats ; la vitrine masque simplement les sections de recommandations. \\
+\cline{2-3}
+ & Intégrité & Transactions ACID pour les commandes et les paiements. \\
+\hline
+\multirow{2}{*}{Utilisabilité} & Ergonomie & Interfaces responsives ; thème sombre par défaut sur l'espace Sellio avec bascule vers le thème clair. \\
+\cline{2-3}
+ & Personnalisation & Toute modification du thème est visible immédiatement sur la vitrine, sans écrire de code. \\
+\hline
+\multirow{3}{*}{Maintenabilité} & Modularité & Un microservice par domaine métier, une bibliothèque partagée pour les entités et DTO. \\
+\cline{2-3}
+ & Évolutivité & Ajout d'un modèle de vitrine, d'un secteur, d'un type de produit ou d'un modèle ML sans toucher aux autres services. \\
+\cline{2-3}
+ & Testabilité & Tests automatisés (JUnit, Vitest, pytest) exécutés à chaque modification. \\
+\hline
+\multirow{2}{*}{Portabilité} & Compatibilité & Navigateurs modernes (Chrome, Firefox, Edge) ; l'essayage virtuel exige une caméra et WebRTC. \\
+\cline{2-3}
+ & Déploiement & Chaque service est livré sous forme d'image Docker ; la plateforme se lance en une commande (Docker Compose). \\
+\hline
+Confidentialité & Données personnelles & Le suivi comportemental repose sur un identifiant de visiteur anonyme ; les pièces d'identité ne sont visibles que par l'administrateur Sellio. \\
+\hline
+\end{longtable}
+
+\subsection{Diagramme de cas d'utilisation général}
+Le système est utilisé par six acteurs principaux : \textbf{le Super administrateur} et \textbf{l'Administrateur Sellio}, \textbf{le Commerçant}, \textbf{le Collaborateur de boutique}, \textbf{le Visiteur} et \textbf{le Client}. Les sous-sections suivantes présentent les cas d'utilisation de chacun.
+
+\subsubsection{Cas d'utilisation de l'équipe Sellio}
+La figure~\ref{fig:cu-admin} présente les cas d'utilisation des administrateurs de la plateforme ; le super administrateur hérite de tous les cas de l'administrateur.
+\begin{figure}[H]
+    \centering
+    \img{0.9}{cu_admin_sellio.png}
+    \caption{Diagramme de cas d'utilisation de l'équipe Sellio}
+    \label{fig:cu-admin}
+\end{figure}
+
+\subsubsection{Cas d'utilisation du Commerçant}
+La figure~\ref{fig:cu-commercant} présente les cas d'utilisation du commerçant. Le collaborateur de boutique hérite d'une partie de ces cas, selon les permissions de son rôle.
+\begin{figure}[H]
+    \centering
+    \img{0.7}{cu_commercant.png}
+    \caption{Diagramme de cas d'utilisation du Commerçant}
+    \label{fig:cu-commercant}
+\end{figure}
+
+\subsubsection{Cas d'utilisation du Visiteur et du Client}
+La figure~\ref{fig:cu-client} présente les cas d'utilisation du visiteur et du client. Le client hérite de tous les cas du visiteur.
+\begin{figure}[H]
+    \centering
+    \img{0.9}{cu_client.png}
+    \caption{Diagramme de cas d'utilisation du Visiteur et du Client}
+    \label{fig:cu-client}
+\end{figure}
+
+\section{Analyse globale}
+\subsection{Diagramme de classes d'analyse}
+La figure~\ref{fig:classes} présente le diagramme de classes d'analyse. La classe centrale est \texttt{Shop} : chaque utilisateur, produit, catégorie, commande, promotion ou événement comportemental est rattaché à une boutique, ce qui matérialise l'isolation multi-boutiques. Une boutique possède un dossier de vérification (\texttt{MerchantVerification}), un statut (\texttt{PENDING}, \texttt{ACTIVE}, \texttt{REJECTED}, \texttt{SUSPENDED}), un secteur, un modèle de vitrine, des couleurs (\texttt{theme}) et sa personnalisation (\texttt{settings}, objet JSON : logo, coordonnées, page d'accueil\dots). Le diagramme présente le modèle du domaine dans son ensemble ; physiquement, ces classes sont réparties entre les bases des microservices (tableau~\ref{tab:bases}), et les associations qui franchissent une frontière de service (une commande et son client, un avis et son auteur) sont matérialisées par un identifiant. Les caractéristiques propres au secteur d'un produit sont rangées dans \texttt{Product.attributes}, ce qui évite une table par secteur. Les codes envoyés par e-mail (\texttt{AuthCode}) ne sont stockés que sous forme d'empreinte.
+\begin{figure}[H]
+    \centering
+    \img{1}{diagramme_classes.png}
+    \caption{Diagramme de classes d'analyse}
+    \label{fig:classes}
+\end{figure}
+
+\subsection{Architecture globale}
+L'architecture influence directement les performances, la maintenabilité et l'évolutivité de la plateforme. Trois approches ont été comparées : \textbf{l'architecture monolithique}, \textbf{l'architecture N-tiers} et \textbf{l'architecture microservices}.\newline
+\Needspace{20\baselineskip}
+Le tableau~\ref{tab:comparaison_architectures} présente leurs avantages et leurs limites.
+
+\begin{longtable}{|>{\raggedright\arraybackslash}p{3.2cm}|>{\raggedright\arraybackslash}p{11cm}|}
+\hline
+\textbf{Architecture} & \textbf{Caractéristiques} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Architecture} & \textbf{Caractéristiques} \\
+\hline
+\endhead
+Monolithique &
+\begin{itemize}[leftmargin=*, nosep]
+    \item Présentation, logique métier et accès aux données dans une seule unité de déploiement.
+    \item \textbf{Avantages} : simplicité de développement et de déploiement, débogage facile, cohérence transactionnelle native.
+    \item \textbf{Limites} : mise à l'échelle uniquement globale, un défaut dans un module peut affecter tout le système, maintenance difficile quand le code grossit.
+\end{itemize} \\
+\hline
+Client--serveur N-tiers &
+\begin{itemize}[leftmargin=*, nosep]
+    \item Séparation en couches : présentation, logique métier, données.
+    \item \textbf{Avantages} : séparation claire des responsabilités, plusieurs clients peuvent consommer la même couche métier.
+    \item \textbf{Limites} : le serveur d'application reste une unité de déploiement unique, avec un couplage interne entre modules.
+\end{itemize} \\
+\hline
+Microservices &
+\begin{itemize}[leftmargin=*, nosep]
+    \item Décomposition en services indépendants, chacun responsable d'un domaine métier, déployés séparément et communiquant par API REST derrière une passerelle.
+    \item \textbf{Avantages} : mise à l'échelle service par service, isolation des pannes, déploiements indépendants, liberté technologique par service.
+    \item \textbf{Limites} : complexité opérationnelle, latence réseau entre services, cohérence des données distribuées plus difficile.
+\end{itemize} \\
+\hline
+\caption{Comparaison des architectures logicielles étudiées}
+\label{tab:comparaison_architectures}
+\end{longtable}
+
+L'\textbf{architecture microservices} a été retenue, pour trois raisons. D'abord, le sujet lui-même demande une plateforme distribuée. Ensuite, les domaines de Sellio ont des charges très différentes : le service d'analyse reçoit un flux continu d'événements et lance des entraînements de modèles coûteux, alors que le service d'identité traite peu de requêtes ; les séparer permet de dimensionner chacun selon sa charge et d'éviter qu'un entraînement ne ralentisse les achats. Enfin, le projet est né d'un monolithe (NaturEssence) dont la croissance rendait les évolutions de plus en plus risquées ; la migration vers des services séparés a rendu chaque domaine plus facile à faire évoluer.
+
+
+\Needspace{18\baselineskip}
+\subsubsection{Une base de données par microservice}
+Chaque microservice possède \textbf{sa propre base de données} et il est le seul à y accéder (\textit{database per service}). Un service ne lit jamais les tables d'un autre : il lui demande l'information par une API interne. Ce principe garantit qu'un service peut faire évoluer son schéma, être sauvegardé ou dimensionné sans effet sur les autres, et qu'une panne de base n'atteint qu'un seul domaine. Le tableau~\ref{tab:bases} présente la répartition des données.
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\small
+\begin{tabular}{|p{2.6cm}|p{2.8cm}|p{9.2cm}|}
+\hline
+\textbf{Base} & \textbf{Propriétaire} & \textbf{Données} \\
+\hline
+\texttt{sellio\_auth} & auth-service & Comptes, rôles et permissions, segments, boutiques et leur personnalisation, dossiers KYC, codes e-mail, jetons de rafraîchissement, fidélité (configuration et points) \\
+\hline
+\texttt{sellio\_catalog} & catalog-service & Produits, variantes, catégories, collections, avis \\
+\hline
+\texttt{sellio\_orders} & order-service & Commandes et lignes, retours et politique de retour, codes promo et utilisations, remises, zones de livraison, TVA \\
+\hline
+\texttt{sellio\_marketing} & marketing-service & Bannières, apparence par défaut de Sellio \\
+\hline
+\texttt{sellio\_analytics} & analytics-service & Événements (partitionnés par mois), agrégats quotidiens, recommandations, segments, historique des entraînements \\
+\hline
+\end{tabular}
+\caption{Répartition des données entre les bases des microservices}
+\label{tab:bases}
+\end{table}
+
+Ce découpage a trois conséquences sur la conception :
+\begin{itemize}
+  \item \textbf{Références par identifiant.} Une commande ne pointe pas vers l'entité client d'un autre service : elle conserve l'identifiant du client et une copie des informations utiles à son affichage (nom, e-mail, adresse ; nom et prix de chaque article au moment de l'achat).
+  \item \textbf{API internes entre services.} Les échanges passent par des routes \texttt{/internal/**} protégées par un jeton de service et non exposées par la passerelle : le service de commandes demande au catalogue de réserver le stock et au service d'identité de créditer les points de fidélité ; le service d'analyse demande chaque nuit au catalogue les produits et au service de commandes les commandes payées.
+  \item \textbf{Boutique connue de tous sans lecture de la base d'identité.} Le jeton JWT porte l'identifiant et le \textit{slug} de la boutique de l'utilisateur ; pour les requêtes publiques de la vitrine, la correspondance \textit{slug} / boutique est obtenue auprès du service d'identité et mise en cache.
+\end{itemize}
+
+Les cinq bases sont hébergées par le même serveur PostgreSQL, ce qui suffit à une plateforme de cette taille ; chacune pourra être déplacée sur son propre serveur sans changer le code, seule son adresse de connexion étant à modifier. Une bibliothèque commune (\texttt{shared-lib}) regroupe les DTO et la sécurité ; chaque service ne déclare que les entités de sa propre base.
+
+\subsubsection{Choix du système de gestion de base de données}
+ Le tableau~\ref{tab:choix-sgbd} résume la comparaison qui nous a conduits à retenir PostgreSQL.
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{|p{4cm}|p{5.3cm}|p{5.3cm}|}
+\hline
+\textbf{Critère} & \textbf{MongoDB} & \textbf{PostgreSQL} \\
+\hline
+Transactions (commande + paiement + stock) & Multi-documents possibles mais plus coûteuses & ACID natives \\
+\hline
+Intégrité référentielle (boutique, client, commande) & À gérer dans l'application & Clés étrangères et contraintes \\
+\hline
+Données flexibles (attributs, thème) & Natif & Type JSONB \\
+\hline
+Volume d'événements & Bon & Partitionnement déclaratif et index BRIN \\
+\hline
+Requêtes analytiques (agrégats, jointures) & Pipeline d'agrégation & SQL standard, fonctions de fenêtre \\
+\hline
+Une base par service sur un même serveur & Oui & Oui (bases isolées, rôles distincts) \\
+\hline
+\end{tabular}
+\caption{Comparaison MongoDB / PostgreSQL}
+\label{tab:choix-sgbd}
+\end{table}
+Les données de Sellio sont avant tout relationnelles et transactionnelles (une commande relie un client, des produits, une boutique et un paiement) ; PostgreSQL couvre en outre le besoin de flexibilité (JSONB) et de volume (partitionnement), d'où ce choix~\cite{postgresql2026}.
+
+\subsubsection{Architecture logique de la plateforme}
+La figure~\ref{fig:archi_logique} présente l'architecture logique de Sellio et ses couches.
+\begin{figure}[H]
+\centering
+\img{1}{architecture_logique.png}
+\caption{Architecture logique de la plateforme Sellio}
+\label{fig:archi_logique}
+\end{figure}
+
+\subsubsection*{La couche présentation (front-end) :}
+Elle se compose de deux applications React :
+\begin{itemize}
+  \item \textbf{l'application Sellio} (port 3000), qui regroupe le site de la plateforme (accueil, inscription, connexion), la console de l'administrateur Sellio et le back-office de chaque commerçant ;
+  \item \textbf{la vitrine} (port 3001), commune à toutes les boutiques : la boutique affichée est déterminée par son identifiant (\textit{slug}) ; son modèle, ses couleurs, ses polices et sa page d'accueil sont chargés dynamiquement. Les éditeurs du back-office l'affichent dans un cadre pour en montrer l'aperçu en direct.
+\end{itemize}
+
+\subsubsection*{La couche passerelle :}
+Une passerelle \textbf{Spring Cloud Gateway} (port 8080) est le point d'entrée unique des API. Elle route chaque requête vers le bon microservice selon son chemin (\texttt{/api/v1/auth/**} vers le service d'identité, \texttt{/api/v1/public/products/**} vers le catalogue, etc.).
+
+\subsubsection*{La couche métier (back-end) :}
+Elle est composée de cinq microservices Spring Boot :
+\begin{itemize}
+  \item \textbf{auth-service} (8081) : comptes, JWT, rôles et permissions, boutiques et leur personnalisation, vérification KYC, console plateforme, fidélité et segments ;
+  \item \textbf{catalog-service} (8082) : produits et leurs caractéristiques par secteur, variantes, catégories, avis, téléversement d'images et jeton d'essayage virtuel ;
+  \item \textbf{order-service} (8083) : tunnel de commande, paiement Stripe, commandes, retours, TVA, livraison, promotions et tableau de bord ;
+  \item \textbf{marketing-service} (8084) : bannières et e-mailing ;
+  \item \textbf{analytics-service} (8085) : collecte des événements, recommandations, analyse comportementale et prédiction de l'attrition.
+\end{itemize}
+
+\subsubsection*{La couche intelligence :}
+Des scripts \textbf{Python} (pandas, scikit-learn) entraînent et appliquent les modèles. Le service d'analyse les exécute comme sous-processus et stocke les modèles entraînés par boutique.
+
+\subsubsection*{La couche données :}
+Chaque microservice dispose de sa propre base \textbf{PostgreSQL} (\texttt{sellio\_auth}, \texttt{sellio\_catalog}, \texttt{sellio\_orders}, \texttt{sellio\_marketing}, \texttt{sellio\_analytics}) ; les images de produits sont stockées sur disque et servies par le catalogue.
+
+\subsubsection*{Les services externes :}
+\textbf{Stripe} (paiements), \textbf{Decart} (essayage virtuel) et \textbf{Brevo} (e-mails).
+
+\subsubsection{Architecture physique de la plateforme}
+La figure~\ref{fig:archi_physique} présente le déploiement physique : chaque composant s'exécute dans un conteneur Docker, orchestré par Docker Compose sur un même hôte. Le navigateur communique en HTTPS avec les conteneurs nginx qui servent les applications React et avec la passerelle ; celle-ci relaie les appels vers les microservices. Le conteneur PostgreSQL héberge les cinq bases, une par microservice, dont les données sont conservées dans un volume ; les services communiquent entre eux par leurs API internes. Le navigateur communique directement avec Stripe (saisie de carte) et avec Decart (flux vidéo WebRTC), les jetons nécessaires étant délivrés par nos services.
+\begin{figure}[H]
+    \centering
+    \img{1}{architecture_physique.png}
+    \caption{Architecture physique de la plateforme Sellio}
+    \label{fig:archi_physique}
+\end{figure}
+
+\section{Pilotage du projet avec Scrum}
+\subsection{Backlog du produit}
+
+Le backlog produit regroupe les principales fonctionnalités de Sellio. 
+Afin de conserver une vue globale du projet, les besoins sont ici synthétisés 
+par grands modules. Les user stories détaillées sont présentées dans les sprints correspondants.
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|p{2.9cm}|p{9.5cm}|p{2.5cm}|}
+\hline
+\textbf{Module} & \textbf{Fonctionnalités principales} & \textbf{Complexité} \\
+\hline
+
+Authentification et utilisateurs &
+Inscription, connexion, gestion des profils, rôles, permissions et réinitialisation du mot de passe. &
+Élevée \\
+\hline
+
+Plateforme et boutiques &
+Création de boutiques, gestion multi-boutiques, vérification KYC et console d'administration Sellio. &
+Élevée \\
+\hline
+
+Catalogue et vitrine &
+Gestion des produits et catégories, fiches adaptées aux huit secteurs, modèles de vitrine et personnalisation. &
+Élevée \\
+\hline
+
+Parcours transactionnel &
+Panier, commande, paiement Stripe, gestion des commandes, retours, TVA, livraison et avis. &
+Élevée \\
+\hline
+
+Marketing et fidélisation &
+Promotions, bannières, e-mailing, programme de fidélité et gestion des niveaux clients. &
+Moyenne \\
+\hline
+
+Essayage virtuel &
+Essayage de vêtements en temps réel à partir de la caméra grâce à l'API Decart. &
+Élevée \\
+\hline
+
+Intelligence comportementale &
+Collecte des événements, recommandations personnalisées, segmentation des visiteurs et prédiction de l'attrition. &
+Élevée \\
+\hline
+
+Qualité et DevOps &
+Tests automatisés, conteneurisation avec Docker et pipeline CI/CD avec GitHub Actions. &
+Élevée \\
+\hline
+
+\end{tabular}
+\caption{Synthèse du backlog produit de Sellio}
+\label{tab:backlog-produit}
+\end{table}
+
+\section{Environnement de travail}
+\subsection{Environnement matériel de développement}
+Le développement a été réalisé sur un ordinateur portable présentant les caractéristiques suivantes :
+\begin{itemize}
+    \item \textbf{Modèle :} MSI GF63 Thin 10SC
+    \item \textbf{Système d'exploitation :} Microsoft Windows 11 Professionnel (64 bits)
+    \item \textbf{Processeur :} Intel Core i5-10500H @ 2.50 GHz, 6 cœurs et 12 processeurs logiques
+    \item \textbf{Mémoire RAM :} 16 Go
+   
+\end{itemize}
+
+\subsection{Environnement logiciel de développement}
+
+Le tableau~\ref{tab:outils} présente les principaux outils utilisés.
+
+\vspace{0.3em}
+
+\renewcommand{\arraystretch}{1.3}
+\begin{center}
+\begin{tabular}{|l|p{9cm}|c|}
+\hline
+\textbf{Outil} & \textbf{Description} & \textbf{Logo} \\
+\hline
+Visual Studio Code~\cite{vscode} &
+Éditeur principal pour le front-end React, le back-end Spring Boot et les scripts Python. &
+\logo{25pt}{vscode.jpeg} \\
+\hline
+Git et GitHub~\cite{github} & Gestion de versions et hébergement du dépôt du projet. & \logo{25pt}{github.png} \\
+\hline
+PlantUML~\cite{plantuml} & Génération des diagrammes UML à partir de descriptions textuelles. & \logo{25pt}{plantuml.png} \\
+\hline
+PostgreSQL~\cite{postgresql2026} & Système de gestion de base de données relationnelle. & \logo{25pt}{postgresql.png} \\
+\hline
+Maven~\cite{maven} & Construction et gestion des dépendances des microservices Java. & \logo{25pt}{maven.png} \\
+\hline
+Stripe Dashboard~\cite{stripe} & Suivi des paiements et des cartes en mode test. & \logo{25pt}{stripe.png} \\
+\hline
+Docker~\cite{docker} & Images des services et des front-ends ; Docker Compose pour lancer la plateforme. & \logo{25pt}{docker.png} \\
+\hline
+GitHub Actions~\cite{githubactions} & Intégration et livraison continues, publication des images. & \logo{25pt}{githubactions.png} \\
+\hline
+\end{tabular}
+\captionof{table}{Outils utilisés pour la modélisation, le développement et le suivi}
+\label{tab:outils}
+\end{center}
+
+\subsubsection{Langages de programmation}
+\Needspace{16\baselineskip}
+Le tableau~\ref{tab:langages} présente les langages utilisés.
+\vspace{0.5em}
+\begin{center}
+\begin{tabular}{|l|p{9cm}|c|}
+\hline
+\textbf{Langage} & \textbf{Usage} & \textbf{Logo} \\
+\hline
+Java 17~\cite{java17} & Microservices (API REST, logique métier, sécurité). & \logo{25pt}{java.png} \\
+\hline
+JavaScript (JSX)~\cite{javascript} & Applications React : Sellio, back-office et vitrine. & \logo{25pt}{javascript.png} \\
+\hline
+Python 3~\cite{python} & Nettoyage des données, entraînement et évaluation des modèles. & \logo{25pt}{python.png} \\
+\hline
+SQL & Requêtes, partitionnement et agrégats PostgreSQL. & \logo{25pt}{sql.png} \\
+\hline
+\end{tabular}
+\captionof{table}{Langages de programmation utilisés}
+\label{tab:langages}
+\end{center}
+
+\subsubsection{Frameworks et bibliothèques}
+\Needspace{24\baselineskip}
+Le tableau~\ref{tab:frameworks} présente les frameworks et bibliothèques utilisés.
+\vspace{0.5em}
+\begin{center}
+\begin{tabular}{|l|p{9cm}|c|}
+\hline
+\textbf{Framework} & \textbf{Rôle} & \textbf{Logo} \\
+\hline
+Spring Boot 3.2~\cite{springboot} & Socle des microservices (Spring Web, Spring Data JPA, Spring Security). & \logo{25pt}{springboot.png} \\
+\hline
+Spring Cloud Gateway~\cite{springcloudgateway} & Passerelle API : point d'entrée unique et routage vers les services. & \logo{25pt}{springcloud.png} \\
+\hline
+React 18~\cite{react} et Vite~\cite{vite} & Interfaces web à base de composants ; serveur de développement et compilation. & \logo{25pt}{react.png} \\
+\hline
+Tailwind CSS~\cite{tailwind} & Mise en forme utilitaire ; variables CSS pour les thèmes des vitrines. & \logo{25pt}{tailwind.png} \\
+\hline
+scikit-learn~\cite{scikitlearn}, pandas, NumPy & Modèles d'apprentissage automatique et préparation des données. & \logo{25pt}{scikitlearn.png} \\
+\hline
+Stripe.js~\cite{stripe} & Saisie sécurisée de la carte et confirmation des paiements. & \logo{25pt}{stripe.png} \\
+\hline
+SDK Decart~\cite{decart} & Connexion WebRTC au modèle d'essayage virtuel en temps réel. & \logo{25pt}{decart.png} \\
+\hline
+JUnit 5~\cite{junit}, Vitest~\cite{vitest}, pytest~\cite{pytest} & Tests automatisés du back-end, du front-end et des modèles. & \logo{25pt}{junit.png} \\
+\hline
+\end{tabular}
+\captionof{table}{Frameworks et bibliothèques utilisés}
+\label{tab:frameworks}
+\end{center}
+
+\section*{Conclusion}
+Dans ce chapitre, nous avons identifié les acteurs, spécifié les besoins fonctionnels et non fonctionnels, justifié l'architecture microservices et le choix de PostgreSQL, puis présenté le backlog produit et la planification en sept releases et douze sprints. Le chapitre suivant présente la première release.

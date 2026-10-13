@@ -23,6 +23,10 @@ timeout /t 2 /nobreak >nul
 
 start "API Gateway" cmd /k "mvn spring-boot:run -pl api-gateway"
 
+timeout /t 2 /nobreak >nul
+
+start "Analytics Service" cmd /k "mvn spring-boot:run -pl analytics-service"
+
 echo.
 echo ==========================================
 echo All services launched.

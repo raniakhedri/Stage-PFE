@@ -1,0 +1,647 @@
+\thispagestyle{fancy}
+\fancyhead[R]{A.U 2025-2026}
+\fancyhead[L]{ chapitre 3: Release 1 : Fondations de la plateforme }
+\chapter{Release 1 : Fondations de la plateforme Sellio}
+\section*{Introduction}
+Ce chapitre présente la première release, qui pose les fondations de Sellio. Le premier sprint découpe l'application existante en microservices derrière une passerelle et sécurise l'accès (JWT, rôles et permissions, comptes clients propres à chaque boutique, réinitialisation du mot de passe). Le second transforme la boutique unique en plateforme multi-boutiques : inscription des commerçants confirmée par un code envoyé par e-mail, assistant de création de boutique, vérification d'identité (KYC) et console d'administration de la plateforme, avec ses deux niveaux d'administrateurs.
+
+%==================================================================
+\section{Backlog du Sprint 1}
+\Needspace{18\baselineskip}
+Le tableau~\ref{tab:backlog-sprint1} présente le \textbf{backlog du Sprint 1}, consacré à l'architecture microservices, à l'authentification et au contrôle d'accès.
+
+\renewcommand{\arraystretch}{1.05}
+\setlength{\tabcolsep}{3pt}
+\begin{longtable}{|>{\raggedright\arraybackslash}p{3cm}|>{\raggedright\arraybackslash}p{9cm}|>{\centering\arraybackslash}p{2.5cm}|}
+\hline
+\textbf{User Story} & \textbf{Tâches} & \textbf{Estimation} \\
+\hline
+\endfirsthead
+\hline
+\textbf{User Story} & \textbf{Tâches} & \textbf{Estimation} \\
+\hline
+\endhead
+\hline
+\multicolumn{3}{r}{\textit{Suite à la page suivante}} \\
+\endfoot
+\hline
+\endlastfoot
+
+\textbf{En tant qu'utilisateur, je souhaite créer un compte}
+& Découper l'application en microservices (auth, catalog, order, marketing, analytics) et une bibliothèque partagée. & 1 \\
+\cline{2-3}
+& Mettre en place la passerelle Spring Cloud Gateway et ses règles de routage. & 1 \\
+\cline{2-3}
+& Développer l'API d'inscription avec hachage BCrypt. & 1 \\
+\cline{2-3}
+& Rattacher chaque compte client à une boutique : l'e-mail d'un client est unique dans sa boutique, celui d'un commerçant, d'un membre d'équipe ou d'un administrateur l'est sur toute la plateforme (deux index uniques partiels). & 1 \\
+\cline{2-3}
+& Développer l'interface d'inscription. & 1 \\
+\cline{2-3}
+& Tester la fonctionnalité. & 1 \\
+\hline
+
+\textbf{En tant qu'utilisateur, je souhaite me connecter}
+& Développer l'API de connexion et la génération du jeton JWT signé. & 1 \\
+\cline{2-3}
+& Développer le filtre JWT partagé par tous les microservices ; identifier l'utilisateur par son identifiant (et non par son e-mail, qui peut exister dans plusieurs boutiques). & 1 \\
+\cline{2-3}
+& Chercher le compte parmi les clients de la boutique (connexion depuis une vitrine) ou parmi les comptes Sellio ; conserver la session de chaque vitrine séparément dans le navigateur. & 1 \\
+\cline{2-3}
+& Développer l'interface de connexion et la gestion des erreurs. & 1 \\
+\cline{2-3}
+& Tester la fonctionnalité. & 1 \\
+\hline
+
+\textbf{En tant qu'utilisateur, je souhaite rester connecté}
+& Développer le jeton de rafraîchissement persistant et l'API \texttt{/refresh}. & 1 \\
+\cline{2-3}
+& Renouveler automatiquement le jeton côté client (intercepteur HTTP). & 1 \\
+\hline
+
+\textbf{En tant qu'utilisateur, je souhaite me déconnecter}
+& Développer l'API de déconnexion (révocation du jeton de rafraîchissement) et le bouton associé. & 1 \\
+\hline
+
+\textbf{En tant qu'utilisateur, je souhaite réinitialiser mon mot de passe}
+& Générer un code à six chiffres (empreinte SHA-256, validité 10 minutes, 3 essais, un envoi par minute), propre à la boutique pour un client. & 1 \\
+\cline{2-3}
+& Envoyer le code par e-mail (Brevo) aux couleurs de la boutique ou de Sellio. & 1 \\
+\cline{2-3}
+& Développer les pages « Mot de passe oublié » de la vitrine et de Sellio. & 1 \\
+\hline
+
+\textbf{En tant que client, je souhaite consulter et modifier mon profil}
+& Développer l'API et l'interface « Mon profil ». & 1 \\
+\cline{2-3}
+& Tester la fonctionnalité. & 1 \\
+\hline
+
+\textbf{En tant que commerçant, je souhaite créer des rôles et leur associer des permissions}
+& Développer l'API CRUD des rôles et l'association des permissions. & 1 \\
+\cline{2-3}
+& Développer l'interface « Rôles et permissions » (matrice des permissions). & 1 \\
+\cline{2-3}
+& Tester la fonctionnalité. & 1 \\
+\hline
+
+\textbf{En tant que commerçant, je souhaite gérer les comptes de mon équipe et de mes clients}
+& Développer l'API de gestion des utilisateurs (création, recherche, filtres, statut, statistiques). & 1 \\
+\cline{2-3}
+& Développer les interfaces « Clients », « Détail client » et « Ajouter un compte ». & 1 \\
+\cline{2-3}
+& Inviter un membre de l'équipe : mot de passe temporaire envoyé par e-mail, à remplacer obligatoirement à la première connexion. & 1 \\
+\cline{2-3}
+& Tester la fonctionnalité. & 1 \\
+\hline
+
+\textbf{En tant que système, je veux restreindre chaque endpoint selon les permissions}
+& Configurer Spring Security dans chaque microservice (endpoints publics, profil, administration). & 1 \\
+\cline{2-3}
+& Protéger les routes du back-office côté interface (garde d'authentification). & 1 \\
+\hline
+
+\multicolumn{2}{|r|}{\textbf{Total}} & \textbf{28} \\
+\hline
+\caption{Backlog du Sprint 1}
+\label{tab:backlog-sprint1}
+\end{longtable}
+
+\section{Diagramme de cas d'utilisation du Sprint 1}
+\Needspace{20\baselineskip}
+La figure~\ref{fig:cu-sprint1} présente le diagramme de cas d'utilisation du premier sprint.
+\begin{figure}[H]
+    \centering
+    \img{0.8}{cu_sprint1.png}
+    \caption{Diagramme de cas d'utilisation du Sprint 1}
+    \label{fig:cu-sprint1}
+\end{figure}
+
+\section{Services web du Sprint 1}
+Les services web permettent aux applications de communiquer via des API REST. Toutes les requêtes passent par la passerelle (\texttt{http://localhost:8080}), qui les route vers le service compétent. Le tableau~\ref{tab:ws-sprint1} présente les services web du Sprint 1.
+
+\renewcommand{\arraystretch}{1.15}
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{|p{1.8cm}|p{6.8cm}|p{6.2cm}|}
+\hline
+\textbf{Méthode} & \textbf{URL} & \textbf{Description} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Méthode} & \textbf{URL} & \textbf{Description} \\
+\hline
+\endhead
+\multicolumn{3}{|c|}{\textbf{Authentification --- /api/v1/auth (auth-service)}} \\
+\hline
+POST & /api/v1/auth/register & Créer un compte client dans une boutique et retourner les jetons. \\
+\hline
+POST & /api/v1/auth/login & Authentifier un utilisateur et retourner le jeton d'accès et le jeton de rafraîchissement. \\
+\hline
+POST & /api/v1/auth/refresh & Obtenir un nouveau jeton d'accès. \\
+\hline
+POST & /api/v1/auth/logout & Révoquer le jeton de rafraîchissement. \\
+\hline
+POST & /api/v1/auth/forgot-password & Envoyer un code de réinitialisation (boutique précisée depuis une vitrine). \\
+\hline
+POST & /api/v1/auth/reset-password & Choisir un nouveau mot de passe avec le code reçu. \\
+\hline
+POST & /api/v1/auth/change-password & Changer son mot de passe (obligatoire après un mot de passe temporaire). \\
+\hline
+GET & /api/v1/auth/me & Retourner l'utilisateur connecté, son rôle et sa boutique. \\
+\hline
+\multicolumn{3}{|c|}{\textbf{Profil --- /api/v1/profile}} \\
+\hline
+GET & /api/v1/profile & Consulter son profil. \\
+\hline
+PUT & /api/v1/profile & Modifier son profil. \\
+\hline
+\multicolumn{3}{|c|}{\textbf{Rôles et permissions --- /api/v1/admin/roles}} \\
+\hline
+GET & /api/v1/admin/roles & Lister les rôles. \\
+\hline
+POST & /api/v1/admin/roles & Créer un rôle. \\
+\hline
+PUT & /api/v1/admin/roles/\{id\} & Modifier un rôle. \\
+\hline
+DELETE & /api/v1/admin/roles/\{id\} & Supprimer un rôle. \\
+\hline
+PUT & /api/v1/admin/roles/\{id\}/permissions & Associer des permissions à un rôle. \\
+\hline
+GET & /api/v1/admin/roles/permissions-matrix & Obtenir la matrice rôles / permissions. \\
+\hline
+\multicolumn{3}{|c|}{\textbf{Utilisateurs --- /api/v1/admin/users}} \\
+\hline
+GET & /api/v1/admin/users & Lister les utilisateurs de la boutique. \\
+\hline
+POST & /api/v1/admin/users & Créer un compte. \\
+\hline
+PUT & /api/v1/admin/users/\{id\} & Modifier un compte. \\
+\hline
+PATCH & /api/v1/admin/users/\{id\}/status & Activer ou désactiver un compte. \\
+\hline
+GET & /api/v1/admin/users/search & Rechercher un utilisateur. \\
+\hline
+GET & /api/v1/admin/users/stats & Statistiques des comptes. \\
+\hline
+\caption{Services web du Sprint 1}
+\label{tab:ws-sprint1}
+\end{longtable}
+
+\section{Les cas d'utilisation du Sprint 1}
+\subsection{Cas d'utilisation « S'authentifier »}
+\subsubsection{Description textuelle}
+Le tableau~\ref{tab:uc-login} présente la description textuelle du cas d'utilisation « S'authentifier ».
+\renewcommand{\arraystretch}{1.5}
+\begin{longtable}{|p{4cm}|p{11cm}|}
+\hline
+\textbf{Acteurs} & Commerçant, Collaborateur, Client, Administrateur Sellio \\
+\hline
+\textbf{Objectif} & Accéder à la plateforme de façon sécurisée et obtenir un jeton reflétant son rôle, ses permissions et sa boutique. \\
+\hline
+\textbf{Pré-condition} & L'utilisateur possède un compte. \\
+\hline
+\textbf{Scénario principal} &
+1. L'utilisateur saisit son e-mail et son mot de passe.\newline
+2. L'interface envoie la requête à la passerelle, qui la route vers le service d'identité.\newline
+3. Le système recherche le compte : parmi les clients de la boutique si la connexion vient d'une vitrine, parmi les commerçants, membres d'équipe et administrateurs sinon. Il compare le mot de passe à son empreinte BCrypt.\newline
+4. Le système vérifie que le compte n'est pas bloqué.\newline
+5. Le système génère un jeton d'accès JWT (24 heures) contenant l'identité, le rôle et la boutique, ainsi qu'un jeton de rafraîchissement (7 jours).\newline
+6. Le système retourne les jetons et le profil de l'utilisateur.\newline
+7. L'interface stocke les jetons et redirige l'utilisateur selon son rôle : console Sellio pour l'administrateur, back-office pour le commerçant, vitrine pour le client. \\
+\hline
+\textbf{Scénario alternatif} &
+\textbf{Identifiants incorrects :} à l'étape 3, le système renvoie le message générique « Email ou mot de passe incorrect », sans préciser le champ erroné, pour ne pas faciliter l'énumération des comptes.\newline
+\textbf{Compte bloqué :} à l'étape 4, le système répond 401 avec « Votre compte a été bloqué. Contactez l'équipe Sellio. »\newline
+\textbf{Jeton expiré :} lors d'un appel ultérieur, l'intercepteur utilise le jeton de rafraîchissement pour obtenir un nouveau jeton sans redemander le mot de passe.\newline
+\textbf{Même e-mail dans deux boutiques :} un client inscrit dans deux boutiques possède deux comptes distincts, avec deux mots de passe ; la boutique depuis laquelle il se connecte détermine le compte utilisé. \\
+\hline
+\caption{Description textuelle du cas d'utilisation « S'authentifier »}
+\label{tab:uc-login}
+\end{longtable}
+
+\subsubsection{Diagramme de séquence système}
+\Needspace{18\baselineskip}
+La figure~\ref{fig:dss-login} présente le diagramme de séquence système de ce cas d'utilisation.
+\begin{figure}[H]
+    \centering
+    \img{0.6}{dss_login.png}
+    \caption{Diagramme de séquence système du cas « S'authentifier »}
+    \label{fig:dss-login}
+\end{figure}
+
+\subsubsection{Diagramme de séquence objet}
+\Needspace{20\baselineskip}
+La figure~\ref{fig:dso-login} présente le diagramme de séquence objet : la requête traverse la passerelle, le contrôleur \texttt{AuthController} et le service \texttt{AuthService}, qui interroge le dépôt \texttt{UserRepository} selon l'origine de la connexion (\texttt{findClientByEmail} pour une vitrine, \texttt{findAccountByEmail} pour Sellio) avant de générer les jetons.
+\begin{figure}[H]
+    \centering
+    \img{0.9}{dso_login.png}
+    \caption{Diagramme de séquence objet du cas « S'authentifier »}
+    \label{fig:dso-login}
+\end{figure}
+
+\section{Réalisation du Sprint 1}
+\Needspace{20\baselineskip}
+\textbf{Interface de connexion :} la figure~\ref{fig:ui-login} présente la page de connexion de Sellio, affichée par défaut en thème sombre avec une bascule vers le thème clair.
+\begin{figure}[H]
+    \centering
+    \img{0.8}{ui_login.png}
+    \caption{Interface de connexion à Sellio}
+    \label{fig:ui-login}
+\end{figure}
+
+\Needspace{20\baselineskip}
+\textbf{Interface de gestion des rôles et permissions :} la figure~\ref{fig:ui-roles} présente la matrice des permissions : le commerçant crée un rôle (par exemple « Préparateur de commandes ») et coche les modules auxquels il donne accès.
+\begin{figure}[H]
+    \centering
+    \img{0.8}{ui_roles.png}
+    \caption{Gestion des rôles et permissions}
+    \label{fig:ui-roles}
+\end{figure}
+
+\Needspace{20\baselineskip}
+\textbf{Interface de gestion des clients :} la figure~\ref{fig:ui-clients} présente la liste des clients de la boutique, avec recherche, filtres par statut et par segment, et accès à la fiche détaillée.
+\begin{figure}[H]
+    \centering
+    \img{0.8}{ui_clients.png}
+    \caption{Liste des clients de la boutique}
+    \label{fig:ui-clients}
+\end{figure}
+
+%==================================================================
+\section{Backlog du Sprint 2}
+\Needspace{18\baselineskip}
+Le tableau~\ref{tab:backlog-sprint2} présente le \textbf{backlog du Sprint 2}, consacré à la transformation en plateforme multi-boutiques.
+
+\renewcommand{\arraystretch}{1.05}
+\setlength{\tabcolsep}{3pt}
+\begin{longtable}{|>{\raggedright\arraybackslash}p{3cm}|>{\raggedright\arraybackslash}p{9cm}|>{\centering\arraybackslash}p{2.3cm}|}
+\hline
+\textbf{User Story} & \textbf{Tâches} & \textbf{Estimation} \\
+\hline
+\endfirsthead
+\hline
+\textbf{User Story} & \textbf{Tâches} & \textbf{Estimation} \\
+\hline
+\endhead
+\hline
+\multicolumn{3}{r}{\textit{Suite à la page suivante}} \\
+\endfoot
+\hline
+\endlastfoot
+
+\textbf{En tant que visiteur, je souhaite découvrir Sellio sur une page d'accueil}
+& Concevoir et développer la page d'accueil Sellio (thème sombre premium). & 1 \\
+\cline{2-3}
+& Développer la bascule thème sombre / thème clair. & 1 \\
+\hline
+
+\textbf{En tant que commerçant, je souhaite m'inscrire sur Sellio}
+& Développer l'API d'inscription commerçant (\texttt{/register-merchant}) : l'inscription reste en attente, le mot de passe déjà haché. & 1 \\
+\cline{2-3}
+& Confirmer l'adresse par un code à six chiffres envoyé par e-mail (Brevo), avec renvoi limité. & 1 \\
+\cline{2-3}
+& Développer les interfaces d'inscription et de connexion Sellio. & 1 \\
+\hline
+
+\textbf{En tant que commerçant, je souhaite créer ma boutique avec un assistant}
+& Ajouter l'entité \texttt{Shop} et rattacher utilisateurs, produits, commandes et événements à une boutique. & 1 \\
+\cline{2-3}
+& Filtrer toutes les requêtes par la boutique de l'utilisateur connecté (isolation multi-boutiques). & 1 \\
+\cline{2-3}
+& Développer l'API de création de boutique (nom, \textit{slug}, secteur parmi huit, modèle parmi huit, logo, couleurs). & 1 \\
+\cline{2-3}
+& Développer l'assistant en cinq étapes avec retour en arrière. & 1 \\
+\cline{2-3}
+& Tester la fonctionnalité. & 1 \\
+\hline
+
+\textbf{En tant que commerçant, je souhaite ouvrir ma vitrine depuis le back-office}
+& Développer le lien « Voir le site » vers la vitrine de la boutique. & 1 \\
+\hline
+
+\textbf{En tant que commerçant, je souhaite enregistrer ma carte bancaire}
+& Développer l'API Stripe de création d'un \textit{SetupIntent}. & 1 \\
+\cline{2-3}
+& Intégrer Stripe Elements et confirmer la carte côté navigateur. & 1 \\
+\cline{2-3}
+& Stocker uniquement la marque, les 4 derniers chiffres, l'expiration et la référence \texttt{pm\_}. & 1 \\
+\hline
+
+\textbf{En tant que commerçant, je souhaite soumettre ma pièce d'identité et un selfie}
+& Développer l'entité \texttt{MerchantVerification} et l'API de soumission avec contrôles (CIN à 8 chiffres, passeport, taille des images). & 1 \\
+\cline{2-3}
+& Développer l'étape « Identité » (CIN recto-verso ou passeport, selfie). & 1 \\
+\cline{2-3}
+& Développer la page de suivi du dossier et la nouvelle soumission après refus. & 1 \\
+\hline
+
+\textbf{En tant qu'administrateur Sellio, je souhaite valider ou refuser un dossier}
+& Développer les API d'approbation et de refus (motif obligatoire). & 1 \\
+\cline{2-3}
+& Développer l'écran de revue du dossier dans la console. & 1 \\
+\cline{2-3}
+& Tester la fonctionnalité. & 1 \\
+\hline
+
+\textbf{En tant qu'administrateur Sellio, je souhaite consulter les boutiques et leurs propriétaires}
+& Créer le compte administrateur Sellio au démarrage (\textit{seed}). & 1 \\
+\cline{2-3}
+& Développer les API de statistiques, de liste et de détail des boutiques. & 1 \\
+\cline{2-3}
+& Développer la console avec pagination. & 1 \\
+\hline
+
+\textbf{En tant qu'administrateur Sellio, je souhaite suspendre une boutique ou bloquer un commerçant}
+& Développer les API de changement de statut d'une boutique et d'un utilisateur. & 1 \\
+\cline{2-3}
+& Refuser la connexion d'un compte bloqué et afficher un message de boutique fermée sur la vitrine. & 1 \\
+\cline{2-3}
+& Tester la fonctionnalité. & 1 \\
+\hline
+
+\textbf{En tant qu'administrateur Sellio, je souhaite supprimer un commerçant et sa boutique}
+& Développer la suppression en cascade : chaque microservice expose une route interne qui efface les données de la boutique dans sa propre base, appelée par le service d'identité. & 1 \\
+\cline{2-3}
+& Développer la confirmation par saisie du nom de la boutique dans la console. & 1 \\
+\cline{2-3}
+& Tester : aucune ligne restante, le compte du même client dans une autre boutique intact. & 1 \\
+\hline
+
+\textbf{En tant que super administrateur, je souhaite gérer les administrateurs Sellio et les rôles des comptes}
+& Créer le rôle \texttt{SELLIO\_ADMIN} et l'API d'ajout d'un administrateur (mot de passe temporaire par e-mail). & 1 \\
+\cline{2-3}
+& Développer le changement de rôle avec garde-fous : au moins un super administrateur, pas de modification de son propre rôle, pas de compte Sellio propriétaire d'une boutique. & 1 \\
+\cline{2-3}
+& Développer l'onglet « Comptes » de la console. & 1 \\
+\hline
+
+\textbf{En tant que système, je veux interdire à l'équipe Sellio l'accès aux données des boutiques}
+& Refuser dans le filtre JWT, pour les rôles Sellio, les API des boutiques (clients, commandes, analyses) et retirer la liste des clients de la console. & 1 \\
+\hline
+
+\multicolumn{2}{|r|}{\textbf{Total}} & \textbf{33} \\
+\hline
+\caption{Backlog du Sprint 2}
+\label{tab:backlog-sprint2}
+\end{longtable}
+
+\section{Diagramme de cas d'utilisation du Sprint 2}
+\Needspace{20\baselineskip}
+La figure~\ref{fig:cu-sprint2} présente le diagramme de cas d'utilisation du deuxième sprint.
+\begin{figure}[H]
+    \centering
+    \img{0.85}{cu_sprint2.png}
+    \caption{Diagramme de cas d'utilisation du Sprint 2}
+    \label{fig:cu-sprint2}
+\end{figure}
+
+\section{Services web du Sprint 2}
+Le tableau~\ref{tab:ws-sprint2} présente les services web du Sprint 2.
+\renewcommand{\arraystretch}{1.15}
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{|p{1.8cm}|p{6.8cm}|p{6.2cm}|}
+\hline
+\textbf{Méthode} & \textbf{URL} & \textbf{Description} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Méthode} & \textbf{URL} & \textbf{Description} \\
+\hline
+\endhead
+\multicolumn{3}{|c|}{\textbf{Commerçant et boutique --- /api/v1/auth}} \\
+\hline
+POST & /api/v1/auth/register-merchant & Démarrer l'inscription d'un commerçant et envoyer le code. \\
+\hline
+POST & /api/v1/auth/register-merchant/verify & Vérifier le code et créer le compte commerçant. \\
+\hline
+POST & /api/v1/auth/register-merchant/resend & Renvoyer un code. \\
+\hline
+POST & /api/v1/auth/my-shop & Créer sa boutique avec son dossier de vérification. \\
+\hline
+GET & /api/v1/auth/my-shop & Consulter sa boutique. \\
+\hline
+PATCH & /api/v1/auth/my-shop & Modifier les informations de sa boutique. \\
+\hline
+GET & /api/v1/auth/my-shop/verification & Consulter l'état de son dossier. \\
+\hline
+PUT & /api/v1/auth/my-shop/verification & Soumettre à nouveau un dossier refusé. \\
+\hline
+GET & /api/v1/public/shops/\{slug\} & Informations publiques d'une boutique (statut, gabarit, thème). \\
+\hline
+POST & /api/v1/public/stripe/setup-intent & Créer un \textit{SetupIntent} Stripe pour enregistrer la carte. \\
+\hline
+\multicolumn{3}{|c|}{\textbf{Console plateforme --- /api/v1/admin/platform}} \\
+\hline
+GET & /api/v1/admin/platform/stats & Statistiques globales (boutiques, commerçants, dossiers en attente). \\
+\hline
+GET & /api/v1/admin/platform/shops & Lister les boutiques et leurs propriétaires (paginé). \\
+\hline
+GET & /api/v1/admin/platform/shops/\{id\} & Détail d'une boutique. \\
+\hline
+PATCH & /api/v1/admin/platform/shops/\{id\}/status & Suspendre ou réactiver une boutique. \\
+\hline
+PATCH & /api/v1/admin/platform/users/\{id\}/status & Bloquer ou débloquer un commerçant. \\
+\hline
+GET & /api/v1/admin/platform/users & Lister les commerçants et les administrateurs Sellio (jamais les clients). \\
+\hline
+POST & /api/v1/admin/platform/users & Ajouter un administrateur Sellio (super administrateur). \\
+\hline
+PATCH & /api/v1/admin/platform/users/\{id\}/role & Changer le rôle d'un compte (super administrateur). \\
+\hline
+DELETE & /api/v1/admin/platform/users/\{id\} & Supprimer un commerçant avec sa boutique, ou un compte Sellio. \\
+\hline
+GET & /api/v1/admin/platform/verifications & Lister les dossiers de vérification. \\
+\hline
+GET & /api/v1/admin/platform/verifications/\{id\} & Consulter un dossier (pièces et selfie). \\
+\hline
+POST & /api/v1/admin/platform/verifications/\{id\}/approve & Valider un dossier : la boutique passe à \texttt{ACTIVE}. \\
+\hline
+POST & /api/v1/admin/platform/verifications/\{id\}/reject & Refuser un dossier avec un motif : la boutique passe à \texttt{REJECTED}. \\
+\hline
+\caption{Services web du Sprint 2}
+\label{tab:ws-sprint2}
+\end{longtable}
+
+\section{Les cas d'utilisation du Sprint 2}
+\subsection{Cas d'utilisation « Créer une boutique et faire vérifier son identité »}
+\subsubsection{Description textuelle}
+Le tableau~\ref{tab:uc-kyc} présente la description textuelle de ce cas d'utilisation.
+\renewcommand{\arraystretch}{1.5}
+\begin{longtable}{|p{4cm}|p{11cm}|}
+\hline
+\textbf{Acteurs} & Commerçant, Administrateur Sellio, Stripe \\
+\hline
+\textbf{Objectif} & Ouvrir une boutique qui ne pourra vendre qu'après vérification de l'identité et du moyen de paiement de son propriétaire. \\
+\hline
+\textbf{Pré-condition} & Le commerçant est inscrit et connecté ; il ne possède pas encore de boutique. \\
+\hline
+\textbf{Scénario principal} &
+1. Le commerçant saisit le nom de sa boutique ; le système propose un identifiant (\textit{slug}).\newline
+2. Il choisit le secteur parmi huit (mode, beauté, sport, high-tech, maison, épicerie, bijoux, enfants) et l'un des huit modèles de vitrine, recommandés selon le secteur, puis son logo et sa palette.\newline
+3. À l'étape « Carte », le système crée un \textit{SetupIntent} Stripe ; le commerçant saisit sa carte dans le champ sécurisé Stripe, qui la confirme sans que le numéro ne transite par Sellio.\newline
+4. À l'étape « Identité », il choisit CIN ou passeport, photographie sa pièce et prend un selfie.\newline
+5. Le système contrôle le dossier (format du numéro, validité de la carte, taille des images), crée la boutique au statut \texttt{PENDING} et le dossier au statut en attente.\newline
+6. Le back-office affiche « Dossier en cours de vérification » ; la vitrine n'est pas encore ouverte au public.\newline
+7. L'administrateur Sellio consulte le dossier, compare le selfie à la pièce d'identité et le valide.\newline
+8. La boutique passe au statut \texttt{ACTIVE} ; le commerçant accède à tout le back-office. \\
+\hline
+\textbf{Scénario alternatif} &
+\textbf{Carte refusée par Stripe :} à l'étape 3, le message de Stripe est affiché et le commerçant peut saisir une autre carte.\newline
+\textbf{Dossier incomplet :} à l'étape 5, le système indique la pièce manquante (par exemple « Le numéro de CIN doit contenir 8 chiffres »).\newline
+\textbf{Dossier refusé :} à l'étape 7, l'administrateur saisit obligatoirement un motif ; la boutique passe à \texttt{REJECTED}, le motif est affiché au commerçant qui peut soumettre un nouveau dossier. \\
+\hline
+\caption{Description textuelle du cas « Créer une boutique et faire vérifier son identité »}
+\label{tab:uc-kyc}
+\end{longtable}
+
+\subsubsection{Diagramme de séquence système}
+\Needspace{18\baselineskip}
+La figure~\ref{fig:dss-kyc} présente le diagramme de séquence système de ce cas.
+\begin{figure}[H]
+    \centering
+    \img{0.8}{dss_kyc.png}
+    \caption{Diagramme de séquence système du cas « Créer une boutique et faire vérifier son identité »}
+    \label{fig:dss-kyc}
+\end{figure}
+
+\subsubsection{Diagramme de séquence objet}
+\Needspace{20\baselineskip}
+La figure~\ref{fig:dso-kyc} présente le diagramme de séquence objet de ce cas.
+\begin{figure}[H]
+    \centering
+    \img{0.95}{dso_kyc.png}
+    \caption{Diagramme de séquence objet du cas « Créer une boutique et faire vérifier son identité »}
+    \label{fig:dso-kyc}
+\end{figure}
+
+\subsection{Cas d'utilisation « S'inscrire comme commerçant »}
+\subsubsection{Description textuelle}
+Le tableau~\ref{tab:uc-inscription} présente la description textuelle de ce cas d'utilisation.
+\renewcommand{\arraystretch}{1.5}
+\begin{longtable}{|p{4cm}|p{11cm}|}
+\hline
+\textbf{Acteurs} & Commerçant, Brevo \\
+\hline
+\textbf{Objectif} & Créer un compte commerçant dont l'adresse e-mail a été vérifiée. \\
+\hline
+\textbf{Pré-condition} & Aucun compte Sellio n'utilise cette adresse. \\
+\hline
+\textbf{Scénario principal} &
+1. Le commerçant saisit son nom, son e-mail, son téléphone et un mot de passe d'au moins huit caractères.\newline
+2. Le système conserve l'inscription en attente, avec le mot de passe déjà haché, et génère un code à six chiffres dont seule l'empreinte est stockée.\newline
+3. Le code est envoyé par e-mail via Brevo.\newline
+4. Le commerçant saisit le code ; le système crée le compte et l'authentifie.\newline
+5. Le commerçant est dirigé vers l'assistant de création de boutique. \\
+\hline
+\textbf{Scénario alternatif} &
+\textbf{Code incorrect :} le système indique le nombre d'essais restants ; après trois erreurs, un nouveau code doit être demandé.\newline
+\textbf{Code expiré :} au-delà de dix minutes, le commerçant demande un nouveau code (un envoi par minute au plus). \\
+\hline
+\caption{Description textuelle du cas « S'inscrire comme commerçant »}
+\label{tab:uc-inscription}
+\end{longtable}
+
+\subsubsection{Diagramme de séquence système}
+\Needspace{18\baselineskip}
+La figure~\ref{fig:dss-inscription} présente le diagramme de séquence système de ce cas.
+\begin{figure}[H]
+    \centering
+    \img{0.75}{dss_inscription.png}
+    \caption{Diagramme de séquence système du cas « S'inscrire comme commerçant »}
+    \label{fig:dss-inscription}
+\end{figure}
+
+\subsection{Cas d'utilisation « Supprimer un commerçant et sa boutique »}
+\subsubsection{Description textuelle}
+Le tableau~\ref{tab:uc-suppression} présente la description textuelle de ce cas d'utilisation.
+\renewcommand{\arraystretch}{1.5}
+\begin{longtable}{|p{4cm}|p{11cm}|}
+\hline
+\textbf{Acteurs} & Administrateur Sellio, Super administrateur Sellio \\
+\hline
+\textbf{Objectif} & Retirer définitivement un commerçant de la plateforme, avec sa boutique et toutes ses données. \\
+\hline
+\textbf{Pré-condition} & L'administrateur est connecté à la console. \\
+\hline
+\textbf{Scénario principal} &
+1. L'administrateur ouvre la fiche de la boutique (ou l'onglet « Comptes ») et choisit « Supprimer le marchand ».\newline
+2. Le système affiche ce qui sera supprimé et demande de saisir le nom de la boutique.\newline
+3. L'administrateur saisit le nom et confirme.\newline
+4. Le service d'identité demande à chaque microservice, par sa route interne \texttt{DELETE /internal/shops/\{id\}}, d'effacer les données de la boutique dans sa base : analyse, marketing, commandes, catalogue. Chaque service supprime d'abord les lignes dépendantes (lignes de commande, avis, variantes\dots), puis les lignes de la boutique. Le service d'identité supprime enfin, dans sa propre base, les clients, l'équipe, les rôles, la boutique et le compte du commerçant.\newline
+5. Le système affiche « Marchand supprimé avec sa boutique et ses N clients ». \\
+\hline
+\textbf{Scénario alternatif} &
+\textbf{Compte Sellio :} la suppression d'un administrateur n'est permise qu'au super administrateur, et Sellio garde toujours au moins un super administrateur.\newline
+\textbf{Son propre compte :} le système refuse la suppression. \\
+\hline
+\caption{Description textuelle du cas « Supprimer un commerçant et sa boutique »}
+\label{tab:uc-suppression}
+\end{longtable}
+
+Chaque microservice étant le seul à connaître sa base, c'est à lui d'effacer les données de la boutique : le service d'identité n'a besoin de connaître aucune table des autres services. Les suppressions sont idempotentes ; si un service est indisponible, l'opération s'arrête avant d'effacer le compte du commerçant et peut être relancée.
+
+\subsubsection{Diagramme de séquence système}
+\Needspace{18\baselineskip}
+La figure~\ref{fig:dss-suppression} présente le diagramme de séquence système de ce cas.
+\begin{figure}[H]
+    \centering
+    \img{0.7}{dss_suppression.png}
+    \caption{Diagramme de séquence système du cas « Supprimer un commerçant et sa boutique »}
+    \label{fig:dss-suppression}
+\end{figure}
+
+\subsubsection{Diagramme de séquence objet}
+\Needspace{20\baselineskip}
+La figure~\ref{fig:dso-suppression} présente le diagramme de séquence objet de ce cas.
+\begin{figure}[H]
+    \centering
+    \img{0.95}{dso_suppression.png}
+    \caption{Diagramme de séquence objet du cas « Supprimer un commerçant et sa boutique »}
+    \label{fig:dso-suppression}
+\end{figure}
+
+\section{Réalisation du Sprint 2}
+\Needspace{20\baselineskip}
+\textbf{Page d'accueil Sellio :} la figure~\ref{fig:ui-sellio-home} présente la page d'accueil de la plateforme, qui présente l'offre aux commerçants et donne accès à l'inscription et à la connexion.
+\begin{figure}[H]
+    \centering
+    \img{0.85}{ui_sellio_home.png}
+    \caption{Page d'accueil de Sellio}
+    \label{fig:ui-sellio-home}
+\end{figure}
+
+\Needspace{20\baselineskip}
+\textbf{Assistant de création de boutique :} la figure~\ref{fig:ui-wizard-1} présente la première étape de l'assistant : nom de la boutique et choix du secteur parmi huit, avec un aperçu de la vitrine. Les étapes suivantes enregistrent la carte bancaire et la pièce d'identité.
+\begin{figure}[H]
+    \centering
+    \img{0.8}{ui_nouvelle_boutique.png}
+    \caption{Assistant de création de boutique : informations et secteur}
+    \label{fig:ui-wizard-1}
+\end{figure}
+
+\Needspace{20\baselineskip}
+\textbf{Console d'administration Sellio :} la figure~\ref{fig:ui-console} présente la console : indicateurs globaux, liste paginée des boutiques avec leur propriétaire et leur statut, et actions de suspension ou de blocage. La figure~\ref{fig:ui-verif} présente la revue d'un dossier de vérification.
+\begin{figure}[H]
+    \centering
+    \img{0.85}{ui_console_sellio.png}
+    \caption{Console d'administration Sellio}
+    \label{fig:ui-console}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \img{0.85}{ui_revue_dossier.png}
+    \caption{Revue d'un dossier de vérification par l'administrateur}
+    \label{fig:ui-verif}
+\end{figure}
+
+\Needspace{20\baselineskip}
+\textbf{Gestion des comptes de la plateforme :} la figure~\ref{fig:ui-comptes} présente l'onglet « Comptes » : seuls les commerçants et les administrateurs Sellio y figurent. Le super administrateur y ajoute un administrateur, change un rôle ou supprime un compte ; un administrateur Sellio peut bloquer ou supprimer un commerçant.
+\begin{figure}[H]
+    \centering
+    \img{0.85}{ui_console_comptes.png}
+    \caption{Comptes de la plateforme dans la console Sellio}
+    \label{fig:ui-comptes}
+\end{figure}
+
+\subsection*{Conclusion}
+Au terme de cette release, Sellio dispose d'une architecture microservices sécurisée et d'un véritable modèle multi-boutiques : un commerçant peut s'inscrire, créer sa boutique et la faire vérifier ; chaque client appartient à une boutique ; l'équipe Sellio, organisée en administrateurs et super administrateurs, garde le contrôle sur les boutiques ouvertes sans jamais accéder à leurs clients. La release suivante porte sur le catalogue et la vitrine.
