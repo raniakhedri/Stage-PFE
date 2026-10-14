@@ -223,12 +223,17 @@ package "Couche métier (microservices Spring Boot)" {
   [order-service :8083\ncommandes, Stripe, retours,\nTVA, promotions] as OS
   [marketing-service :8084\nbannières, e-mailing] as MS
   [analytics-service :8085\nsuivi, recommandations,\nsegments, attrition] as AN
-  [shared-lib\n(entités, DTO, sécurité\nmulti-boutiques)] as SL
 }
 package "Couche intelligence" {
   [Scripts Python\npandas, scikit-learn] as PY
 }
-database "PostgreSQL" as DB
+package "Couche données (PostgreSQL)" {
+  database "sellio_auth" as DA
+  database "sellio_catalog" as DC2
+  database "sellio_orders" as DO
+  database "sellio_marketing" as DM
+  database "sellio_analytics" as DN
+}
 cloud "Services externes" {
   [Stripe] as ST
   [Decart] as DC
@@ -242,17 +247,16 @@ GW --> CS
 GW --> OS
 GW --> MS
 GW --> AN
-AS ..> SL
-CS ..> SL
-OS ..> SL
-MS ..> SL
-AN ..> SL
+OS ..> CS : /internal (stock)
+OS ..> AS : /internal (points)
+AN ..> CS : /internal (produits)
+AN ..> OS : /internal (commandes)
 AN --> PY : sous-processus
-AS --> DB
-CS --> DB
-OS --> DB
-MS --> DB
-AN --> DB
+AS --> DA
+CS --> DC2
+OS --> DO
+MS --> DM
+AN --> DN
 OS --> ST
 CS --> DC
 AS --> BR
@@ -279,7 +283,11 @@ node "Hôte Docker (docker compose)" {
   node "marketing-service :8084" as M
   node "analytics-service :8085\nJava 17 + Python 3.12" as AN
   node "postgres :5432" as PG {
-    database "naturessence" as DB
+    database "sellio_auth" as DBA
+    database "sellio_catalog" as DBC
+    database "sellio_orders" as DBO
+    database "sellio_marketing" as DBM
+    database "sellio_analytics" as DBN
   }
   storage "volume pgdata" as V1
   storage "volume uploads" as V2
@@ -297,12 +305,14 @@ GW --> C
 GW --> O
 GW --> M
 GW --> AN
-A --> DB : JDBC
-C --> DB : JDBC
-O --> DB : JDBC
-M --> DB : JDBC
-AN --> DB : JDBC
-DB ..> V1
+A --> DBA : JDBC
+C --> DBC : JDBC
+O --> DBO : JDBC
+M --> DBM : JDBC
+AN --> DBN : JDBC
+O ..> C : API interne
+AN ..> O : API interne
+PG ..> V1
 C ..> V2
 O --> ST : HTTPS
 C --> DC : HTTPS (jeton)
@@ -348,6 +358,12 @@ node "Vitrine" {
 node "Back-office" {
   [Comportement.jsx\nClients.jsx] as BO
 }
+node "catalog-service" {
+  [API interne\n/internal/products] as CI
+}
+node "order-service" {
+  [API interne\n/internal/orders] as OI
+}
 node "analytics-service" {
   [TrackingController\nTrackingService] as TC
   [EventStore] as ES
@@ -360,14 +376,16 @@ node "Python" {
   [ml_train.py\nhybride SVD + TF-IDF,\nrègles d'association, K-Means] as PT
   [predict.py\nforêt aléatoire /\ngradient boosting] as PP
 }
-database "PostgreSQL" {
+database "sellio_analytics" {
   [user_events\n(partitions mensuelles, BRIN)] as UE
   [product_recommendations\nbehavior_segments\nml_model_runs] as RT
 }
 TR --> TC : lots d'événements
 TC --> ES
 ES --> UE
-MT --> UE : extraction
+MT --> UE : événements
+MT --> CI : produits
+MT --> OI : commandes payées
 MT --> PR
 PR --> PT
 MT --> RT : résultats

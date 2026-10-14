@@ -164,32 +164,38 @@ autonumber
 actor "Client" as CL
 boundary "CheckoutPage.jsx" as UI
 participant "Stripe.js" as SJ
-control "PublicCouponController" as CC
 control "StripeController" as STC
 participant "StripeService" as SS
 control "PublicCheckoutController" as C
 control "OrderService" as SV
 control "CouponService" as CS
-entity "OrderRepository" as OR
-entity "ProductRepository" as PR
+participant "CatalogClient" as CAT
+entity "OrderRepository\n(sellio_orders)" as OR
 participant "EmailService" as ES
 CL -> UI : adresse, code promo
-UI -> CC : GET /public/coupons/validate
-CC --> UI : remise
+UI -> CS : GET /public/coupons/validate
+CS --> UI : remise
 CL -> UI : payer par carte
 UI -> STC : POST /public/stripe/payment-intent
+STC -> CAT : prix actuels des articles
 STC -> SS : createPaymentIntent(total, réf.)
 SS --> UI : client secret
 UI -> SJ : confirmPayment(carte)
 SJ --> UI : succès
 UI -> C : POST /public/checkout/orders
 C -> SV : createOrder(request)
-SV -> SV : TVA, livraison, sous-total
-SV -> CS : appliquer le coupon et\nenregistrer l'utilisation
-SV -> OR : save(order)
-SV -> PR : décrémenter le stock
-SV -> ES : sendOrderConfirmation(order)
-SV --> C : OrderResponse
+SV -> CAT : POST /internal/stock/reserve\n(catalog-service)
+alt stock insuffisant
+  CAT --> SV : 409
+  SV --> C : 400 « Quantité indisponible »
+else stock réservé
+  CAT --> SV : noms et prix des articles
+  SV -> SV : TVA, livraison, sous-total
+  SV -> CS : appliquer le coupon et\nenregistrer l'utilisation
+  SV -> OR : save(order) avec copie\ndes articles et du client
+  SV -> ES : sendOrderConfirmation(order)
+  SV --> C : OrderResponse
+end
 C --> UI : commande créée
 UI -> UI : vider le panier, suivre PURCHASE
 @enduml
@@ -372,27 +378,32 @@ autonumber
 actor "Administrateur Sellio" as A
 boundary "SellioConsole.jsx\n(DeleteAccountDialog)" as UI
 participant "API Gateway" as GW
-participant "JwtAuthenticationFilter" as F
-control "PlatformController" as C
+control "PlatformController\n(auth-service)" as C
 control "PlatformAccountService" as SV
-entity "UserRepository\nShopRepository" as R
-database "PostgreSQL\n(catalogue système)" as DB
+participant "analytics-service" as AN
+participant "marketing-service" as MK
+participant "order-service" as OS
+participant "catalog-service" as CS
+database "sellio_auth" as DB
 A -> UI : taper le nom de la boutique, confirmer
 UI -> GW : DELETE /admin/platform/users/{id}
-GW -> F : jeton SELLIO_ADMIN
-F -> F : route /admin/platform autorisée\npour l'équipe Sellio
-F -> C : requête authentifiée
+GW -> C : jeton SELLIO_ADMIN
 C -> SV : deleteAccount(appelant, id)
-SV -> R : findById(id)
-R --> SV : marchand + boutique
-SV -> DB : tables ayant une colonne shop_id\n(pg_attribute)
-DB --> SV : liste des tables
-loop pour chaque table
-  SV -> DB : clés étrangères qui la référencent\n(pg_constraint)
-  SV -> DB : DELETE des lignes dépendantes,\npuis DELETE ... WHERE shop_id = ?
+SV -> DB : marchand et boutique
+SV -> AN : DELETE /internal/shops/{shopId}
+AN --> SV : 204 (événements, recommandations, segments)
+SV -> MK : DELETE /internal/shops/{shopId}
+MK --> SV : 204 (bannières)
+SV -> OS : DELETE /internal/shops/{shopId}
+OS --> SV : 204 (commandes, retours, promotions)
+SV -> CS : DELETE /internal/shops/{shopId}
+CS --> SV : 204 (produits, catégories, avis)
+alt un service indisponible
+  SV --> C : 503, rien n'est supprimé dans sellio_auth\n(l'opération peut être relancée)
+else toutes les bases nettoyées
+  SV -> DB : clients, équipe, rôles,\nboutique, marchand
+  SV --> C : {boutique, nombre de clients}
 end
-SV -> DB : DELETE shops, DELETE users (marchand)
-SV --> C : {boutique, nombre de clients}
 C --> UI : 200
 UI --> A : « Marchand supprimé avec sa boutique »
 @enduml
