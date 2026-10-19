@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 import java.sql.Timestamp;
@@ -18,6 +19,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
 
 @ExtendWith(MockitoExtension.class)
@@ -94,6 +96,7 @@ class RecommendationServiceTest {
         row.put("event_type", "PURCHASE");
         row.put("created_at", Timestamp.from(Instant.now()));
         when(jdbc.queryForList(contains("user_events"), eq(2L), eq(""), eq(9L))).thenReturn(List.of(row));
+        doNothing().when(jdbc).query(contains("r.kind = ?"), any(RowCallbackHandler.class), eq(2L), eq("SIMILAR"));
         when(jdbc.query(contains("kind = 'POPULAR'"), any(RowMapper.class), eq(2L), eq(5)))
             .thenReturn(List.of(new RecommendationService.Item(5L, 1.0), new RecommendationService.Item(7L, 0.2)));
 

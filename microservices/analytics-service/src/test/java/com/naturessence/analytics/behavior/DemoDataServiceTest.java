@@ -64,7 +64,8 @@ class DemoDataServiceTest {
 
         assertThat(result).containsEntry("deletedEvents", 7);
         verify(jdbc).update(contains("behavior_segments"), eq(4L));
-        verify(jdbc).update(contains("product_stats_daily"), eq(4L));
+        verify(jdbc).update(contains("DELETE FROM product_stats_daily"), eq(4L));
+        verify(jdbc).update(contains("INSERT INTO product_stats_daily"), eq(4L));
     }
 
     @Test
