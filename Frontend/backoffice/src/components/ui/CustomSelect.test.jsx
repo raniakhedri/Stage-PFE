@@ -22,6 +22,6 @@ describe('CustomSelect', () => {
 
   it('falls back to the placeholder when nothing matches', () => {
     render(<CustomSelect value="" onChange={() => {}} options={[]} placeholder="Choisir un statut" />)
-    expect(screen.getByRole('button', { name: /Choisir un statut/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Choisir un statut' })).toBeInTheDocument()
   })
 })

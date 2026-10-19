@@ -78,6 +78,7 @@ export default function CustomSelect({
           {selected?.label ?? placeholder}
         </span>
         <span
+          aria-hidden="true"
           className={`material-symbols-outlined flex-shrink-0 text-slate-400 transition-transform duration-200 ${
             isSm ? 'text-[16px]' : 'text-[18px]'
           } ${open ? 'rotate-180 text-brand' : ''}`}
