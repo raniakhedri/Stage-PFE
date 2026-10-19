@@ -120,5 +120,10 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 3001,
     },
+    test: {
+      environment: 'jsdom',
+      setupFiles: './src/setupTests.js',
+      include: ['src/**/*.{test,spec}.{js,jsx}'],
+    },
   }
 })
