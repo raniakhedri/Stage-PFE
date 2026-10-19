@@ -18,13 +18,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Import;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
+/**
+ * {@code AuthServiceApplication} adds a {@code @ComponentScan} without Spring Boot's slice filter
+ * and {@code @EnableJpaRepositories}. Pointing the slice at the controller avoids DataSeeder and JPA.
+ */
 @WebMvcTest(controllers = AuthController.class)
-@Import(SecurityConfig.class)
+@ContextConfiguration(classes = { AuthController.class, SecurityConfig.class })
 @AutoConfigureMockMvc
 class AuthControllerTest {
 

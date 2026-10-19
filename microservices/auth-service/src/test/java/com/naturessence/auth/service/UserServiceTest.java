@@ -64,7 +64,8 @@ class UserServiceTest {
         User me = merchant();
         when(caller.require()).thenReturn(me);
         when(roleRepository.findByName("CLIENT")).thenReturn(Optional.of(Role.builder().name("CLIENT").label("Client").build()));
-        when(userRepository.clientEmailTaken("ada@example.com", 12L)).thenReturn(false);
+        // requireFreeEmail trims but does not lowercase; the stored address is lowercased later.
+        when(userRepository.clientEmailTaken("Ada@Example.com", 12L)).thenReturn(false);
         when(segmentRepository.findByName("NOUVEAU")).thenReturn(Optional.of(Segment.builder().name("NOUVEAU").label("Nouveau").build()));
         when(passwordEncoder.encode(anyString())).thenReturn("hashed");
         when(userRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));

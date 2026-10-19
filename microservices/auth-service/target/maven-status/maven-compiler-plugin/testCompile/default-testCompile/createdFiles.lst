@@ -1,1 +1,13 @@
+com\naturessence\auth\service\AuthCodeServiceTest.class
+com\naturessence\auth\service\MerchantVerificationServiceTest.class
+com\naturessence\auth\service\LoyaltyServiceTest.class
+com\naturessence\auth\service\SegmentServiceTest.class
+com\naturessence\auth\service\RoleServiceTest.class
+com\naturessence\auth\service\EmailServiceTest.class
+com\naturessence\auth\service\AuthServiceTest.class
+com\naturessence\auth\service\CustomUserDetailsServiceTest.class
+com\naturessence\auth\service\UserServiceTest.class
+com\naturessence\auth\controller\AuthControllerTest.class
+com\naturessence\auth\service\PlatformAccountServiceTest.class
+com\naturessence\auth\service\RefreshTokenServiceTest.class
 com\naturessence\auth\service\ShopSettingsValidatorTest.class
