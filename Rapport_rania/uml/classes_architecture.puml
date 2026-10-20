@@ -282,14 +282,26 @@ node "Hôte Docker (docker compose)" {
   node "order-service :8083" as O
   node "marketing-service :8084" as M
   node "analytics-service :8085\nJava 17 + Python 3.12" as AN
-  node "postgres :5432" as PG {
+  node "postgres-auth :5432" as PGA {
     database "sellio_auth" as DBA
+  }
+  node "postgres-catalog :5433" as PGC {
     database "sellio_catalog" as DBC
+  }
+  node "postgres-orders :5434" as PGO {
     database "sellio_orders" as DBO
+  }
+  node "postgres-marketing :5435" as PGM {
     database "sellio_marketing" as DBM
+  }
+  node "postgres-analytics :5436" as PGN {
     database "sellio_analytics" as DBN
   }
-  storage "volume pgdata" as V1
+  storage "volume auth" as VA
+  storage "volume catalog" as VC
+  storage "volume orders" as VO
+  storage "volume marketing" as VM
+  storage "volume analytics" as VN
   storage "volume uploads" as V2
 }
 cloud "Stripe" as ST
@@ -312,7 +324,11 @@ M --> DBM : JDBC
 AN --> DBN : JDBC
 O ..> C : API interne
 AN ..> O : API interne
-PG ..> V1
+PGA ..> VA
+PGC ..> VC
+PGO ..> VO
+PGM ..> VM
+PGN ..> VN
 C ..> V2
 O --> ST : HTTPS
 C --> DC : HTTPS (jeton)
@@ -441,7 +457,7 @@ cloud "GitHub" {
 }
 node "Serveur / poste\navec Docker" {
   [docker compose up] as DC
-  [8 conteneurs Sellio\n+ PostgreSQL] as RUN
+  [8 conteneurs Sellio\n+ 5 PostgreSQL] as RUN
 }
 DEV --> SRC
 SRC --> REPO : git push / pull request

@@ -24,7 +24,7 @@ Sellio met en relation une plateforme, des commerçants et les clients de ces co
 \item \textbf{Stripe :} prestataire de paiement. Il traite les paiements des commandes (\textit{PaymentIntent}) et l'enregistrement de la carte du commerçant lors de la vérification (\textit{SetupIntent}).
 \item \textbf{Decart :} service d'intelligence artificielle générative qui produit en temps réel la vidéo d'essayage virtuel à partir du flux caméra du client et de l'image du vêtement.
 \item \textbf{Brevo~\cite{brevo} :} service d'envoi d'e-mails transactionnels et marketing (codes de vérification, réinitialisation du mot de passe, invitations, confirmations de commande, newsletters).
-\item \textbf{GitHub Actions et Dependabot :} services de GitHub qui construisent, testent et publient la plateforme à chaque modification, et proposent les mises à jour de dépendances.
+\item \textbf{GitHub Actions et Dependabot :} GitHub Actions construit et teste la plateforme à chaque modification. Dependabot propose les mises à jour de dépendances. Aucun des deux ne déploie Sellio sur un serveur.
 \item \textbf{Moteur d'apprentissage automatique :} ensemble de scripts Python (scikit-learn) appelés par le microservice d'analyse pour entraîner les modèles et produire recommandations, segments et scores d'attrition.
 \end{itemize}
 
@@ -194,7 +194,7 @@ Le tableau~\ref{tab:besoins-devops} présente les besoins de ce module.
 \hline
 Construire et tester automatiquement chaque modification & Équipe de développement , GitHub Actions \\
 \hline
-Construire et publier les images Docker de la plateforme & GitHub Actions \\
+Construire les images Docker une fois les tests passés, sans les déployer & GitHub Actions \\
 \hline
 Lancer toute la plateforme en une commande & Équipe de développement  \\
 \hline
@@ -240,7 +240,7 @@ Le tableau~\ref{tab:exigences-non-fonctionnelles} les présente selon le modèle
 \cline{2-3}
  & Volume de données & Table d'événements partitionnée par mois, index BRIN sur la date, agrégats quotidiens et rétention de 13 mois. \\
 \hline
-\multirow{2}{*}{Fiabilité} & Tolérance aux pannes & La panne d'un microservice (par exemple l'analyse) n'empêche pas les achats ; la vitrine masque simplement les sections de recommandations. \\
+\multirow{2}{*}{Fiabilité} & Tolérance aux pannes & La panne du service d'analyse n'empêche pas les achats : la vitrine masque les recommandations. En revanche, la réservation de stock est un appel synchrone au catalogue : s'il est arrêté, la commande ne peut pas être enregistrée. \\
 \cline{2-3}
  & Intégrité & Transactions ACID pour les commandes et les paiements. \\
 \hline
@@ -346,7 +346,7 @@ L'\textbf{architecture microservices} a été retenue, pour trois raisons. D'abo
 
 \Needspace{18\baselineskip}
 \subsubsection{Une base de données par microservice}
-Chaque microservice possède \textbf{sa propre base de données} et il est le seul à y accéder (\textit{database per service}). Un service ne lit jamais les tables d'un autre : il lui demande l'information par une API interne. Ce principe garantit qu'un service peut faire évoluer son schéma, être sauvegardé ou dimensionné sans effet sur les autres, et qu'une panne de base n'atteint qu'un seul domaine. Le tableau~\ref{tab:bases} présente la répartition des données.
+Le découpage n'est pas seulement logique. Chaque microservice possède \textbf{son propre serveur PostgreSQL}, seul processus autorisé à ouvrir cette base (\textit{database per service}). Il ne lit jamais les tables d'un autre : il demande l'information par une API interne. Sauvegarder, migrer ou saturer un disque ne concerne qu'un domaine. Le tableau~\ref{tab:bases} précise le contenu de chaque serveur.
 \begin{table}[H]
 \centering
 \renewcommand{\arraystretch}{1.3}
@@ -377,7 +377,7 @@ Ce découpage a trois conséquences sur la conception :
   \item \textbf{Boutique connue de tous sans lecture de la base d'identité.} Le jeton JWT porte l'identifiant et le \textit{slug} de la boutique de l'utilisateur ; pour les requêtes publiques de la vitrine, la correspondance \textit{slug} / boutique est obtenue auprès du service d'identité et mise en cache.
 \end{itemize}
 
-Les cinq bases sont hébergées par le même serveur PostgreSQL, ce qui suffit à une plateforme de cette taille ; chacune pourra être déplacée sur son propre serveur sans changer le code, seule son adresse de connexion étant à modifier. Une bibliothèque commune (\texttt{shared-lib}) regroupe les DTO et la sécurité ; chaque service ne déclare que les entités de sa propre base.
+Ces cinq serveurs tournent aujourd'hui sur le même hôte, pour le développement et la démonstration, mais ce sont cinq processus, cinq volumes et cinq chaînes de connexion. Les déplacer sur cinq machines ne change que ces adresses. La bibliothèque \texttt{shared-lib} ne porte que les contrats échangés (DTO et vérification du jeton) : le schéma de chaque base reste dans son service.
 
 \subsubsection{Choix du système de gestion de base de données}
  Le tableau~\ref{tab:choix-sgbd} résume la comparaison qui nous a conduits à retenir PostgreSQL.
@@ -439,13 +439,13 @@ Elle est composée de cinq microservices Spring Boot :
 Des scripts \textbf{Python} (pandas, scikit-learn) entraînent et appliquent les modèles. Le service d'analyse les exécute comme sous-processus et stocke les modèles entraînés par boutique.
 
 \subsubsection*{La couche données :}
-Chaque microservice dispose de sa propre base \textbf{PostgreSQL} (\texttt{sellio\_auth}, \texttt{sellio\_catalog}, \texttt{sellio\_orders}, \texttt{sellio\_marketing}, \texttt{sellio\_analytics}) ; les images de produits sont stockées sur disque et servies par le catalogue.
+Chaque microservice a \textbf{son propre serveur PostgreSQL}, dans un conteneur distinct, avec son port, son compte et son volume : \texttt{postgres-auth} (5432), \texttt{postgres-catalog} (5433), \texttt{postgres-orders} (5434), \texttt{postgres-marketing} (5435) et \texttt{postgres-analytics} (5436). Un service ne connaît pas l'adresse des autres bases. Les images de produits sont sur un volume du catalogue.
 
 \subsubsection*{Les services externes :}
 \textbf{Stripe} (paiements), \textbf{Decart} (essayage virtuel) et \textbf{Brevo} (e-mails).
 
 \subsubsection{Architecture physique de la plateforme}
-La figure~\ref{fig:archi_physique} présente le déploiement physique : chaque composant s'exécute dans un conteneur Docker, orchestré par Docker Compose sur un même hôte. Le navigateur communique en HTTPS avec les conteneurs nginx qui servent les applications React et avec la passerelle ; celle-ci relaie les appels vers les microservices. Le conteneur PostgreSQL héberge les cinq bases, une par microservice, dont les données sont conservées dans un volume ; les services communiquent entre eux par leurs API internes. Le navigateur communique directement avec Stripe (saisie de carte) et avec Decart (flux vidéo WebRTC), les jetons nécessaires étant délivrés par nos services.
+La figure~\ref{fig:archi_physique} présente le déploiement physique, sur un même hôte Docker Compose, mais avec un conteneur par processus. Il y a les deux front-ends nginx, la passerelle, les cinq microservices et \textbf{cinq serveurs PostgreSQL}. Arrêter ou remplir le disque de \texttt{postgres-analytics} ne rend pas les comptes ni les commandes illisibles : chaque volume est indépendant. Les services ne se parlent que par API. Le navigateur parle en HTTPS aux front-ends et à la passerelle, et directement à Stripe (saisie de carte) et à Decart (WebRTC).
 \begin{figure}[H]
     \centering
     \img{1}{architecture_physique.png}
@@ -504,7 +504,7 @@ Collecte des événements, recommandations personnalisées, segmentation des vis
 \hline
 
 Qualité et DevOps &
-Tests automatisés, conteneurisation avec Docker et pipeline CI/CD avec GitHub Actions. &
+Tests automatisés, conteneurisation avec Docker et intégration continue avec GitHub Actions. &
 Élevée \\
 \hline
 
@@ -512,6 +512,50 @@ Tests automatisés, conteneurisation avec Docker et pipeline CI/CD avec GitHub A
 \caption{Synthèse du backlog produit de Sellio}
 \label{tab:backlog-produit}
 \end{table}
+
+\subsection{Planification des releases et des sprints}
+Le stage commence le 2 février 2026 et, par avenant, se termine le 29 octobre 2026. Les dix derniers jours, du 20 au 29 octobre, sont réservés aux tests automatisés, aux corrections du pipeline et à la mise au propre du rapport. Le développement tient donc du 2 février au 19 octobre, en douze sprints d'environ trois semaines. Cette durée, un peu plus longue qu'un sprint Scrum classique, correspond au rythme des revues avec l'encadrant et au fait qu'une seule personne réalise l'analyse, le code et les diagrammes.
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.25}
+\small
+\begin{tabular}{|c|p{3.4cm}|c|p{7.2cm}|}
+\hline
+\textbf{Sprint} & \textbf{Dates} & \textbf{Release} & \textbf{Livrable} \\
+\hline
+1 & 2 févr. -- 22 févr. & 1 & Passerelle, authentification, rôles \\
+\hline
+2 & 23 févr. -- 15 mars & 1 & Boutiques, KYC, console Sellio \\
+\hline
+3 & 16 mars -- 5 avr. & 2 & Catalogue et fiches par secteur \\
+\hline
+4 & 6 avr. -- 26 avr. & 2 & Huit vitrines et personnalisation \\
+\hline
+5 & 27 avr. -- 17 mai & 3 & Panier, commande, paiement Stripe \\
+\hline
+6 & 18 mai -- 7 juin & 3 & Retours, TVA, livraison, avis \\
+\hline
+7 & 8 juin -- 28 juin & 4 & Promotions, bannières, e-mailing \\
+\hline
+8 & 29 juin -- 19 juil. & 4 & Fidélité et segments \\
+\hline
+9 & 20 juil. -- 16 août & 5 & Essayage virtuel Decart \\
+\hline
+10 & 17 août -- 13 sept. & 6 & Suivi comportemental et recommandation \\
+\hline
+11 & 14 sept. -- 4 oct. & 6 & Segmentation et attrition \\
+\hline
+12 & 5 oct. -- 19 oct. & 7 & Docker et pipeline d'intégration \\
+\hline
+Clôture & 20 oct. -- 29 oct. & --- & Tests, corrections de la CI, rapport \\
+\hline
+\end{tabular}
+\caption{Calendrier des douze sprints, du 2 février au 29 octobre 2026}
+\label{tab:calendrier-sprints}
+\end{table}
+
+Le sprint 9 est un peu plus long : l'essayage dépend d'un service externe (caméra, jeton, WebRTC) et les essais prennent plus de temps qu'un écran de gestion. Les sprints 10 et 11 aussi, parce que l'évaluation des modèles sur les jeux publics ne se réduit pas à l'écriture de l'API.
 
 \section{Environnement de travail}
 \subsection{Environnement matériel de développement}
@@ -552,7 +596,7 @@ Stripe Dashboard~\cite{stripe} & Suivi des paiements et des cartes en mode test.
 \hline
 Docker~\cite{docker} & Images des services et des front-ends ; Docker Compose pour lancer la plateforme. & \logo{25pt}{docker.png} \\
 \hline
-GitHub Actions~\cite{githubactions} & Intégration et livraison continues, publication des images. & \logo{25pt}{githubactions.png} \\
+GitHub Actions~\cite{githubactions} & Intégration continue : construction et tests à chaque modification. & \logo{25pt}{githubactions.png} \\
 \hline
 \end{tabular}
 \captionof{table}{Outils utilisés pour la modélisation, le développement et le suivi}
