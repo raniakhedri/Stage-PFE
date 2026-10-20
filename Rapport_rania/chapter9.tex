@@ -106,7 +106,7 @@ Coût pour un dépôt public & Gratuit & Gratuit (quota) & Coût du serveur \\
 Le code de Sellio étant hébergé sur GitHub, \textbf{GitHub Actions}~\cite{githubactions} s'impose : aucun serveur à maintenir, des machines Linux fournies, et le registre d'images intégré. \textbf{Docker}~\cite{docker} est retenu pour la conteneurisation : chaque service embarque son environnement d'exécution (Java 17, ou Java 17 et Python 3.12 pour l'analyse), ce qui supprime les différences entre le poste de développement, la machine d'intégration continue et le serveur.
 
 \section{Stratégie de tests}
-Les tests portent en priorité sur ce qui serait le plus grave en cas d'erreur : la séparation des données entre boutiques, les droits de chaque rôle et les modèles d'apprentissage. Ce sont des tests unitaires rapides, sans base de données : l'ensemble s'exécute en moins de deux minutes. Le tableau~\ref{tab:tests} les résume.
+Les tests portent en priorité sur ce qui serait le plus grave en cas d'erreur : la séparation des données entre boutiques, les droits de chaque rôle et les modèles d'apprentissage. Depuis le lot \texttt{test: tests unitaires pour la CI.}, ils couvrent aussi les services d'authentification, de catalogue et d'analyse, les contrôleurs HTTP de ces services, et les écrans React de la vitrine et du back-office. Ce sont des tests unitaires et fonctionnels rapides, sans base de données ni réseau réel : les dépôts, la sécurité et les réponses d'API sont simulés. Le tableau~\ref{tab:tests} les résume.
 \begin{longtable}{|p{2.4cm}|p{4.2cm}|p{7cm}|p{1.2cm}|}
 \hline
 \textbf{Outil} & \textbf{Suite} & \textbf{Ce qui est vérifié} & \textbf{Tests} \\
@@ -136,7 +136,19 @@ pytest & \texttt{test\_recommender} & Signal collaboratif, recommandation d'un p
 \hline
 pytest & \texttt{test\_segmentation}, \texttt{test\_churn\_models} & Segments distincts trouvés ; seuil de visiteurs ; les deux modèles d'attrition se chargent et jugent plus risqué un client inactif. & 5 \\
 \hline
-\multicolumn{3}{|r|}{\textbf{Total}} & \textbf{56} \\
+JUnit 5 & \texttt{DemoDataServiceTest}, \texttt{TrackingServiceTest}, \texttt{AnalyticsHttpTest}, \texttt{RecommendationServiceTest}, \texttt{MlTrainingServiceTest}, \texttt{ChurnPredictionServiceTest}, \texttt{FeatureExtractionServiceTest} & Service d'analyse : données de démonstration, collecte d'événements, recommandations, entraînement, attrition et extraction de variables. Dépôts simulés ; MockMvc pour les routes publiques et les routes réservées à l'administrateur. & 30 \\
+\hline
+JUnit 5 & \texttt{AuthServiceTest}, \texttt{AuthCodeServiceTest}, \texttt{AuthControllerTest}, \texttt{UserServiceTest}, \texttt{RoleServiceTest}, \texttt{RefreshTokenServiceTest}, \texttt{LoyaltyServiceTest}, \texttt{SegmentServiceTest}, \texttt{MerchantVerificationServiceTest}, \texttt{PlatformAccountServiceTest}, \texttt{EmailServiceTest}, \texttt{CustomUserDetailsServiceTest} & Service d'authentification : inscription et connexion, codes à usage unique, jetons de session, rôles de boutique, fidélité, segments, vérification du marchand, comptes de la plateforme et envoi d'e-mails. Le contrôleur vérifie le corps invalide (400), les jetons (200) et la déconnexion sans session (401). & 68 \\
+\hline
+JUnit 5 & \texttt{CategoryServiceTest}, \texttt{CollectionServiceTest}, \texttt{CategoryControllerTest}, \texttt{DecartTryOnServiceTest} & Catalogue : slugs, catégorie parente interdite, collections, menu public, refus d'accès sans rôle, création sans nom, essayage virtuel sans clé ou service injoignable. & 18 \\
+\hline
+Vitest & \texttt{CategoryStorefrontPreview}, \texttt{ClothingFields}, \texttt{SectorFields}, \texttt{ThemeEditor}, \texttt{RequireAuth}, \texttt{Layout}, \texttt{Sidebar}, \texttt{AuthShell}, \texttt{CardStep}, \texttt{IdentityStep}, \texttt{Badge}, \texttt{Button}, \texttt{Card}, \texttt{CustomSelect}, \texttt{KpiCard}, \texttt{OptionPickers}, \texttt{PageHeader}, \texttt{Spinner} & Back-office : aperçu de catégorie, champs métier, thème, garde d'authentification, navigation, identité et carte, composants d'interface. Les appels réseau sont simulés. & 50 \\
+\hline
+Vitest & \texttt{Login}, \texttt{LoginPromptModal} & Vitrine : message d'erreur renvoyé par l'API, refus d'un compte marchand, modale « continuer sans compte ». & 5 \\
+\hline
+pytest & \texttt{test\_product\_text} & Un achat pèse plus qu'une vue ; le texte d'un produit répète sa catégorie et retire les accents ; les paires achetées ensemble sont classées. & 3 \\
+\hline
+\multicolumn{3}{|r|}{\textbf{Total}} & \textbf{230} \\
 \hline
 \caption{Tests automatisés de Sellio}
 \label{tab:tests}
@@ -231,4 +243,4 @@ La figure~\ref{fig:archi-devops} replace ce pipeline dans la chaîne complète, 
 \end{figure}
 
 \section*{Conclusion}
-Cette release a rendu la livraison de Sellio reproductible : chaque modification est compilée et testée sur les trois technologies du projet, la plateforme se lance en une commande, et les images publiées sont exactement celles qui ont passé les tests. Les tests écrits portent sur les règles dont la violation aurait les conséquences les plus graves, en particulier l'isolation des données entre boutiques.
+Cette release a rendu la livraison de Sellio reproductible : chaque modification est compilée et testée sur les trois technologies du projet, la plateforme se lance en une commande, et les images publiées sont exactement celles qui ont passé les tests. Les 230 tests portent sur les règles dont la violation aurait les conséquences les plus graves, en particulier l'isolation des données entre boutiques, puis sur les services, les contrôleurs et les écrans ajoutés pour la CI.
