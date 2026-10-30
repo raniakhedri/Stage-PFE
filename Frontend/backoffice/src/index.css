@@ -494,3 +494,8 @@ html.dark-transition *::after {
 .dark-mode .border-pink-100, .dark-mode .border-pink-200 { border-color: rgb(236 72 153 / 0.3) !important; }
 .dark-mode .text-pink-700, .dark-mode .text-pink-800 { color: rgb(249 168 212) !important; }
 .dark-mode .text-pink-500, .dark-mode .text-pink-600 { color: rgb(244 114 182) !important; }
+/* Translucent light headers and stripes (bg-slate-50/30 … /80) */
+.dark-mode [class*="bg-slate-50\/"],
+.dark-mode [class*="bg-gray-50\/"] {
+  background-color: rgb(255 255 255 / 0.03) !important;
+}

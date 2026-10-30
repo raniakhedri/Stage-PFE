@@ -20,7 +20,7 @@ const TIER_PALETTE = {
   FIDELE:  { hex: '#16a34a', light: '#f0fdf4' },
   VIP:     { hex: '#d97706', light: '#fffbeb' },
   INACTIF: { hex: '#64748b', light: '#f8fafc' },
-  DEFAULT: { hex: '#004D40', light: '#f0fdf4' },
+  DEFAULT: { hex: '#7C3AED', light: '#f5f3ff' },
 }
 function tierColor(seg) {
   if (!seg) return TIER_PALETTE.DEFAULT

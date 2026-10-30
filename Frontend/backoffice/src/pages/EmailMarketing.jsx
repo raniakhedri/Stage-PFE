@@ -19,7 +19,7 @@ const PALETTE = {
   FIDELE:  { hex: '#16a34a', light: '#f0fdf4' },
   VIP:     { hex: '#d97706', light: '#fffbeb' },
   INACTIF: { hex: '#64748b', light: '#f8fafc' },
-  ALL:     { hex: '#004D40', light: '#f0fdf4' },
+  ALL:     { hex: '#7C3AED', light: '#f5f3ff' },
 }
 const col = (name) => PALETTE[name] || PALETTE.ALL
 
@@ -206,7 +206,7 @@ export default function EmailMarketing() {
                   const c = col(s.segmentName)
                   const pct = stats.totalClients > 0 ? Math.round((s.count / stats.totalClients) * 100) : 0
                   return (
-                    <div key={s.segmentName} className="rounded-xl p-4 text-center border" style={{ backgroundColor: c.light, borderColor: c.hex + '30' }}>
+                    <div key={s.segmentName} className="rounded-xl p-4 text-center border" style={{ backgroundColor: c.hex + '14', borderColor: c.hex + '30' }}>
                       <p className="text-2xl font-bold font-heading" style={{ color: c.hex }}>{s.count.toLocaleString()}</p>
                       <p className="text-xs font-semibold text-slate-600 mt-1 font-button">{s.segmentLabel}</p>
                       <p className="text-[10px] text-slate-400 mt-0.5">{pct}% du total</p>
