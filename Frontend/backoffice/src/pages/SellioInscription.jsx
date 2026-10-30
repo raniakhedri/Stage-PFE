@@ -84,10 +84,11 @@ export default function SellioInscription() {
   if (step === 'code') {
     return (
       <AuthShell
+        mascot="parcel"
         eyebrow="// Vérification"
         title="Vérifiez votre e-mail."
         subtitle={`Nous avons envoyé un code à 6 chiffres à ${form.email}. Il expire dans 10 minutes.`}
-        footer={<button type="button" onClick={() => { setStep('form'); setCode(''); setError('') }} className="text-white font-medium hover:underline">← Modifier mes informations</button>}
+        footer={<button type="button" onClick={() => { setStep('form'); setCode(''); setError('') }} className="text-flame-400 font-medium hover:text-flame-300 hover:underline">← Modifier mes informations</button>}
       >
         <form onSubmit={verify} className="space-y-5">
           {error && <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</p>}
@@ -113,10 +114,11 @@ export default function SellioInscription() {
 
   return (
     <AuthShell
+      mascot="shop"
       eyebrow="// Inscription"
       title="Créez votre compte."
       subtitle="Le compte d’abord. Le nom, l’activité et le modèle de votre boutique se choisissent juste après."
-      footer={<>Déjà marchand ? <Link to="/login" className="text-white font-medium hover:underline">Se connecter</Link></>}
+      footer={<>Déjà marchand ? <Link to="/login" className="text-flame-400 font-medium hover:text-flame-300 hover:underline">Se connecter</Link></>}
     >
       <form onSubmit={handleSubmit} className="space-y-5">
         {error && <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</p>}

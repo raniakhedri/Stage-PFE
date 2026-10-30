@@ -37,10 +37,11 @@ export default function SellioLogin() {
 
   return (
     <AuthShell
+      mascot="laptop"
       eyebrow="// Connexion"
       title="Bon retour."
       subtitle="Connectez-vous pour retrouver le backoffice de votre boutique."
-      footer={<>Pas encore de compte ? <Link to="/inscription" className="text-white font-medium hover:underline">Créer ma boutique</Link></>}
+      footer={<>Pas encore de compte ? <Link to="/inscription" className="text-flame-400 font-medium hover:text-flame-300 hover:underline">Créer ma boutique</Link></>}
     >
       <form onSubmit={handleSubmit} className="space-y-5">
         {error && <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</p>}

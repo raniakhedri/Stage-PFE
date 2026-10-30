@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { SellioLogo, TechBackdrop, DISPLAY, MONO } from '../components/sellio/brand'
+import { SellioLogo, TechBackdrop, Mascot, DISPLAY, MONO, GRADIENT_TEXT } from '../components/sellio/brand'
 import { readUser, isPlatform } from '../lib/sellio'
 
 const FEATURES = [
@@ -104,6 +104,24 @@ function TemplateMock({ kind }) {
   )
 }
 
+const TONES = {
+  flame: 'bg-flame-500/15 text-flame-300',
+  plum: 'bg-plum-500/20 text-plum-300',
+}
+
+/** Small glass card floating around the mascot. */
+function FloatingChip({ className = '', icon, tone, label, value, mono = false }) {
+  return (
+    <div className={`absolute flex items-center gap-3 rounded-xl bg-ink-900/80 backdrop-blur border border-white/10 px-4 py-3 shadow-2xl ${className}`}>
+      <span className={`w-8 h-8 rounded-lg flex items-center justify-center material-symbols-outlined text-lg ${TONES[tone]}`}>{icon}</span>
+      <div>
+        <p className="text-[11px] text-white/50">{label}</p>
+        <p className="text-sm font-medium text-white" style={mono ? MONO : undefined}>{value}</p>
+      </div>
+    </div>
+  )
+}
+
 function HeroMock() {
   const kinds = ['minimal', 'bold', 'luxury']
   const [active, setActive] = useState(0)
@@ -115,7 +133,7 @@ function HeroMock() {
   return (
     <div className="relative">
       <div className="absolute -inset-px rounded-2xl bg-gradient-to-b from-white/30 via-white/5 to-transparent" />
-      <div className="relative rounded-2xl bg-[#0c0d10] border border-white/10 shadow-[0_40px_120px_-20px_rgba(124,58,237,0.45)] overflow-hidden">
+      <div className="relative rounded-2xl bg-ink-900 border border-white/10 shadow-[0_40px_120px_-20px_rgba(124,58,237,0.5)] overflow-hidden">
         <div className="flex items-center gap-2 px-4 py-3 border-b border-white/10">
           <span className="w-2.5 h-2.5 rounded-full bg-white/15" />
           <span className="w-2.5 h-2.5 rounded-full bg-white/15" />
@@ -128,7 +146,7 @@ function HeroMock() {
               <button
                 key={k}
                 onClick={() => setActive(i)}
-                className={`px-2.5 py-1 rounded-md text-[10px] uppercase tracking-wider transition-colors ${active === i ? 'bg-white text-black' : 'text-white/40 hover:text-white'}`}
+                className={`px-2.5 py-1 rounded-md text-[10px] uppercase tracking-wider transition-colors ${active === i ? 'bg-flame-500 text-white' : 'text-white/40 hover:text-white'}`}
                 style={MONO}
               >
                 {k}
@@ -142,20 +160,6 @@ function HeroMock() {
               <TemplateMock kind={k} />
             </div>
           ))}
-        </div>
-      </div>
-      <div className="hidden md:flex absolute -left-10 bottom-10 items-center gap-3 rounded-xl bg-[#111318]/90 backdrop-blur border border-white/10 px-4 py-3 shadow-2xl">
-        <span className="w-8 h-8 rounded-lg bg-emerald-500/15 text-emerald-400 flex items-center justify-center material-symbols-outlined text-lg">shopping_bag</span>
-        <div>
-          <p className="text-[11px] text-white/50">Nouvelle commande</p>
-          <p className="text-sm font-medium text-white" style={MONO}>+ 189,00 TND</p>
-        </div>
-      </div>
-      <div className="hidden md:flex absolute -right-8 top-16 items-center gap-3 rounded-xl bg-[#111318]/90 backdrop-blur border border-white/10 px-4 py-3 shadow-2xl">
-        <span className="w-8 h-8 rounded-lg bg-violet-500/15 text-violet-300 flex items-center justify-center material-symbols-outlined text-lg">auto_awesome</span>
-        <div>
-          <p className="text-[11px] text-white/50">Essayage IA</p>
-          <p className="text-sm font-medium text-white">Actif sur 12 produits</p>
         </div>
       </div>
     </div>
@@ -175,7 +179,7 @@ export default function SellioHome() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-[#07080a] text-white antialiased selection:bg-violet-500/40" style={{ fontFamily: 'Inter, sans-serif' }}>
+    <div className="min-h-screen bg-ink-950 text-white antialiased selection:bg-flame-500/40" style={{ fontFamily: 'Inter, sans-serif' }}>
       <style>{`
         @keyframes sellioMarquee { from { transform: translateX(0) } to { transform: translateX(-50%) } }
         .sellio-marquee { animation: sellioMarquee 12s linear infinite }
@@ -185,7 +189,7 @@ export default function SellioHome() {
       `}</style>
 
       {/* Nav */}
-      <header className={`fixed top-0 inset-x-0 z-50 transition-all ${scrolled ? 'bg-[#07080a]/80 backdrop-blur-xl border-b border-white/10' : ''}`}>
+      <header className={`fixed top-0 inset-x-0 z-50 transition-all ${scrolled ? 'bg-ink-950/80 backdrop-blur-xl border-b border-white/10' : ''}`}>
         <div className="max-w-7xl mx-auto px-5 md:px-8 h-16 flex items-center justify-between">
           <SellioLogo />
           <nav className="hidden md:flex items-center gap-8 text-sm text-white/60">
@@ -195,11 +199,11 @@ export default function SellioHome() {
           </nav>
           <div className="flex items-center gap-2">
             {signedIn ? (
-              <a href={spaceLink} className="px-4 py-2 rounded-lg bg-white text-black text-sm font-semibold hover:bg-white/90">Mon espace →</a>
+              <a href={spaceLink} className="px-4 py-2 rounded-lg bg-flame-500 text-white text-sm font-semibold hover:bg-flame-400">Mon espace →</a>
             ) : (
               <>
                 <Link to="/login" className="px-4 py-2 rounded-lg text-sm text-white/80 hover:text-white">Se connecter</Link>
-                <Link to="/inscription" className="px-4 py-2 rounded-lg bg-white text-black text-sm font-semibold hover:bg-white/90">Créer ma boutique</Link>
+                <Link to="/inscription" className="px-4 py-2 rounded-lg bg-flame-500 text-white text-sm font-semibold hover:bg-flame-400">Créer ma boutique</Link>
               </>
             )}
           </div>
@@ -207,32 +211,42 @@ export default function SellioHome() {
       </header>
 
       {/* Hero */}
-      <section className="relative pt-36 md:pt-44 pb-24 overflow-hidden">
+      <section className="relative pt-32 md:pt-40 pb-24 overflow-hidden">
         <TechBackdrop />
-        <div className="relative max-w-7xl mx-auto px-5 md:px-8 text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/70">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_2px_rgba(52,211,153,0.6)]" />
-            Nouveau · Essayage virtuel par IA
-          </span>
-          <h1 className="mt-7 text-5xl sm:text-6xl md:text-7xl lg:text-[88px] font-semibold tracking-[-0.04em] leading-[0.95]" style={DISPLAY}>
-            Votre boutique en ligne,
-            <br />
-            <span className="bg-gradient-to-r from-white via-violet-300 to-cyan-200 bg-clip-text text-transparent sellio-shine">prête en quelques minutes.</span>
-          </h1>
-          <p className="mt-7 max-w-2xl mx-auto text-base md:text-lg text-white/55 leading-relaxed">
-            Sellio est la plateforme e-commerce des marques tunisiennes — mode, beauté, sport, high-tech, maison, épicerie fine, bijoux, enfants :
-            vitrines premium, catalogue structuré, paiements, livraisons et analyses — sans une ligne de code.
-          </p>
-          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <a href={signedIn ? spaceLink : '/inscription'} className="group w-full sm:w-auto px-6 py-3.5 rounded-xl bg-white text-black font-semibold text-sm hover:bg-white/90 transition-colors inline-flex items-center justify-center gap-2">
-              {signedIn ? 'Ouvrir mon espace' : 'Commencer gratuitement'}
-              <span className="transition-transform group-hover:translate-x-0.5">→</span>
-            </a>
-            <a href="#modeles" className="w-full sm:w-auto px-6 py-3.5 rounded-xl border border-white/15 bg-white/[0.03] text-sm font-medium hover:bg-white/[0.07] transition-colors">
-              Voir les modèles
-            </a>
+        <div className="relative max-w-7xl mx-auto px-5 md:px-8">
+          <div className="grid lg:grid-cols-[1.4fr_0.6fr] items-center gap-8">
+            <div className="text-center lg:text-left">
+              <span className="inline-flex items-center gap-2 rounded-full border border-flame-400/25 bg-flame-500/10 px-3 py-1.5 text-xs text-flame-300">
+                <span className="w-1.5 h-1.5 rounded-full bg-flame-400 shadow-[0_0_10px_2px_rgba(255,138,61,0.6)]" />
+                Nouveau · Essayage virtuel par IA
+              </span>
+              <h1 className="mt-7 text-5xl sm:text-6xl lg:text-[54px] xl:text-[64px] font-semibold tracking-[-0.04em] leading-[1.02]" style={DISPLAY}>
+                Votre boutique en ligne,
+                <br />
+                <span className={`${GRADIENT_TEXT} sellio-shine`}>prête en quelques minutes.</span>
+              </h1>
+              <p className="mt-7 max-w-2xl mx-auto lg:mx-0 text-base md:text-lg text-white/55 leading-relaxed">
+                Sellio est la plateforme e-commerce des marques tunisiennes — mode, beauté, sport, high-tech, maison, épicerie fine, bijoux, enfants :
+                vitrines premium, catalogue structuré, paiements, livraisons et analyses — sans une ligne de code.
+              </p>
+              <div className="mt-10 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
+                <a href={signedIn ? spaceLink : '/inscription'} className="group w-full sm:w-auto px-6 py-3.5 rounded-xl bg-flame-500 text-white font-semibold text-sm hover:bg-flame-400 shadow-[0_12px_32px_-12px_rgba(255,106,26,0.85)] transition-colors inline-flex items-center justify-center gap-2">
+                  {signedIn ? 'Ouvrir mon espace' : 'Commencer gratuitement'}
+                  <span className="transition-transform group-hover:translate-x-0.5">→</span>
+                </a>
+                <a href="#modeles" className="w-full sm:w-auto px-6 py-3.5 rounded-xl border border-plum-400/30 bg-plum-500/10 text-sm font-medium hover:bg-plum-500/20 transition-colors">
+                  Voir les modèles
+                </a>
+              </div>
+              <p className="mt-5 text-xs text-white/35" style={MONO}>Sans carte bancaire · Prêt en 3 étapes · Hébergé en Tunisie</p>
+            </div>
+
+            <div className="relative hidden lg:block h-[540px]">
+              <Mascot pose="laptop" className="absolute inset-y-0 left-1/2 -translate-x-1/2 h-full aspect-[511/798]" />
+              <FloatingChip className="-left-16 top-1/2" icon="shopping_bag" tone="flame" label="Nouvelle commande" value="+ 189,00 TND" mono />
+              <FloatingChip className="-right-2 bottom-10" icon="trending_up" tone="flame" label="Visiteurs" value="+ 24 % ce mois" />
+            </div>
           </div>
-          <p className="mt-5 text-xs text-white/35" style={MONO}>Sans carte bancaire · Prêt en 3 étapes · Hébergé en Tunisie</p>
 
           <div id="modeles" className="mt-20 max-w-5xl mx-auto scroll-mt-24">
             <HeroMock />
@@ -244,8 +258,8 @@ export default function SellioHome() {
       <section className="border-y border-white/10 bg-white/[0.015]">
         <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-px bg-white/10">
           {STATS.map(([value, label]) => (
-            <div key={label} className="py-10 px-6 md:px-8 bg-[#08090b]">
-              <p className="text-4xl md:text-5xl font-semibold tracking-tight" style={DISPLAY}>{value}</p>
+            <div key={label} className="py-10 px-6 md:px-8 bg-ink-950">
+              <p className={`text-4xl md:text-5xl font-semibold tracking-tight ${GRADIENT_TEXT}`} style={DISPLAY}>{value}</p>
               <p className="mt-2 text-sm text-white/45">{label}</p>
             </div>
           ))}
@@ -255,7 +269,7 @@ export default function SellioHome() {
       {/* Features */}
       <section id="fonctionnalites" className="relative py-28 scroll-mt-16">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
-          <p className="text-xs uppercase tracking-[0.3em] text-violet-300/80" style={MONO}>// Fonctionnalités</p>
+          <p className="text-xs uppercase tracking-[0.3em] text-flame-400" style={MONO}>// Fonctionnalités</p>
           <h2 className="mt-4 text-4xl md:text-6xl font-semibold tracking-[-0.03em] max-w-3xl leading-[1.02]" style={DISPLAY}>
             Tout ce qu’il faut pour vendre. Rien de superflu.
           </h2>
@@ -265,8 +279,8 @@ export default function SellioHome() {
                 key={f.title}
                 className={`group relative rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.05] to-white/[0.01] p-7 overflow-hidden hover:border-white/20 transition-colors ${f.wide ? 'md:col-span-2' : ''}`}
               >
-                <div className="absolute -top-24 -right-24 w-56 h-56 rounded-full bg-violet-500/0 group-hover:bg-violet-500/10 blur-3xl transition-colors duration-700" />
-                <span className="relative w-11 h-11 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center material-symbols-outlined text-[22px] text-white/90">{f.icon}</span>
+                <div className="absolute -top-24 -right-24 w-56 h-56 rounded-full bg-plum-500/0 group-hover:bg-plum-500/15 blur-3xl transition-colors duration-700" />
+                <span className="relative w-11 h-11 rounded-xl border border-flame-400/20 bg-gradient-to-br from-flame-500/25 to-plum-500/25 flex items-center justify-center material-symbols-outlined text-[22px] text-flame-300">{f.icon}</span>
                 <h3 className="relative mt-6 text-xl font-semibold tracking-tight" style={DISPLAY}>{f.title}</h3>
                 <p className="relative mt-2 text-sm text-white/50 leading-relaxed max-w-md">{f.text}</p>
               </div>
@@ -279,16 +293,17 @@ export default function SellioHome() {
       <section id="etapes" className="py-28 border-t border-white/10 scroll-mt-16">
         <div className="max-w-7xl mx-auto px-5 md:px-8 grid lg:grid-cols-[1fr_1.4fr] gap-14">
           <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-cyan-300/80" style={MONO}>// Comment ça marche</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-plum-300" style={MONO}>// Comment ça marche</p>
             <h2 className="mt-4 text-4xl md:text-5xl font-semibold tracking-[-0.03em] leading-[1.05]" style={DISPLAY}>
               De l’idée à la première vente.
             </h2>
             <p className="mt-5 text-white/50 max-w-md">Chaque compte Sellio possède sa boutique, son lien et son backoffice. Vos données restent séparées de celles des autres marchands.</p>
+            <Mascot pose="parcel" className="hidden lg:block mt-10 h-64 aspect-[245/347]" />
           </div>
           <ol className="space-y-3">
             {STEPS.map((s) => (
               <li key={s.n} className="flex gap-6 rounded-2xl border border-white/10 bg-white/[0.02] p-6">
-                <span className="text-sm text-violet-300" style={MONO}>{s.n}</span>
+                <span className="text-sm font-semibold text-flame-400" style={MONO}>{s.n}</span>
                 <div>
                   <p className="text-lg font-semibold" style={DISPLAY}>{s.title}</p>
                   <p className="text-sm text-white/50 mt-1">{s.text}</p>
@@ -301,12 +316,14 @@ export default function SellioHome() {
 
       {/* CTA */}
       <section className="px-5 md:px-8 pb-28">
-        <div className="relative max-w-7xl mx-auto rounded-3xl border border-white/10 overflow-hidden px-8 py-20 md:py-24 text-center">
+        <div className="relative max-w-7xl mx-auto rounded-3xl border border-white/10 overflow-hidden px-8 py-20 md:py-24 text-center bg-gradient-to-br from-plum-700/30 via-ink-950 to-flame-600/20">
           <TechBackdrop />
+          <Mascot pose="shop" glow={false} className="hidden xl:block absolute -left-4 bottom-4 w-56 aspect-[505/435]" />
+          <Mascot pose="idea" glow={false} className="hidden xl:block absolute right-10 bottom-4 h-60 aspect-[194/358]" />
           <h2 className="relative text-4xl md:text-6xl font-semibold tracking-[-0.03em]" style={DISPLAY}>Lancez votre marque aujourd’hui.</h2>
           <p className="relative mt-5 text-white/55 max-w-xl mx-auto">Créez votre compte, choisissez votre vitrine et publiez votre premier produit en moins de dix minutes.</p>
           <div className="relative mt-10 flex flex-col sm:flex-row gap-3 justify-center">
-            <Link to="/inscription" className="px-6 py-3.5 rounded-xl bg-white text-black font-semibold text-sm hover:bg-white/90">Créer ma boutique</Link>
+            <Link to="/inscription" className="px-6 py-3.5 rounded-xl bg-flame-500 text-white font-semibold text-sm hover:bg-flame-400 shadow-[0_12px_32px_-12px_rgba(255,106,26,0.85)]">Créer ma boutique</Link>
             <Link to="/login" className="px-6 py-3.5 rounded-xl border border-white/15 text-sm font-medium hover:bg-white/5">J’ai déjà un compte</Link>
           </div>
         </div>

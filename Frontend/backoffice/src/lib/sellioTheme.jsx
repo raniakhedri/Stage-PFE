@@ -4,22 +4,22 @@ const KEY = 'sellioTheme'
 
 /** Class tokens for the Sellio platform pages (console, shop creation, verification). */
 const DARK = {
-  page: 'bg-[#07080a] text-white',
-  header: 'bg-[#07080a]/85 border-white/10',
+  page: 'bg-ink-950 text-white',
+  header: 'bg-ink-950/85 border-white/10',
   card: 'bg-white/[0.03] border border-white/10',
-  cardSolid: 'bg-[#0d0e12] border border-white/10',
+  cardSolid: 'bg-ink-900 border border-white/10',
   muted: 'text-white/55',
   faint: 'text-white/35',
   divider: 'border-white/10',
   hover: 'hover:bg-white/[0.04]',
-  input: 'bg-white/[0.04] border border-white/10 text-white placeholder:text-white/30 focus:border-violet-400/60 focus:ring-4 focus:ring-violet-500/10',
-  primaryBtn: 'bg-white text-black hover:bg-white/90',
+  input: 'bg-white/[0.04] border border-white/10 text-white placeholder:text-white/30 focus:border-flame-400/60 focus:ring-4 focus:ring-flame-500/10',
+  primaryBtn: 'bg-flame-500 text-white hover:bg-flame-400 shadow-[0_10px_30px_-12px_rgba(255,106,26,0.8)]',
   secondaryBtn: 'border border-white/15 text-white hover:bg-white/[0.06]',
-  selected: 'border-violet-400/70 bg-violet-500/10 ring-1 ring-violet-400/40',
+  selected: 'border-plum-400/70 bg-plum-500/10 ring-1 ring-plum-400/40',
   unselected: 'border-white/10 hover:border-white/25',
   tableHead: 'text-white/40',
   row: 'border-white/[0.06] hover:bg-white/[0.03]',
-  drawer: 'bg-[#0b0c0f] border-l border-white/10',
+  drawer: 'bg-ink-900 border-l border-white/10',
   chip: 'bg-white/[0.06] text-white/80',
   overlay: 'bg-black/60',
   stripeText: '#ffffff',
@@ -35,10 +35,10 @@ const LIGHT = {
   faint: 'text-slate-400',
   divider: 'border-slate-200',
   hover: 'hover:bg-slate-50',
-  input: 'bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10',
-  primaryBtn: 'bg-slate-900 text-white hover:bg-slate-800',
+  input: 'bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-flame-500 focus:ring-4 focus:ring-flame-500/10',
+  primaryBtn: 'bg-flame-500 text-white hover:bg-flame-600',
   secondaryBtn: 'border border-slate-300 text-slate-800 hover:bg-slate-50',
-  selected: 'border-violet-500 bg-violet-50 ring-1 ring-violet-500/30',
+  selected: 'border-plum-500 bg-plum-500/5 ring-1 ring-plum-500/30',
   unselected: 'border-slate-200 hover:border-slate-400',
   tableHead: 'text-slate-400',
   row: 'border-slate-100 hover:bg-slate-50',
@@ -103,7 +103,7 @@ export function Switch({ checked, onChange, label, description, theme }) {
         <span className="block text-sm font-medium">{label}</span>
         {description && <span className={`block text-xs mt-0.5 ${theme.t.muted}`}>{description}</span>}
       </span>
-      <span className={`relative shrink-0 w-11 h-6 rounded-full transition-colors ${checked ? 'bg-violet-500' : theme.dark ? 'bg-white/15' : 'bg-slate-300'}`}>
+      <span className={`relative shrink-0 w-11 h-6 rounded-full transition-colors ${checked ? 'bg-flame-500' : theme.dark ? 'bg-white/15' : 'bg-slate-300'}`}>
         <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-5' : ''}`} />
       </span>
     </button>

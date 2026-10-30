@@ -65,7 +65,7 @@ function DropImage({ label, hint, value, onChange, onError, theme, aspect = 'asp
         onDragLeave={() => setDrag(false)}
         onDrop={(e) => { e.preventDefault(); setDrag(false); take(e.dataTransfer.files?.[0]) }}
         className={`relative ${aspect} rounded-xl border-2 border-dashed overflow-hidden cursor-pointer transition-colors flex items-center justify-center ${
-          drag ? 'border-violet-400 bg-violet-500/10' : theme.dark ? 'border-white/15 hover:border-white/30 bg-white/[0.02]' : 'border-slate-300 hover:border-slate-400 bg-slate-50'
+          drag ? 'border-flame-400 bg-flame-500/10' : theme.dark ? 'border-white/15 hover:border-white/30 bg-white/[0.02]' : 'border-slate-300 hover:border-slate-400 bg-slate-50'
         }`}
       >
         {value ? (
@@ -150,7 +150,7 @@ function SelfieCapture({ value, onChange, onError, theme }) {
       <div className="flex flex-wrap gap-2 mt-3">
         {live ? (
           <>
-            <button type="button" onClick={capture} className="px-4 py-2 rounded-lg bg-violet-500 text-white text-sm font-semibold hover:bg-violet-400">Prendre la photo</button>
+            <button type="button" onClick={capture} className="px-4 py-2 rounded-lg bg-flame-500 text-white text-sm font-semibold hover:bg-flame-400">Prendre la photo</button>
             <button type="button" onClick={stop} className={`px-4 py-2 rounded-lg text-sm ${theme.t.secondaryBtn}`}>Annuler</button>
           </>
         ) : (

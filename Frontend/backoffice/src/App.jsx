@@ -3,7 +3,7 @@ import { ToastContainer } from 'react-toastify'
 import { useEffect } from 'react'
 import 'react-toastify/dist/ReactToastify.css'
 
-import { applyAllColors, applyAllFonts, applyLogos, applySidebarLayout, applyBorderRadius, applyDarkMode, applyLogoScale, applyLogoAlign } from './utils/brandColor'
+import { applyAllColors, applyAllFonts, applyLogos, applySidebarLayout, applyBorderRadius, setPlatformDarkDefault, applyLogoScale, applyLogoAlign } from './utils/brandColor'
 import RequireAuth from './components/auth/RequireAuth'
 import Layout from './components/layout/Layout'
 import AuthCallback from './pages/AuthCallback'
@@ -61,7 +61,7 @@ function App() {
           applyLogos(data)
           applySidebarLayout(data)
           applyBorderRadius(data.borderRadius)
-          applyDarkMode(data.darkMode)
+          setPlatformDarkDefault(data.darkMode)
           applyLogoScale(data.logoScale)
           applyLogoAlign(data.logoAlign)
         }

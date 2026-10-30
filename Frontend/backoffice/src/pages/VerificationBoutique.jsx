@@ -118,7 +118,7 @@ export default function VerificationBoutique() {
       </header>
 
       <main className="max-w-3xl mx-auto px-5 py-14">
-        <p className="text-xs uppercase tracking-[0.3em] text-violet-400" style={MONO}>// {status?.shopName || user.shopName || 'Votre boutique'}</p>
+        <p className="text-xs uppercase tracking-[0.3em] text-flame-400" style={MONO}>// {status?.shopName || user.shopName || 'Votre boutique'}</p>
         {!status && <p className={`mt-6 ${t.muted}`}>Chargement…</p>}
 
         {view && (
@@ -143,7 +143,7 @@ export default function VerificationBoutique() {
                   ['Ouverture du backoffice', false],
                 ].map(([label, done, detail], i) => (
                   <li key={label} className="flex items-center gap-4">
-                    <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs ${done ? 'bg-violet-500 text-white' : i === 3 ? 'border-2 border-violet-400 animate-pulse' : theme.dark ? 'border border-white/20' : 'border border-slate-300'}`}>
+                    <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs ${done ? 'bg-flame-500 text-white' : i === 3 ? 'border-2 border-flame-400 animate-pulse' : theme.dark ? 'border border-white/20' : 'border border-slate-300'}`}>
                       {done ? <span className="material-symbols-outlined text-sm">check</span> : i + 1}
                     </span>
                     <span className={done ? '' : t.muted}>{label}</span>
@@ -182,7 +182,7 @@ export default function VerificationBoutique() {
                       <CardStep value={card} onChange={setCard} theme={theme} />
                     </section>
                     <div className="flex gap-3">
-                      <button type="button" disabled={sending} onClick={resubmit} className="px-6 py-3 rounded-xl text-sm font-semibold bg-violet-500 text-white hover:bg-violet-400 disabled:opacity-50">
+                      <button type="button" disabled={sending} onClick={resubmit} className="px-6 py-3 rounded-xl text-sm font-semibold bg-flame-500 text-white hover:bg-flame-400 disabled:opacity-50">
                         {sending ? 'Envoi…' : 'Renvoyer mon dossier'}
                       </button>
                       <button type="button" onClick={() => setResubmitting(false)} className={`px-5 py-3 rounded-xl text-sm ${t.secondaryBtn}`}>Annuler</button>

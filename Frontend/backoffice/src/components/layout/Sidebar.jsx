@@ -55,7 +55,7 @@ function ShopBrand({ shop, fallbackName, align }) {
   )
 }
 
-function Sidebar({ user = {}, shop = null }) {
+function Sidebar({ user = {}, shop = null, dark = false, onToggleDark }) {
   const navigate = useNavigate()
 
   /* ── read sidebar layout toggles from CSS custom properties ── */
@@ -275,6 +275,22 @@ function Sidebar({ user = {}, shop = null }) {
             </div>
           )}
         </div>
+
+        {onToggleDark && (
+          <button
+            type="button"
+            role="switch"
+            aria-checked={dark}
+            onClick={onToggleDark}
+            className="w-full flex items-center gap-3 px-4 py-2 text-slate-600 hover:bg-slate-50 hover:text-sidebar rounded-lg transition-all"
+          >
+            {showIcons && <span className="material-symbols-outlined text-[20px]">{dark ? 'light_mode' : 'dark_mode'}</span>}
+            <span className="text-sm font-medium flex-1 text-left">Mode sombre</span>
+            <span className={`relative shrink-0 w-9 h-5 rounded-full transition-colors ${dark ? 'bg-[#FF6A1A]' : 'bg-slate-300'}`}>
+              <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-[#ffffff] shadow transition-transform ${dark ? 'translate-x-4' : ''}`} />
+            </span>
+          </button>
+        )}
 
         <a
           href={`${STOREFRONT_URL}/${user.shopSlug || currentShopSlug()}`}

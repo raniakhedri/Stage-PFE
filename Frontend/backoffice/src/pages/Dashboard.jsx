@@ -56,15 +56,21 @@ function TrendChart({ data, dataKey }) {
       const chartH = H - pad.top - pad.bottom
 
       ctx.clearRect(0, 0, W, H)
+      // Follow the brand colour and the backoffice theme (light or dark).
+      const root = document.documentElement
+      const dark = root.classList.contains('dark-mode')
+      const brand = getComputedStyle(root).getPropertyValue('--color-brand').trim().split(/\s+/).join(', ') || '124, 58, 237'
+      const gridColor = dark ? '#272135' : '#f1f5f9'
+      const labelColor = dark ? '#a29cb2' : '#94a3b8'
 
       const values = data.map(d => d[dataKey] || 0)
       const maxVal = Math.max(...values, 1)
 
       // Grid
-      ctx.strokeStyle = '#f1f5f9'
+      ctx.strokeStyle = gridColor
       ctx.lineWidth = 1
       ctx.font = '10px system-ui'
-      ctx.fillStyle = '#94a3b8'
+      ctx.fillStyle = labelColor
       ctx.textAlign = 'right'
       for (let i = 0; i <= 4; i++) {
         const y = pad.top + (chartH / 4) * i
@@ -80,7 +86,7 @@ function TrendChart({ data, dataKey }) {
 
       // X labels
       ctx.textAlign = 'center'
-      ctx.fillStyle = '#94a3b8'
+      ctx.fillStyle = labelColor
       data.forEach((d, i) => {
         const x = pad.left + (chartW / (data.length - 1)) * i
         ctx.fillText(d.mois?.slice(0, 3) || '', x, H - 8)
@@ -88,8 +94,8 @@ function TrendChart({ data, dataKey }) {
 
       // Gradient fill
       const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + chartH)
-      grad.addColorStop(0, 'rgba(0, 91, 61, 0.15)')
-      grad.addColorStop(1, 'rgba(0, 91, 61, 0)')
+      grad.addColorStop(0, `rgba(${brand}, ${dark ? 0.3 : 0.15})`)
+      grad.addColorStop(1, `rgba(${brand}, 0)`)
       ctx.beginPath()
       ctx.moveTo(pad.left, pad.top + chartH)
       values.forEach((v, i) => {
@@ -108,7 +114,7 @@ function TrendChart({ data, dataKey }) {
         const y = pad.top + chartH - (v / maxVal) * chartH
         i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
       })
-      ctx.strokeStyle = '#005b3d'
+      ctx.strokeStyle = `rgb(${brand})`
       ctx.lineWidth = 2.5
       ctx.stroke()
 
@@ -118,7 +124,7 @@ function TrendChart({ data, dataKey }) {
         const y = pad.top + chartH - (v / maxVal) * chartH
         ctx.beginPath()
         ctx.arc(x, y, 3, 0, Math.PI * 2)
-        ctx.fillStyle = '#005b3d'
+        ctx.fillStyle = `rgb(${brand})`
         ctx.fill()
       })
     }
@@ -126,7 +132,10 @@ function TrendChart({ data, dataKey }) {
     draw()
     const ro = new ResizeObserver(draw)
     ro.observe(canvas)
-    return () => ro.disconnect()
+    // Redraw when the backoffice switches between light and dark.
+    const mo = new MutationObserver(draw)
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+    return () => { ro.disconnect(); mo.disconnect() }
   }, [data, dataKey])
 
   return <canvas ref={canvasRef} className="w-full h-full" />

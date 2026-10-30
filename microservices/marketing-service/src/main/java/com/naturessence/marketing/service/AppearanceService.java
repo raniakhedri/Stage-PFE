@@ -125,13 +125,15 @@ public class AppearanceService {
 
     // ── Helpers ────────────────────────────────────────────────────────
     private AppearanceSettings createDefault(String scope) {
+        // The backoffice wears Sellio's own palette (purple and orange); storefronts keep theirs.
+        boolean backoffice = scope.equals("backoffice");
         AppearanceSettings settings = AppearanceSettings.builder()
                 .scope(scope)
-                .primaryColor("#004D40")
-                .secondaryColor("#EC5B13")
-                .buttonColor("#004D40")
-                .sidebarColor("#004D40")
-                .badgeColor("#EC5B13")
+                .primaryColor(backoffice ? "#7C3AED" : "#004D40")
+                .secondaryColor(backoffice ? "#FF6A1A" : "#EC5B13")
+                .buttonColor(backoffice ? "#FF6A1A" : "#004D40")
+                .sidebarColor(backoffice ? "#7C3AED" : "#004D40")
+                .badgeColor(backoffice ? "#FF6A1A" : "#EC5B13")
                 .fontPrimary(scope.equals("backoffice") ? "Public Sans" : "Poppins")
                 .fontSecondary("Poppins")
                 .fontSidebar("Public Sans")

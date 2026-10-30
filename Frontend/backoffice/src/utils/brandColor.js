@@ -31,11 +31,11 @@ function setColorPair(name, hex) {
  */
 export function applyAllColors(data) {
   if (!data) return
-  const primary = data.primaryColor || '#004D40'
+  const primary = data.primaryColor || '#7C3AED'
   setColorPair('brand', primary)
-  setColorPair('btn', data.buttonColor || primary)
+  setColorPair('btn', data.buttonColor || '#FF6A1A')
   setColorPair('sidebar', data.sidebarColor || primary)
-  setColorPair('badge', data.badgeColor || data.secondaryColor || '#EC5B13')
+  setColorPair('badge', data.badgeColor || data.secondaryColor || '#FF6A1A')
 }
 
 /**
@@ -112,6 +112,47 @@ export function applyDarkMode(enabled) {
   root.classList.add('dark-transition')
   root.classList.toggle('dark-mode', !!enabled)
   setTimeout(() => root.classList.remove('dark-transition'), 450)
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BACKOFFICE THEME — the user's own choice wins over the platform default
+   ═══════════════════════════════════════════════════════════════ */
+
+const BACKOFFICE_THEME_KEY = 'backofficeTheme'
+const THEME_EVENT = 'backoffice-theme'
+let platformDark = false
+
+/** Dark mode for the backoffice: the user's choice, else the platform setting. */
+export function readBackofficeDark() {
+  try {
+    const stored = localStorage.getItem(BACKOFFICE_THEME_KEY)
+    if (stored === 'dark') return true
+    if (stored === 'light') return false
+  } catch {
+    // storage blocked: fall back to the platform setting
+  }
+  return platformDark
+}
+
+/** Platform default (Apparence > Back-office), used until the user picks a theme. */
+export function setPlatformDarkDefault(enabled) {
+  platformDark = !!enabled
+  window.dispatchEvent(new Event(THEME_EVENT))
+}
+
+/** Remember the user's theme for this browser. */
+export function setBackofficeDark(enabled) {
+  try {
+    localStorage.setItem(BACKOFFICE_THEME_KEY, enabled ? 'dark' : 'light')
+  } catch {
+    // storage blocked: the choice lasts for this page only
+  }
+  window.dispatchEvent(new Event(THEME_EVENT))
+}
+
+export function onBackofficeThemeChange(listener) {
+  window.addEventListener(THEME_EVENT, listener)
+  return () => window.removeEventListener(THEME_EVENT, listener)
 }
 
 /* ═══════════════════════════════════════════════════════════════

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import apiClient from '../../api/apiClient'
-import { applyAllColors } from '../../utils/brandColor'
+import { applyAllColors, applyDarkMode, onBackofficeThemeChange, readBackofficeDark, setBackofficeDark } from '../../utils/brandColor'
 import { canAccess, currentShopSlug, firstAllowedPath, moduleForPath, readUser, isPlatform } from '../../lib/sellio'
 
 const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'
@@ -41,6 +41,14 @@ function Layout() {
   const location = useLocation()
   const [user, setUser] = useState(readUser)
   const [shop, setShop] = useState(null)
+  const [dark, setDark] = useState(readBackofficeDark)
+
+  // Dark mode belongs to the backoffice only: it is removed when the user leaves it.
+  useEffect(() => onBackofficeThemeChange(() => setDark(readBackofficeDark())), [])
+  useEffect(() => {
+    applyDarkMode(dark)
+    return () => applyDarkMode(false)
+  }, [dark])
 
   // Keep the stored profile in sync (role, permissions and shop may change while signed in).
   useEffect(() => {
@@ -87,7 +95,7 @@ function Layout() {
 
   return (
     <div className="h-screen flex bg-slate-50">
-      <Sidebar user={user} shop={shop} />
+      <Sidebar user={user} shop={shop} dark={dark} onToggleDark={() => setBackofficeDark(!dark)} />
       <div className="flex flex-col flex-1 min-w-0 h-screen overflow-y-auto" id="main-scroll">
         <main className="flex-1">
           <Outlet />

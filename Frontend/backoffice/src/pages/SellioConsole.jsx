@@ -76,7 +76,7 @@ function Pagination({ paged, theme }) {
         {numbers.map((n, i) => (
           <span key={n} className="flex items-center">
             {i > 0 && n - numbers[i - 1] > 1 && <span className={`px-1 ${theme.t.faint}`}>…</span>}
-            <button className={`${btn} ${n === page ? 'bg-violet-500 text-white' : theme.t.hover}`} onClick={() => setPage(n)}>{n}</button>
+            <button className={`${btn} ${n === page ? 'bg-flame-500 text-white' : theme.t.hover}`} onClick={() => setPage(n)}>{n}</button>
           </span>
         ))}
         <button className={`${btn} ${theme.t.hover}`} disabled={page === pages} onClick={() => setPage(page + 1)} aria-label="Page suivante">›</button>
@@ -633,7 +633,7 @@ export default function SellioConsole() {
 
       <main className="max-w-7xl mx-auto px-5 md:px-8 py-8 space-y-8">
         <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-violet-400" style={MONO}>// Plateforme</p>
+          <p className="text-xs uppercase tracking-[0.3em] text-flame-400" style={MONO}>// Plateforme</p>
           <h1 className="mt-2 text-3xl md:text-4xl font-semibold tracking-tight" style={DISPLAY}>Vue d’ensemble</h1>
         </div>
 
@@ -668,7 +668,7 @@ export default function SellioConsole() {
               ['verifications', 'Vérifications', pending],
               ['users', `Comptes (${users.length})`],
             ].map(([id, label, badge]) => (
-              <button key={id} onClick={() => setTab(id)} className={`px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-2 ${tab === id ? (dark ? 'bg-white text-black' : 'bg-slate-900 text-white') : t.muted}`}>
+              <button key={id} onClick={() => setTab(id)} className={`px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-2 ${tab === id ? 'bg-flame-500 text-white' : t.muted}`}>
                 {label}
                 {badge > 0 && <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-amber-500 text-black text-[11px] font-bold flex items-center justify-center">{badge}</span>}
               </button>
@@ -795,7 +795,7 @@ export default function SellioConsole() {
                       <td className="px-5 py-3 text-xs" style={MONO}>{(v.cardBrand || '').toUpperCase()} •••• {v.cardLast4}</td>
                       <td className="px-5 py-3"><Pill dark={dark} tone={VERIF_STATUS[v.status]?.[1]}>{VERIF_STATUS[v.status]?.[0]}</Pill></td>
                       <td className={`px-5 py-3 whitespace-nowrap ${t.muted}`}>{dateTime(v.submittedAt)}</td>
-                      <td className="px-5 py-3 text-right"><span className="text-violet-400 text-sm font-medium">Examiner →</span></td>
+                      <td className="px-5 py-3 text-right"><span className="text-flame-400 text-sm font-medium">Examiner →</span></td>
                     </tr>
                   ))}
                   {visibleVerifs.length === 0 && (

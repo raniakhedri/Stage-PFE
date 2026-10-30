@@ -66,7 +66,7 @@ export default function MotDePasseOublie() {
           : step === 'code' ? `Saisissez le code reçu à ${email} et choisissez un nouveau mot de passe.`
             : 'Votre mot de passe a été modifié. Vous pouvez vous connecter.'
       }
-      footer={<><Link to="/login" className="text-white font-medium hover:underline">← Retour à la connexion</Link></>}
+      footer={<><Link to="/login" className="text-flame-400 font-medium hover:text-flame-300 hover:underline">← Retour à la connexion</Link></>}
     >
       {error && <p className="mb-5 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</p>}
 
@@ -103,7 +103,7 @@ export default function MotDePasseOublie() {
       )}
 
       {step === 'done' && (
-        <Link to="/login" className="block w-full py-3.5 rounded-xl bg-white text-black font-semibold text-sm text-center hover:bg-white/90">
+        <Link to="/login" className="block w-full py-3.5 rounded-xl bg-flame-500 text-white font-semibold text-sm text-center hover:bg-flame-400">
           Se connecter
         </Link>
       )}

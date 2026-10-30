@@ -97,7 +97,7 @@ export default function CardStep({ value, onChange, theme }) {
   if (cardComplete(value)) {
     return (
       <div className="space-y-4">
-        <div className="relative overflow-hidden rounded-2xl p-6 text-white bg-gradient-to-br from-violet-600 via-indigo-700 to-slate-900 aspect-[1.6/1] max-w-sm shadow-2xl">
+        <div className="relative overflow-hidden rounded-2xl p-6 text-white bg-gradient-to-br from-flame-500 via-plum-600 to-ink-950 aspect-[1.6/1] max-w-sm shadow-2xl">
           <div className="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-white/10" />
           <div className="flex justify-between items-start">
             <span className="material-symbols-outlined text-3xl">contactless</span>

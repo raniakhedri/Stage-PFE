@@ -165,7 +165,7 @@ function LogoDrop({ logo, onChange, onError, theme }) {
       onDragLeave={() => setDrag(false)}
       onDrop={(e) => { e.preventDefault(); setDrag(false); take(e.dataTransfer.files?.[0]) }}
       className={`relative rounded-xl border-2 border-dashed p-5 flex items-center gap-5 cursor-pointer transition-colors ${
-        drag ? 'border-violet-400 bg-violet-500/10' : theme.dark ? 'border-white/15 hover:border-white/30' : 'border-slate-300 hover:border-slate-400'
+        drag ? 'border-flame-400 bg-flame-500/10' : theme.dark ? 'border-white/15 hover:border-white/30' : 'border-slate-300 hover:border-slate-400'
       }`}
     >
       <div className={`w-24 h-16 rounded-lg flex items-center justify-center shrink-0 ${theme.dark ? 'bg-white' : 'bg-slate-100'}`}>
@@ -337,7 +337,7 @@ export default function NouvelleBoutique() {
       </header>
 
       <div className="max-w-6xl mx-auto px-5 md:px-8 py-10">
-        <p className="text-xs uppercase tracking-[0.3em] text-violet-400" style={{ fontFamily: '"JetBrains Mono", monospace' }}>// Ouverture de boutique</p>
+        <p className="text-xs uppercase tracking-[0.3em] text-flame-400" style={{ fontFamily: '"JetBrains Mono", monospace' }}>// Ouverture de boutique</p>
         <h1 className="mt-3 text-3xl md:text-4xl font-semibold tracking-tight" style={{ fontFamily: '"Space Grotesk", Inter, sans-serif' }}>
           Bonjour {user.firstName || ''}, créons votre boutique.
         </h1>
@@ -347,7 +347,7 @@ export default function NouvelleBoutique() {
           {STEPS.map((s, i) => (
             <li key={s.id}>
               <button type="button" onClick={() => goTo(i)} className="w-full text-left group">
-                <span className={`block h-1 rounded-full transition-colors ${i <= step ? 'bg-violet-500' : theme.dark ? 'bg-white/10' : 'bg-slate-200'}`} />
+                <span className={`block h-1 rounded-full transition-colors ${i <= step ? 'bg-gradient-to-r from-flame-500 to-plum-500' : theme.dark ? 'bg-white/10' : 'bg-slate-200'}`} />
                 <span className={`mt-2 hidden sm:flex items-center gap-1.5 text-xs ${i === step ? '' : t.muted}`}>
                   <span className="material-symbols-outlined text-sm">{i < step ? 'check_circle' : s.icon}</span>
                   {s.label}
@@ -390,7 +390,7 @@ export default function NouvelleBoutique() {
                           <span className="flex gap-1.5">
                             {item.swatch.map((color) => <span key={color} className="w-5 h-5 rounded-full border border-black/10" style={{ background: color }} />)}
                           </span>
-                          {isRecommended(business, item.id) && <span className="text-[10px] font-semibold uppercase tracking-wider text-violet-400">Recommandé</span>}
+                          {isRecommended(business, item.id) && <span className="text-[10px] font-semibold uppercase tracking-wider text-plum-300">Recommandé</span>}
                         </div>
                         <p className="font-semibold" style={{ fontFamily: item.font, fontStyle: item.italic ? 'italic' : 'normal' }}>{item.title}</p>
                         <p className={`text-sm mt-1 ${t.muted}`}>{item.text}</p>
@@ -493,7 +493,7 @@ export default function NouvelleBoutique() {
                   ))}
                 </dl>
                 <button type="button" onClick={() => setCertify((v) => !v)} className="flex items-start gap-3 text-left">
-                  <span className={`mt-0.5 w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition-colors ${certify ? 'bg-violet-500 border-violet-500 text-white' : theme.dark ? 'border-white/30' : 'border-slate-400'}`}>
+                  <span className={`mt-0.5 w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition-colors ${certify ? 'bg-flame-500 border-flame-500 text-white' : theme.dark ? 'border-white/30' : 'border-slate-400'}`}>
                     {certify && <span className="material-symbols-outlined text-sm">check</span>}
                   </span>
                   <span className={`text-sm ${t.muted}`}>Je certifie sur l’honneur que les informations et documents fournis sont exacts et m’appartiennent.</span>
@@ -510,7 +510,7 @@ export default function NouvelleBoutique() {
                   Continuer →
                 </button>
               ) : (
-                <button type="button" disabled={loading} onClick={submit} className="px-6 py-3 rounded-xl text-sm font-semibold bg-violet-500 text-white hover:bg-violet-400 disabled:opacity-50">
+                <button type="button" disabled={loading} onClick={submit} className="px-6 py-3 rounded-xl text-sm font-semibold bg-flame-500 text-white hover:bg-flame-400 disabled:opacity-50">
                   {loading ? 'Envoi…' : 'Envoyer mon dossier'}
                 </button>
               )}

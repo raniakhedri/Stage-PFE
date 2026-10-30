@@ -9,6 +9,26 @@ export default {
       colors: {
         // brand & brand-dark are defined as CSS utilities in index.css
         // using CSS custom properties for dynamic runtime color changes
+        // Sellio's own palette (platform pages): orange, purple and near-black.
+        flame: {
+          300: '#FFB37A',
+          400: '#FF8A3D',
+          500: '#FF6A1A',
+          600: '#E8550A',
+        },
+        plum: {
+          300: '#C4A6FF',
+          400: '#A07BFA',
+          500: '#7C3AED',
+          600: '#6425D0',
+          700: '#4C1D95',
+        },
+        ink: {
+          700: '#211B2E',
+          800: '#16121F',
+          900: '#0E0B16',
+          950: '#08060D',
+        },
         primary: {
           50:  '#eff6ff',
           100: '#dbeafe',
