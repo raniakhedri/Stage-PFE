@@ -1,0 +1,840 @@
+\thispagestyle{fancy}
+\fancyhead[R]{A.U 2025-2026}
+\fancyhead[L]{ chapitre 8: Release 6 : Intelligence comportementale }
+\chapter{Release 6 : Intelligence comportementale et apprentissage automatique}
+\section*{Introduction}
+Ce dernier chapitre répond au cœur du sujet : analyser les interactions des utilisateurs et exploiter ces données par apprentissage automatique pour personnaliser l'expérience d'achat. Nous présentons d'abord l'architecture de ce volet, puis les données utilisées pour entraîner et évaluer les modèles et le protocole d'évaluation. Nous détaillons ensuite les trois modèles, recommandation, segmentation et prédiction de l'attrition, avec le choix de chaque algorithme, sa configuration et ses résultats. Nous terminons par les deux sprints de la release.
+
+\section{Architecture de l'intelligence comportementale}
+\subsection{Flux d'architecture}
+La figure~\ref{fig:archi-ml} présente le flux complet, de la collecte d'un clic jusqu'à l'affichage d'une recommandation ou d'un score d'attrition.
+\begin{figure}[H]
+    \centering
+    \img{0.7}{architecture_ml.png}
+    \caption{Architecture de l'intelligence comportementale}
+    \label{fig:archi-ml}
+\end{figure}
+
+\subsection{Couche de collecte}
+Un module JavaScript de la vitrine (\texttt{tracker.js}) enregistre douze types d'événements : pages vues, catégories et produits consultés, clics, recherches, ajouts et retraits du panier, ajouts aux favoris, début de commande, achats et clics sur une recommandation. Chaque événement porte l'identifiant de la boutique, un \textbf{identifiant de visiteur anonyme} conservé dans le navigateur, un identifiant de session (une nouvelle session commence après 30 minutes d'inactivité) et, si le client est connecté, son identifiant. Les événements sont regroupés en lots et envoyés à \texttt{POST /api/v1/analytics/events}, pour ne pas ralentir la navigation. Le serveur n'accepte que les types connus, limite la taille des lots (50 événements) et le débit par visiteur, afin qu'un script ne puisse pas fausser les données.
+
+\subsection{Couche de stockage}
+Le volume d'événements croît beaucoup plus vite que celui des commandes. La table \texttt{user\_events} est donc conçue pour ce volume :
+\begin{itemize}
+  \item \textbf{partitionnement mensuel} par date : les requêtes sur une période ne lisent que les mois concernés, et la suppression d'un mois ancien est instantanée ;
+  \item \textbf{index BRIN} sur la date : quelques kilo-octets suffisent à indexer des millions de lignes insérées dans l'ordre chronologique ;
+  \item \textbf{index B-tree partiels} sur les seuls événements utiles aux modèles (produits consultés, achats) ;
+  \item \textbf{agrégats quotidiens} pour le tableau de bord et \textbf{rétention de 13 mois}, suffisante pour comparer une saison à celle de l'année précédente.
+\end{itemize}
+
+\subsection{Couche d'entraînement}
+Chaque nuit à 3 h 40, et à la demande du commerçant, le service \texttt{MlTrainingService} rassemble les données de chaque boutique (ses événements, dans sa propre base ; les produits, demandés au catalogue, et les commandes payées, demandées au service de commandes, par leurs API internes), les transmet à des scripts Python (\texttt{ml\_train.py}) exécutés en sous-processus, puis enregistre les résultats : voisins de chaque produit et règles d'association dans \texttt{product\_recommendations}, segment de chaque visiteur dans \texttt{behavior\_segments}, et métriques de chaque entraînement dans \texttt{ml\_model\_runs}. Les modèles d'attrition, entraînés hors ligne sur des données réelles, sont chargés par \texttt{predict.py}.
+
+\subsection{Couche de service et de restitution}
+Les recommandations sont lues dans des tables pré-calculées : servir une recommandation revient à une simple requête indexée, sans calcul au moment de l'affichage. La vitrine les affiche sur la fiche produit, sur l'accueil et dans le panier ; le back-office restitue segments, entonnoir de conversion et risques d'attrition dans la page « Comportement ».
+
+\section{Données d'entraînement et d'évaluation}
+\subsection{Pourquoi des jeux de données publics réels}
+Une plateforme nouvelle n'a pas d'historique : ses premières boutiques ne comptent que quelques centaines d'événements, trop peu pour mesurer la qualité d'un modèle. Générer des données artificielles aurait été une impasse : un modèle évalué sur des données fabriquées retrouve surtout les règles qui ont servi à les fabriquer, et ses scores ne disent rien de son comportement face à de vrais clients. Nous avons donc entraîné et évalué les modèles sur \textbf{trois jeux de données publics réels}, choisis pour correspondre aux deux secteurs de Sellio, et nettoyés par des scripts Python reproductibles. Le tableau~\ref{tab:datasets} les présente.
+
+\renewcommand{\arraystretch}{1.35}
+\begin{longtable}{|p{3.1cm}|p{4.3cm}|p{3.4cm}|p{3.6cm}|}
+\hline
+\textbf{Jeu de données} & \textbf{Contenu} & \textbf{Volume brut} & \textbf{Usage dans Sellio} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Jeu de données} & \textbf{Contenu} & \textbf{Volume brut} & \textbf{Usage dans Sellio} \\
+\hline
+\endhead
+Online Retail II (UCI, licence CC BY 4.0)~\cite{onlineretail} & Transactions d'un e-commerçant britannique, déc. 2009 -- déc. 2011. & 1 067 371 lignes de factures & Attrition (modèle général), recommandation, « souvent achetés ensemble ». \\
+\hline
+eCommerce Events History in Cosmetics Shop (Kaggle, REES46)~\cite{cosmetics} & Événements de navigation d'une boutique de cosmétiques en ligne (vue, panier, retrait, achat). & 3 533 286 événements (décembre 2019) & Segmentation des visiteurs, recommandation (secteur cosmétiques). \\
+\hline
+H\&M Personalized Fashion Recommendations (Kaggle)~\cite{hm} & Achats, articles et clients d'une enseigne de mode, sept. 2018 -- sept. 2020. & 31,8 millions d'achats, 105 542 articles & Attrition (modèle vêtements), recommandation (secteur vêtements). \\
+\hline
+\caption{Jeux de données publics utilisés}
+\label{tab:datasets}
+\end{longtable}
+
+\subsection{Nettoyage des données}
+Aucun de ces jeux n'est directement exploitable : chacun contient des doublons, des valeurs manquantes, des valeurs aberrantes ou du trafic non humain. Chaque script de nettoyage produit un rapport qui détaille, étape par étape, le nombre de lignes avant et après. Le tableau~\ref{tab:nettoyage} en résume les principales étapes.
+
+\renewcommand{\arraystretch}{1.3}
+\begin{longtable}{|p{2.6cm}|p{8.6cm}|p{3.4cm}|}
+\hline
+\textbf{Jeu} & \textbf{Étape (lignes supprimées)} & \textbf{Résultat} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Jeu} & \textbf{Étape (lignes supprimées)} & \textbf{Résultat} \\
+\hline
+\endhead
+Online Retail II &
+Doublons exacts (34 335) ; factures annulées et ajustements (19 110) ; quantité ou prix $\le 0$ (6 014) ; codes qui ne sont pas des produits : frais de port, remises, frais bancaires (4 698) ; client inconnu (226 637) ; annotations internes « damaged », « wet » (479) ; valeurs au-delà du 99,9\textsuperscript{e} centile (1 507). &
+774 591 lignes de vente \\
+\hline
+Cosmetics &
+Doublons exacts, par exemple double clic (183 860) ; prix $\le 0$ (7 537) ; session manquante (714) ; \textbf{robots} : plus de 500 événements par jour ou 60 par minute, 136 comptes (78 998) ; prix aberrant par rapport à la médiane du produit (696) ; échantillon aléatoire de 60 000 visiteurs pour tenir en mémoire. &
+525 253 événements, 60 000 visiteurs \\
+\hline
+H\&M &
+Échantillon d'un client sur seize ; achats en magasin retirés, Sellio étant une boutique en ligne (588 289) ; prix au-delà du 99,9\textsuperscript{e} centile (1 394) ; achats identiques du même jour regroupés en une ligne avec quantité (167 798). Traduction des articles en fiches Sellio (genre, couleur, tissu) et mise à l'échelle des prix anonymisés (article médian $\approx$ 50 DT). &
+1 224 099 achats, 68 874 clients, 71 735 articles \\
+\hline
+\caption{Principales étapes de nettoyage}
+\label{tab:nettoyage}
+\end{longtable}
+
+La traduction du jeu H\&M vers le modèle de données de Sellio a aussi servi de test d'adéquation : la couleur a pu être renseignée pour 98\,\% des articles et le tissu pour 80\,\%, ce qui confirme que les attributs définis au Sprint 3 couvrent les données d'une vraie enseigne de mode.
+
+\subsection{Protocole d'évaluation}
+Deux règles ont guidé toutes les évaluations :
+\begin{itemize}
+  \item \textbf{Découpage temporel :} un modèle est toujours entraîné sur le passé et évalué sur la période qui suit, comme en production. Pour l'attrition, trois dates d'observation T1, T2 et T3 sont utilisées : entraînement à T1, choix du modèle et des réglages à T2, puis évaluation finale une seule fois à T3, le modèle retenu étant ré-entraîné sur T1 et T2. Un découpage aléatoire aurait laissé le modèle « voir le futur » et gonflé ses scores.
+  \item \textbf{Comparaison à une référence simple :} chaque modèle est comparé à une règle naïve (produits les plus populaires, ou ancienneté du dernier achat pour l'attrition). Un modèle qui ne bat pas sa référence n'apporte rien et n'est pas retenu.
+\end{itemize}
+
+Le tableau~\ref{tab:metriques} définit les métriques utilisées.
+\renewcommand{\arraystretch}{1.3}
+\begin{longtable}{|p{3.2cm}|p{11.4cm}|}
+\hline
+\textbf{Métrique} & \textbf{Signification} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Métrique} & \textbf{Signification} \\
+\hline
+\endhead
+ROC-AUC & Probabilité qu'un client parti reçoive un score plus élevé qu'un client resté (0,5 = hasard, 1 = parfait). \\
+\hline
+Précision & Parmi les clients signalés « à risque », part de ceux qui partent vraiment. \\
+\hline
+Rappel & Parmi les clients qui partent vraiment, part de ceux que le modèle a signalés. \\
+\hline
+F1 & Moyenne harmonique de la précision et du rappel. \\
+\hline
+HR@10 (\textit{hit rate}) & Part des cas où au moins un produit réellement acheté ensuite figure dans les 10 produits recommandés. \\
+\hline
+NDCG@10 & Comme HR@10, mais récompense davantage un bon produit placé en haut de la liste. \\
+\hline
+Couverture & Part du catalogue qui apparaît au moins une fois dans les recommandations. \\
+\hline
+Silhouette & Qualité d'un regroupement : proximité d'un visiteur avec son groupe comparée au groupe voisin (de $-1$ à $1$). \\
+\hline
+Davies-Bouldin & Rapport entre dispersion interne et séparation des groupes (plus bas = mieux). \\
+\hline
+ARI & Accord entre deux regroupements ; utilisé pour mesurer la stabilité des segments d'un entraînement à l'autre (1 = identiques). \\
+\hline
+\caption{Métriques d'évaluation}
+\label{tab:metriques}
+\end{longtable}
+
+\section{Moteur de recommandation}
+
+\subsection{Choix du modèle}
+
+Le moteur de recommandation de Sellio a pour objectif de proposer aux visiteurs des produits adaptés à leurs intérêts, tout en restant fonctionnel pour les nouvelles boutiques disposant de peu de données. Pour répondre à ce besoin, plusieurs approches ont été étudiées.
+
+\renewcommand{\arraystretch}{1.4}
+\begin{longtable}{|p{3.1cm}|p{4.3cm}|p{4.3cm}|p{2.5cm}|}
+\hline
+\textbf{Approche} & \textbf{Avantages} & \textbf{Limites} & \textbf{Décision} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Approche} & \textbf{Avantages} & \textbf{Limites} & \textbf{Décision} \\
+\hline
+\endhead
+
+Popularité &
+Simple à mettre en place et adaptée aux nouvelles boutiques. &
+Propose les mêmes produits à tous les visiteurs. &
+Intégrée au modèle. \\
+\hline
+
+Filtrage par contenu (TF-IDF) &
+Recommande des produits similaires selon leurs descriptions et catégories. &
+Ne tient pas compte directement des préférences des visiteurs. &
+Intégré au modèle. \\
+\hline
+
+Filtrage collaboratif (SVD) &
+Exploite les interactions des visiteurs pour identifier leurs préférences. &
+Nécessite un historique d'interactions suffisant. &
+Intégré au modèle. \\
+\hline
+
+Réseaux de neurones &
+Adaptés à des systèmes disposant d'importants volumes de données. &
+Plus complexes à entraîner et à maintenir. &
+Non retenus. \\
+\hline
+
+\textbf{Approche hybride} &
+\textbf{Combine plusieurs méthodes pour améliorer la pertinence des recommandations.} &
+Nécessite une configuration et une évaluation adaptées. &
+\textbf{Retenue.} \\
+\hline
+
+\caption{Comparaison des approches de recommandation}
+\label{tab:comparaison-reco}
+\end{longtable}
+
+\subsection{Modèle retenu et fonctionnement}
+
+Nous avons retenu une \textbf{approche hybride}, combinant la popularité des produits, leurs caractéristiques et les interactions des visiteurs. Ce choix permet de proposer des recommandations même lorsqu'une boutique dispose de peu d'historique, puis de les personnaliser progressivement.
+
+Le fonctionnement du moteur repose sur quatre étapes principales :
+
+\begin{enumerate}
+    \item \textbf{Collecte des interactions :} le système prend en compte les actions des visiteurs, notamment les consultations, les favoris, les ajouts au panier et les achats. Ces interactions permettent d'identifier les produits qui suscitent le plus d'intérêt.
+
+    \item \textbf{Analyse des produits :} les informations du catalogue, telles que le nom, la catégorie et les caractéristiques, sont exploitées pour identifier des produits similaires à l'aide de la méthode TF-IDF.
+
+    \item \textbf{Analyse des comportements :} le filtrage collaboratif, basé sur la méthode SVD, permet de repérer des relations entre les produits à partir des interactions enregistrées.
+
+    \item \textbf{Génération des recommandations :} le moteur combine les résultats des différentes approches afin de proposer une sélection de produits pertinente pour chaque visiteur.
+\end{enumerate}
+
+Pour limiter le problème du démarrage à froid (\textit{cold start}), notamment pour les nouvelles boutiques, les nouveaux visiteurs et les produits disposant de peu d'interactions, le moteur privilégie initialement les caractéristiques des produits, leur popularité lorsqu'elle est disponible, ainsi que les nouveautés. À mesure que l'historique s'enrichit, les recommandations s'appuient davantage sur les comportements observés.
+
+Les paramètres du moteur sont ajustés selon les données disponibles afin d'améliorer la pertinence des résultats. Lorsque l'historique est insuffisant, une configuration par défaut est utilisée.
+
+Enfin, la fonctionnalité \textbf{« Souvent achetés ensemble »} repose sur l'analyse des paniers et des associations entre produits. Elle permet de suggérer des articles complémentaires fréquemment présents dans les mêmes commandes.
+
+
+
+
+
+
+\subsection{Résultats}
+
+Le moteur de recommandation a été évalué sur trois jeux de données publics : Online Retail II, Cosmetics et H\&M. L'objectif est de mesurer sa capacité à proposer des produits correspondant aux futures interactions des utilisateurs.
+
+L'évaluation repose sur deux indicateurs :
+\begin{itemize}
+    \item \textbf{HR@10 :} mesure la fréquence à laquelle le produit attendu apparaît parmi les dix premières recommandations.
+    \item \textbf{NDCG@10 :} évalue la pertinence du classement en accordant davantage d'importance aux produits placés en tête de liste.
+\end{itemize}
+
+\renewcommand{\arraystretch}{1.3}
+\begin{longtable}{|p{5.2cm}|p{2.9cm}|p{2.9cm}|p{2.9cm}|}
+\hline
+\textbf{Modèle (HR@10 / NDCG@10)} & \textbf{Online Retail II} & \textbf{Cosmetics} & \textbf{H\&M} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Modèle (HR@10 / NDCG@10)} & \textbf{Online Retail II} & \textbf{Cosmetics} & \textbf{H\&M} \\
+\hline
+\endhead
+Popularité (référence) & 0,308 / 0,052 & 0,159 / 0,044 & 0,053 / 0,015 \\
+\hline
+Contenu seul (TF-IDF) & 0,259 / 0,044 & 0,069 / 0,019 & 0,038 / 0,014 \\
+\hline
+Filtrage collaboratif seul (SVD) & 0,240 / 0,044 & 0,084 / 0,020 & 0,020 / 0,008 \\
+\hline
+Hybride & 0,337 / 0,062 & 0,079 / 0,022 & 0,039 / 0,015 \\
+\hline
+\textbf{Hybride + popularité (retenu)} & \textbf{0,357 / 0,069} & \textbf{0,178 / 0,052} & \textbf{0,059 / 0,022} \\
+\hline
+Cas évalués & 1 500 & 1 373 & 2 000 \\
+\hline
+\caption{Résultats du moteur de recommandation sur la période de test}
+\label{tab:resultats-reco}
+\end{longtable}
+
+
+Les résultats montrent que le modèle hybride intégrant la popularité obtient les meilleures performances parmi les approches comparées sur les trois jeux de données. La combinaison des caractéristiques des produits, des comportements des visiteurs et de la popularité permet ainsi d'améliorer la pertinence des recommandations.
+
+
+
+Enfin, pour la fonctionnalité \textbf{« Souvent achetés ensemble »}, les règles d'association permettent de retrouver un produit acheté dans le même panier parmi les cinq suggestions dans 47,1\,\% des cas, contre 43,0\,\% pour la méthode basée sur la popularité.
+
+
+
+\section{Segmentation des visiteurs}
+\subsection{Choix du modèle}
+Les niveaux de fidélité du chapitre 6 sont définis à la main à partir des points. La segmentation comportementale cherche au contraire des groupes dans les données, sans étiquette préalable : c'est un problème d'apprentissage \textbf{non supervisé}. Le tableau~\ref{tab:comparaison-seg} compare les algorithmes candidats.
+\renewcommand{\arraystretch}{1.4}
+\begin{longtable}{|p{3.1cm}|p{4.3cm}|p{4.3cm}|p{2.5cm}|}
+\hline
+\textbf{Algorithme} & \textbf{Avantages} & \textbf{Contraintes} & \textbf{Décision} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Algorithme} & \textbf{Avantages} & \textbf{Contraintes} & \textbf{Décision} \\
+\hline
+\endhead
+\textbf{K-Means} & Rapide sur des dizaines de milliers de visiteurs ; centres de groupes directement interprétables. & Nombre de groupes à choisir ; sensible aux valeurs extrêmes. & \textbf{Retenu.} \\
+\hline
+DBSCAN & Trouve des groupes de forme libre et isole le bruit. & Paramètres délicats en dimension 9 ; beaucoup de visiteurs classés « bruit ». & Écarté. \\
+\hline
+Mélange gaussien (GMM) & Appartenance probabiliste. & Plus lent, moins stable ; interprétation moins directe. & Écarté. \\
+\hline
+Classification hiérarchique & Visualisation en dendrogramme. & Coût quadratique en mémoire : inadapté à 60 000 visiteurs. & Écartée. \\
+\hline
+\caption{Comparaison des algorithmes de segmentation}
+\label{tab:comparaison-seg}
+\end{longtable}
+
+
+
+
+\subsection{Configuration}
+
+Pour segmenter les visiteurs, nous utilisons l'algorithme K-Means, qui permet de regrouper automatiquement les utilisateurs ayant des comportements similaires.
+
+Chaque visiteur est caractérisé par neuf informations liées à son activité, notamment le nombre de sessions, les produits consultés, les recherches effectuées, les ajouts au panier, les favoris, les achats et la fréquence des visites.
+
+Avant l'entraînement, les données sont préparées afin de réduire les écarts importants entre les comportements et d'éviter que certaines valeurs inhabituelles influencent excessivement les résultats.
+
+Plusieurs configurations, allant de trois à six groupes, ont été comparées afin de retenir celle qui permet de distinguer le plus clairement les profils des visiteurs.
+
+Chaque groupe identifié reçoit ensuite un nom représentatif et une action marketing adaptée, permettant aux commerçants de mieux comprendre leur clientèle.
+
+\subsection{Résultats}
+
+L'évaluation a été réalisée sur 60 000 visiteurs du jeu de données Cosmetics. Les résultats montrent que la configuration à trois groupes offre la meilleure séparation des comportements, avec un score de silhouette de 0,468.
+
+Les groupes obtenus présentent également une bonne stabilité entre les différents entraînements. Le tableau~\ref{tab:segments} présente les trois profils identifiés ainsi que les actions marketing proposées.
+
+\renewcommand{\arraystretch}{1.3}
+\begin{longtable}{|p{3.2cm}|p{1.8cm}|p{5.2cm}|p{4.2cm}|}
+\hline
+\textbf{Segment} & \textbf{Part} & \textbf{Profil moyen} & \textbf{Action suggérée} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Segment} & \textbf{Part} & \textbf{Profil moyen} & \textbf{Action suggérée} \\
+\hline
+\endhead
+
+Visiteurs occasionnels &
+76\,\% (45 694) &
+Peu de visites et de produits consultés, quasiment aucun achat. &
+Encourager la première commande et proposer l'inscription à la newsletter. \\
+\hline
+
+Acheteurs décidés &
+13\,\% (7 615) &
+Consultent plusieurs produits et passent plus facilement à l'achat. &
+Mettre en avant les nouveautés et le réassort. \\
+\hline
+
+Explorateurs &
+11\,\% (6 691) &
+Visitent régulièrement la boutique et consultent de nombreux produits, mais achètent moins souvent. &
+Proposer des recommandations personnalisées et des offres adaptées. \\
+\hline
+
+\caption{Segments de visiteurs obtenus sur le jeu Cosmetics}
+\label{tab:segments}
+\end{longtable}
+
+Ces résultats montrent que K-Means permet d'identifier trois profils de visiteurs distincts. Cette segmentation aide les commerçants à adapter leurs actions marketing en fonction des habitudes de navigation et d'achat.
+
+
+
+
+
+\section{Prédiction de l'attrition}
+\subsection{Définition du problème}
+Un client est considéré comme \textbf{perdu} s'il ne passe aucune commande dans les \textbf{90 jours} qui suivent la date d'observation. Le modèle estime cette probabilité pour chaque client ayant déjà acheté, à partir de six variables calculées sur son historique : ancienneté, nombre de commandes, montant total dépensé, panier moyen, fréquence d'achat et nombre de jours depuis la dernière commande. Le jeu H\&M ajoute l'âge du client.
+
+\subsection{Choix du modèle}
+Le tableau~\ref{tab:comparaison-churn} compare les modèles candidats. Tous ont été entraînés à T1, puis comparés à T2 selon l'AUC, pour plusieurs réglages (profondeur des arbres, taille minimale des feuilles, taux d'apprentissage).
+\renewcommand{\arraystretch}{1.4}
+\begin{longtable}{|p{3.1cm}|p{4.3cm}|p{4.3cm}|p{2.5cm}|}
+\hline
+\textbf{Modèle} & \textbf{Avantages} & \textbf{Contraintes} & \textbf{Décision} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Modèle} & \textbf{Avantages} & \textbf{Contraintes} & \textbf{Décision} \\
+\hline
+\endhead
+Régression logistique & Simple, rapide, coefficients lisibles. & Relations linéaires uniquement (après transformation logarithmique). & Référence forte. \\
+\hline
+Forêt aléatoire & Capture les effets non linéaires et les interactions ; robuste au surapprentissage grâce à la moyenne de nombreux arbres. & Moins lisible qu'une régression ; modèle plus volumineux. & \textbf{Retenue (secteur général).} \\
+\hline
+Gradient boosting & Souvent le plus précis sur données tabulaires. & Plus sensible aux réglages. & \textbf{Retenu (secteur vêtements).} \\
+\hline
+Réseau de neurones & Très flexible. & Excessif pour six variables ; peu explicable. & Écarté. \\
+\hline
+\caption{Comparaison des modèles de prédiction de l'attrition}
+\label{tab:comparaison-churn}
+\end{longtable}
+
+\subsection{Résultats}
+Le tableau~\ref{tab:resultats-churn} présente les résultats sur la période de test T3, jamais utilisée pour choisir le modèle.
+\renewcommand{\arraystretch}{1.3}
+\begin{longtable}{|p{5.4cm}|p{1.6cm}|p{1.8cm}|p{1.6cm}|p{1.6cm}|}
+\hline
+\textbf{Modèle} & \textbf{AUC} & \textbf{Précision} & \textbf{Rappel} & \textbf{F1} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Modèle} & \textbf{AUC} & \textbf{Précision} & \textbf{Rappel} & \textbf{F1} \\
+\hline
+\endhead
+\multicolumn{5}{|c|}{\textbf{Online Retail II (5 239 clients, taux d'attrition 56,5\,\%)}} \\
+\hline
+Référence : ancienneté du dernier achat & 0,762 & 0,844 & 0,375 & 0,519 \\
+\hline
+Régression logistique & 0,791 & 0,737 & 0,804 & 0,769 \\
+\hline
+\textbf{Forêt aléatoire (profondeur 6), retenue} & \textbf{0,801} & 0,728 & \textbf{0,849} & \textbf{0,784} \\
+\hline
+\multicolumn{5}{|c|}{\textbf{H\&M (64 871 clients, taux d'attrition 73,1\,\%)}} \\
+\hline
+Référence : ancienneté du dernier achat & 0,738 & 0,915 & 0,349 & 0,506 \\
+\hline
+Modèle général appliqué tel quel & 0,787 & 0,831 & 0,887 & 0,858 \\
+\hline
+Gradient boosting sans l'âge & 0,799 & 0,878 & 0,724 & 0,794 \\
+\hline
+\textbf{Gradient boosting (taux 0,05), retenu} & \textbf{0,799} & \textbf{0,880} & 0,718 & 0,791 \\
+\hline
+\caption{Résultats de la prédiction de l'attrition sur la période de test}
+\label{tab:resultats-churn}
+\end{longtable}
+
+Ces résultats appellent plusieurs remarques :
+\begin{itemize}
+  \item \textbf{Un gain réel mais mesuré.} Avec une AUC d'environ 0,80, le modèle classe correctement un client parti devant un client resté quatre fois sur cinq. Il dépasse nettement la règle naïve, surtout en rappel : sur Online Retail II, il repère 85\,\% des clients qui partent.
+\item \textbf{Les facteurs influençant la prédiction.}
+L'analyse montre que certains comportements jouent un rôle plus important dans la prédiction du départ d'un client. Pour Online Retail II, il s'agit principalement du temps écoulé depuis le dernier achat et de la fréquence des commandes. Pour H\&M, c'est surtout le nombre total de commandes. Ces résultats montrent que l'historique d'achat permet d'identifier les clients présentant un risque d'attrition.
+
+  \item \textbf{Un modèle par secteur.} Le modèle général fonctionne déjà sur la mode (AUC 0,787), ce qui montre que les comportements d'achat se ressemblent, mais le modèle entraîné sur H\&M fait mieux (0,799) et, surtout, il est plus précis (88\,\% contre 83\,\%) : les alertes envoyées au commerçant sont plus fiables. Sellio choisit donc le modèle selon le secteur de la boutique.
+  \item \textbf{L'âge n'apporte rien} (0,7988 sans, 0,7993 avec) : nous n'avons pas besoin de demander cette donnée personnelle aux clients.
+\end{itemize}
+Le score est enfin traduit en trois niveaux de risque, lisibles par un commerçant : \textbf{élevé} pour les 30\,\% de clients les plus à risque, \textbf{moyen} pour les 30\,\% suivants, \textbf{faible} pour les autres. Les seuils sont calculés pour chaque modèle à partir de la distribution de ses scores.
+
+\subsection{Limites}
+Ces modèles ont été entraînés sur des données européennes antérieures à 2021. Le comportement des clients tunisiens peut différer (paiement à la livraison dominant, saisonnalité du Ramadan et des soldes). Le système est conçu pour cela : la recommandation et la segmentation sont ré-entraînées chaque nuit sur les données propres de chaque boutique, et l'attrition pourra l'être dès que les boutiques auront accumulé plusieurs mois d'historique.
+
+\subsection{Fonctionnement d'une boutique à l'autre : les huit secteurs}
+Sellio héberge des boutiques de huit secteurs. Les trois briques d'apprentissage ne s'y adaptent pas de la même manière, ce que résume le tableau~\ref{tab:ml-par-brique}.
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\small
+\begin{tabular}{|p{3cm}|p{3.6cm}|p{4.2cm}|p{3.4cm}|}
+\hline
+\textbf{Brique} & \textbf{Apprentissage} & \textbf{Données} & \textbf{Quantité minimale} \\
+\hline
+Recommandation & Non supervisé (SVD) + contenu (TF-IDF) & Celles de la boutique : 180 jours d'événements et ses commandes, chaque nuit & 2 produits actifs \\
+\hline
+Segmentation & Non supervisé (K-Means) & Visiteurs de la boutique sur 90 jours, chaque nuit & 8 visiteurs \\
+\hline
+Attrition & Supervisé, pré-entraîné & Jeux publics réels (Online Retail II, H\&M) & 1 commande par client \\
+\hline
+\end{tabular}
+\caption{Ce qui est appris par boutique et ce qui est pré-entraîné}
+\label{tab:ml-par-brique}
+\end{table}
+
+
+En production, les modèles de recommandation et de segmentation utilisent uniquement les données collectées par chaque boutique Sellio, comme les visites, les produits consultés et les achats. Les données des différentes boutiques restent séparées.
+
+Le moteur de recommandation s'adapte également au secteur d'activité en prenant en compte les caractéristiques des produits. Par exemple, il utilise les tailles et les disciplines pour les articles de sport, les marques pour les produits high-tech ou encore les matières pour les bijoux.
+
+Enfin, le moteur ajuste automatiquement l'importance accordée aux produits populaires selon les comportements d'achat. Dans une épicerie, les produits fréquemment achetés peuvent être davantage recommandés, tandis que dans une bijouterie, les préférences personnelles des visiteurs peuvent avoir plus d'importance.
+
+
+
+\Needspace{14\baselineskip}
+L'attrition, elle, demande des clients observés pendant des mois : une boutique qui ouvre n'en a pas. Le service choisit donc le modèle selon le secteur, comme le montre le tableau~\ref{tab:churn-secteur}.
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\small
+\begin{tabular}{|p{2.4cm}|p{3.2cm}|p{6.2cm}|p{2.6cm}|}
+\hline
+\textbf{Secteur} & \textbf{Modèle} & \textbf{Justification} & \textbf{Confiance} \\
+\hline
+Mode & Gradient boosting (H\&M) & Même secteur & Élevée \\
+\hline
+Sport, enfants & Gradient boosting (H\&M) & H\&M couvre ses lignes sport et enfants ; achats saisonniers et tailles & Moyenne \\
+\hline
+Beauté & Forêt aléatoire (Online Retail II) & Petits paniers fréquents, proches d'un commerce de détail généraliste & Moyenne \\
+\hline
+Maison & Forêt aléatoire (Online Retail II) & Online Retail II vend de la décoration et des articles cadeaux & Moyenne à élevée \\
+\hline
+Bijoux, épicerie, high-tech & Forêt aléatoire (Online Retail II) & Faute de données du secteur ; l'horizon de 90 jours ne correspond pas à leur rythme d'achat & À valider \\
+\hline
+\end{tabular}
+\caption{Modèle d'attrition utilisé selon le secteur}
+\label{tab:churn-secteur}
+\end{table}
+
+
+Pour éviter le démarrage à froid, les nouvelles boutiques proposent d'abord des nouveautés et des produits similaires. Les recommandations deviennent progressivement plus personnalisées grâce aux visites et aux achats des clients.
+
+
+
+%==================================================================
+\section{Backlog du Sprint 10}
+\Needspace{18\baselineskip}
+Le tableau~\ref{tab:backlog-sprint10} présente le \textbf{backlog du Sprint 10}, consacré au suivi comportemental et à la recommandation.
+
+\renewcommand{\arraystretch}{1.05}
+\setlength{\tabcolsep}{3pt}
+\begin{longtable}{|>{\raggedright\arraybackslash}p{3cm}|>{\raggedright\arraybackslash}p{8cm}|>{\centering\arraybackslash}p{3.2cm}|}
+\hline
+\textbf{User Story} & \textbf{Tâches} & \textbf{Estimation} \\
+\hline
+\endfirsthead
+\hline
+\textbf{User Story} & \textbf{Tâches} & \textbf{Estimation} \\
+\hline
+\endhead
+\hline
+\multicolumn{3}{r}{\textit{Suite à la page suivante}} \\
+\endfoot
+\hline
+\endlastfoot
+
+\textbf{En tant que système, je veux collecter les événements de navigation}
+& Développer le module \texttt{tracker.js} : identifiants de visiteur et de session, file d'attente et envoi par lots. & 1 \\
+\cline{2-3}
+& Instrumenter la vitrine (vues, recherches, panier, favoris, commande, achat, clics sur recommandation). & 1 \\
+\cline{2-3}
+& Développer l'API de réception avec validation des types d'événements. & 1 \\
+\cline{2-3}
+& Créer la table partitionnée, les index BRIN et partiels, et la gestion automatique des partitions. & 1 \\
+\cline{2-3}
+& Développer les agrégats quotidiens et la rétention de 13 mois. & 1 \\
+\cline{2-3}
+& Tester la fonctionnalité. & 1 \\
+\hline
+
+\textbf{En tant que visiteur, je souhaite voir des produits similaires et « pour vous »}
+& Nettoyer les jeux Online Retail II, Cosmetics et H\&M (scripts et rapports). & 1 \\
+\cline{2-3}
+& Développer le modèle hybride (signal pondéré, SVD, TF-IDF, mélange adaptatif). & 1 \\
+\cline{2-3}
+& Développer le réglage automatique de $\lambda$ et $\alpha$ par boutique. & 1 \\
+\cline{2-3}
+& Évaluer le modèle sur les trois jeux avec découpage temporel et référence. & 1 \\
+\cline{2-3}
+& Développer \texttt{PythonRunner} et \texttt{MlTrainingService} (entraînement nocturne et à la demande). & 1 \\
+\cline{2-3}
+& Développer les API « similaires », « pour vous » et « populaires ». & 1 \\
+\cline{2-3}
+& Développer le composant \texttt{RecommendedProducts} sur la fiche produit et l'accueil. & 1 \\
+\hline
+
+\textbf{En tant que visiteur, je souhaite voir les produits souvent achetés ensemble}
+& Extraire les règles d'association classées par \textit{lift} et les évaluer. & 1 \\
+\cline{2-3}
+& Développer l'API « achetés ensemble » et la section du panier. & 1 \\
+\hline
+
+\multicolumn{2}{|r|}{\textbf{Total}} & \textbf{15} \\
+\hline
+\caption{Backlog du Sprint 10}
+\label{tab:backlog-sprint10}
+\end{longtable}
+
+\section{Diagramme de cas d'utilisation du Sprint 10}
+\Needspace{20\baselineskip}
+\begin{figure}[H]
+    \centering
+    \img{0.7}{cu_sprint10.png}
+    \caption{Diagramme de cas d'utilisation du Sprint 10}
+    \label{fig:cu-sprint10}
+\end{figure}
+
+\section{Diagramme de classes du Sprint 10}
+\Needspace{20\baselineskip}
+La figure~\ref{fig:classes-ml} présente les classes du microservice d'analyse impliquées dans ce sprint (\texttt{TrackingController}, \texttt{TrackingService}, \texttt{EventStore}, \texttt{MlTrainingService}, \texttt{PythonRunner}, \texttt{RecommendationService}).
+\begin{figure}[H]
+    \centering
+    \img{0.95}{classes_analytics.png}
+    \caption{Diagramme de classes du microservice d'analyse}
+    \label{fig:classes-ml}
+\end{figure}
+
+\section{Services web du Sprint 10}
+Le tableau~\ref{tab:ws-sprint10} présente les services web du Sprint 10, exposés par \texttt{analytics-service}.
+\renewcommand{\arraystretch}{1.15}
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{|p{2.5cm}|p{9.8cm}|p{3.2cm}|}
+\hline
+\textbf{Méthode} & \textbf{URL} & \textbf{Description} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Méthode} & \textbf{URL} & \textbf{Description} \\
+\hline
+\endhead
+\multicolumn{3}{|c|}{\textbf{Collecte --- /api/v1/analytics/events}} \\
+\hline
+POST & /api/v1/analytics/events & Recevoir un lot d'événements (boutique, visiteur, session). \\
+\hline
+\multicolumn{3}{|c|}{\textbf{Recommandations --- /api/v1/analytics/recommendations}} \\
+\hline
+GET & /api/v1/analytics/recommendations/similar & Produits similaires à un produit. \\
+\hline
+GET & /api/v1/analytics/recommendations/for-you & Recommandations personnalisées pour un visiteur. \\
+\hline
+GET & /api/v1/analytics/recommendations/bought-together & Produits souvent achetés avec ceux du panier. \\
+\hline
+GET & /api/v1/analytics/recommendations/popular & Produits populaires (repli et démarrage à froid). \\
+\hline
+\caption{Services web du Sprint 10}
+\label{tab:ws-sprint10}
+\end{longtable}
+
+
+\section{Les cas d'utilisation du Sprint 10}
+\subsection{Cas d'utilisation « Recevoir des recommandations personnalisées »}
+\subsubsection{Description textuelle}
+
+Le tableau~\ref{tab:uc-reco} présente la description textuelle de ce cas.
+
+\renewcommand{\arraystretch}{1.4}
+\begin{longtable}{|p{4cm}|p{11cm}|}
+\hline
+\textbf{Acteurs} & Visiteur ou client, moteur de recommandation. \\
+\hline
+\textbf{Objectif} & Proposer des produits adaptés aux intérêts du visiteur. \\
+\hline
+\textbf{Pré-condition} & La boutique est active et dispose de produits. \\
+\hline
+\textbf{Scénario principal} &
+1. Le visiteur consulte des produits sur la boutique.\newline
+2. Le système enregistre ses interactions.\newline
+3. Le moteur analyse les préférences du visiteur et récupère les recommandations disponibles.\newline
+4. La vitrine affiche les produits recommandés.\newline
+5. Les clics sur les recommandations sont enregistrés pour suivre leur efficacité. \\
+\hline
+\textbf{Scénario alternatif} &
+\textbf{Nouveau visiteur :} le système propose des produits populaires.\newline
+\textbf{Modèle non entraîné :} le système affiche des produits populaires ou des nouveautés.\newline
+\textbf{Nouveau produit :} les recommandations reposent sur ses caractéristiques.\newline
+\textbf{Service indisponible :} la section est masquée sans interrompre la navigation. \\
+\hline
+\caption{Description textuelle du cas « Recevoir des recommandations personnalisées »}
+\label{tab:uc-reco}
+\end{longtable}
+
+
+
+
+\clearpage
+
+\subsubsection{Diagramme de séquence système}
+\Needspace{18\baselineskip}
+\begin{figure}[H]
+    \centering
+    \img{0.5}{dss_reco.png}
+    \caption{Diagramme de séquence système du cas « Recevoir des recommandations personnalisées »}
+    \label{fig:dss-reco}
+\end{figure}
+
+\subsubsection{Diagramme de séquence objet}
+\Needspace{20\baselineskip}
+\begin{figure}[H]
+    \centering
+    \img{0.8}{dso_reco.png}
+    \caption{Diagramme de séquence objet du cas « Recevoir des recommandations personnalisées »}
+    \label{fig:dso-reco}
+\end{figure}
+\clearpage
+\section{Réalisation du Sprint 10}
+\Needspace{20\baselineskip}
+\textbf{Recommandations sur la vitrine :} les figures~\ref{fig:ui-reco-fiche} et~\ref{fig:ui-reco-panier} présentent les sections « Vous aimerez aussi » sur la fiche produit et « Souvent achetés ensemble » dans le panier.
+\begin{figure}[H]
+    \centering
+    \img{0.9}{ui_reco_fiche.png}
+    \caption{Recommandations sur la fiche produit}
+    \label{fig:ui-reco-fiche}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \img{0.9}{ui_reco_panier.png}
+    \caption{Produits souvent achetés ensemble dans le panier}
+    \label{fig:ui-reco-panier}
+\end{figure}
+\clearpage
+%==================================================================
+
+
+\section{Backlog du Sprint 11}
+
+Le tableau~\ref{tab:backlog-sprint11} présente le backlog du Sprint 11, consacré à la segmentation des visiteurs, à la prédiction de l'attrition et au tableau de bord comportemental.
+
+\renewcommand{\arraystretch}{1.2}
+\setlength{\tabcolsep}{4pt}
+
+\begin{longtable}{|>{\raggedright\arraybackslash}p{4cm}|>{\raggedright\arraybackslash}p{9cm}|>{\centering\arraybackslash}p{2.2cm}|}
+\hline
+\textbf{User Story} & \textbf{Tâches} & \textbf{Estimation} \\
+\hline
+\endfirsthead
+\hline
+\textbf{User Story} & \textbf{Tâches} & \textbf{Estimation} \\
+\hline
+\endhead
+
+\textbf{En tant que commerçant, je souhaite consulter les segments de mes visiteurs}
+& Préparer les données comportementales des visiteurs. & 1 \\
+\cline{2-3}
+& Développer et configurer le modèle K-Means. & 1 \\
+\cline{2-3}
+& Identifier les profils de visiteurs et proposer des actions marketing adaptées. & 1 \\
+\cline{2-3}
+& Évaluer la qualité de la segmentation sur le jeu Cosmetics. & 1 \\
+\hline
+
+\textbf{En tant que commerçant, je souhaite identifier les clients à risque d'attrition}
+& Préparer les historiques d'achat et identifier les clients inactifs. & 1 \\
+\cline{2-3}
+& Comparer et évaluer plusieurs modèles de prédiction. & 1 \\
+\cline{2-3}
+& Entraîner et évaluer un modèle adapté au secteur de la mode avec H\&M. & 1 \\
+\cline{2-3}
+
+& Intégrer les modèles de prédiction selon le secteur de la boutique. & 1 \\
+\cline{2-3}
+& Développer les API de consultation des risques d'attrition. & 1 \\
+\hline
+
+\textbf{En tant que commerçant, je souhaite consulter le tableau de bord « Comportement » et relancer l'entraînement des modèles}
+& Développer les API des statistiques comportementales. & 1 \\
+\cline{2-3}
+& Développer l'interface du tableau de bord « Comportement ». & 1 \\
+\cline{2-3}
+& Permettre le réentraînement des modèles et la gestion des données de démonstration. & 1 \\
+\cline{2-3}
+& Sécuriser l'accès aux données de chaque boutique. & 1 \\
+\cline{2-3}
+
+
+\multicolumn{2}{|r|}{\textbf{Total}} & \textbf{16} \\
+\hline
+\caption{Backlog du Sprint 11}
+\label{tab:backlog-sprint11}
+\end{longtable}
+```
+
+
+
+
+\section{Diagramme de cas d'utilisation du Sprint 11}
+\Needspace{20\baselineskip}
+\begin{figure}[H]
+    \centering
+    \img{0.6}{cu_sprint11.png}
+    \caption{Diagramme de cas d'utilisation du Sprint 11}
+    \label{fig:cu-sprint11}
+\end{figure}
+
+\section{Services web du Sprint 11}
+Le tableau~\ref{tab:ws-sprint11} présente les services web du Sprint 11.
+\renewcommand{\arraystretch}{1.15}
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{|p{1.7cm}|p{8.8cm}|p{4.2cm}|}
+\hline
+\textbf{Méthode} & \textbf{URL} & \textbf{Description} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Méthode} & \textbf{URL} & \textbf{Description} \\
+\hline
+\endhead
+\multicolumn{3}{|c|}{\textbf{Analyse comportementale --- /api/v1/analytics/behavior}} \\
+\hline
+GET & /api/v1/analytics/behavior/overview & Synthèse : entonnoir, événements, segments, dernier entraînement. \\
+\hline
+POST & /api/v1/analytics/behavior/train & Ré-entraîner les modèles de la boutique. \\
+\hline
+POST & /api/v1/analytics/behavior/demo-data & Générer des données de démonstration. \\
+\hline
+DELETE & /api/v1/analytics/behavior/demo-data & Supprimer les données de démonstration. \\
+\hline
+\multicolumn{3}{|c|}{\textbf{Attrition --- /api/v1/analytics/churn}} \\
+\hline
+GET & /api/v1/analytics/churn/\{userId\} & Score et niveau de risque d'un client. \\
+\hline
+GET & /api/v1/analytics/churn/\{userId\}/features & Variables utilisées pour le score d'un client. \\
+\hline
+POST & /api/v1/analytics/churn/batch-ids & Scores d'une liste de clients. \\
+\hline
+GET & /api/v1/analytics/churn/batch & Scores de tous les clients de la boutique. \\
+\hline
+\caption{Services web du Sprint 11}
+\label{tab:ws-sprint11}
+\end{longtable}
+
+\section{Les cas d'utilisation du Sprint 11}
+\subsection{Cas d'utilisation « Consulter l'analyse comportementale et les risques d'attrition »}
+\subsubsection{Description textuelle}
+Le tableau~\ref{tab:uc-comportement} présente la description textuelle de ce cas.
+\renewcommand{\arraystretch}{1.5}
+\begin{longtable}{|p{4cm}|p{11cm}|}
+\hline
+\textbf{Acteurs} & Commerçant, Moteur d'apprentissage automatique \\
+\hline
+\textbf{Objectif} & Comprendre le comportement des visiteurs et agir sur les clients à risque. \\
+\hline
+\textbf{Pré-condition} & Le commerçant est connecté ; sa boutique est active. \\
+\hline
+\textbf{Scénario principal} &
+1. Le commerçant ouvre la page « Comportement ».\newline
+2. Le système vérifie que la boutique demandée est bien la sienne.\newline
+3. Le système renvoie l'entonnoir (visites, produits vus, ajouts au panier, commandes), les produits les plus consultés, la répartition des segments avec leur action suggérée et la date du dernier entraînement.\newline
+4. Le commerçant ouvre la liste des clients ; le système calcule les scores d'attrition par lot avec le modèle du secteur de la boutique et affiche pour chacun un risque élevé, moyen ou faible.\newline
+5. Le commerçant ouvre la fiche d'un client à risque élevé, consulte les variables qui expliquent son score et le contacte (e-mail, code promo ciblé).\newline
+6. S'il le souhaite, il relance l'entraînement ; le système ré-entraîne recommandation et segmentation et affiche les nouvelles métriques. \\
+\hline
+\textbf{Scénario alternatif} &
+\textbf{Accès à une autre boutique :} à l'étape 2, le système répond 403.\newline
+\textbf{Boutique sans trafic :} pour une démonstration, le commerçant peut générer environ 60 jours de visites fictives (identifiants préfixés « demo- »), puis les supprimer en un clic. \\
+\hline
+\caption{Description textuelle du cas « Consulter l'analyse comportementale et les risques d'attrition »}
+\label{tab:uc-comportement}
+\end{longtable}
+\clearpage
+\subsubsection{Diagramme de séquence système}
+\Needspace{18\baselineskip}
+\begin{figure}[H]
+    \centering
+    \img{0.7}{dss_comportement.png}
+    \caption{Diagramme de séquence système du cas « Consulter l'analyse comportementale »}
+    \label{fig:dss-comportement}
+\end{figure}
+
+\subsubsection{Diagramme de séquence objet}
+\Needspace{20\baselineskip}
+\begin{figure}[H]
+    \centering
+    \img{0.95}{dso_comportement.png}
+    \caption{Diagramme de séquence objet du cas « Consulter l'analyse comportementale »}
+    \label{fig:dso-comportement}
+\end{figure}
+\clearpage
+\section{Réalisation du Sprint 11}
+\Needspace{20\baselineskip}
+\textbf{Tableau de bord « Comportement » :} la figure~\ref{fig:ui-comportement} présente la page d'analyse comportementale : entonnoir de conversion, segments de visiteurs et actions suggérées, produits les plus consultés et état des modèles.
+\begin{figure}[H]
+    \centering
+    \img{0.9}{ui_comportement.png}
+    \caption{Tableau de bord « Comportement »}
+    \label{fig:ui-comportement}
+\end{figure}
+
+\Needspace{20\baselineskip}
+\textbf{Clients à risque :} la figure~\ref{fig:ui-churn} présente le niveau de risque d'attrition affiché dans la liste et la fiche des clients.
+\begin{figure}[H]
+    \centering
+    \img{0.85}{ui_churn.png}
+    \caption{Niveau de risque d'attrition des clients}
+    \label{fig:ui-churn}
+\end{figure}
+
+\section*{Conclusion}
+Cette dernière release a doté Sellio d'une véritable intelligence comportementale : collecte d'événements pensée pour le volume, recommandations hybrides, segmentation et prédiction de l'attrition. Chaque modèle a été choisi par comparaison, évalué sur des données réelles avec un protocole temporel, et comparé à une référence simple. Les résultats sont volontairement présentés tels quels : ils montrent un gain réel mais mesuré, cohérent avec la difficulté des tâches.
